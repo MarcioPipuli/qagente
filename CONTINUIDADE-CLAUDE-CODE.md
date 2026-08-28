@@ -624,10 +624,20 @@ Playwright) agora pode ser feita sem conflito com o núcleo.
 skills mantém o `license: CC-BY-4.0` declarado no frontmatter de cada `SKILL.md`, herdado do
 formato de origem. O README explica o arranjo.
 
-**Ponto que segue aberto e depende do usuário:** a licença do `agent-skills-main`, creditado
-no README como origem dos padrões estruturais, **não foi verificada** — o projeto não está
-nesta máquina. Se ela for copyleft ou restringir obras derivadas, a escolha de MIT pode
-precisar de revisão. Conferir antes de tornar o repositório público.
+**Licença da origem verificada em 2026-08-28 — sem conflito.** O `agent-skills`
+(Tech Leads Club) é dual-licenciado exatamente no mesmo arranjo: MIT para o código, CC-BY-4.0
+para o conteúdo dos `SKILL.md`. Não é coincidência — o `license: CC-BY-4.0` no frontmatter das
+skills do QAGente veio de copiar esse formato. Ambas são permissivas, nenhuma é copyleft, e
+não há impedimento para tornar o repositório público.
+
+Verificado também que a `playwright-skill` de origem não tem sobreposição com a
+`playwright-ui-automation` criada aqui: a de lá é automação ad-hoc de navegador (screenshots,
+links quebrados, scripts em `/tmp`), a daqui é escrita de suíte E2E mantida a partir de casos
+de teste.
+
+A atribuição no README foi reforçada para atender à CC-BY-4.0: autor nomeado, link para a
+origem, licença citada e indicação explícita de que o conteúdo das skills do QAGente é
+original — o que foi reaproveitado é a estrutura, não o texto.
 
 **Perfil `default` alinhado** com a família dos outros três: passou a 4 níveis de risco com
 `critical`, IDs `TC-{DOMAIN}-{NUMBER}` e seletor `data-testid`. O que o distingue agora é
@@ -683,10 +693,9 @@ Próximas tarefas, na ordem da seção 9:
    validado com evidência (ver 8.6); Copilot, Cursor e Windsurf seguem como
    hipótese assumida, não como fato verificado. Depende do usuário abrir cada
    ferramenta; não tente automatizar nem declare como testado.
-2. Verificar a licença do agent-skills-main (ver Etapa 7) antes de tornar o
-   repositório público.
-3. Nenhuma outra pendência técnica em aberto. A 8.6 é a única que resta, e
-   depende do usuário abrir cada ferramenta.
+2. Nenhuma outra pendência em aberto. A 8.6 é a única que resta, e depende do
+   usuário abrir cada ferramenta. A licença da origem já foi verificada e não
+   impede tornar o repositório público (ver Etapa 7).
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes

@@ -182,11 +182,31 @@ suposição de separador ou de quebra de linha passe despercebida.
 
 ## Licença
 
-O código (`install.py`, `test_install.py`) está sob a [licença MIT](LICENSE).
+| Parte | Licença |
+|---|---|
+| Código (`install.py`, `test_install.py`) | [MIT](LICENSE) |
+| Conteúdo das skills (`SKILL.md`) | CC-BY-4.0, declarado no frontmatter de cada arquivo |
 
-O conteúdo das skills carrega `license: CC-BY-4.0` no frontmatter de cada `SKILL.md`, herdado do
-formato de origem — veja a seção abaixo. Se você redistribuir as skills, preserve a atribuição.
+O arranjo espelha deliberadamente o do projeto de origem (ver abaixo), que separa o código do
+conteúdo pelo mesmo critério. Se você redistribuir as skills, preserve a atribuição.
 
 ## Origem dos padrões
 
-Estrutura e convenções (frontmatter `name`/`description`/`license`/`metadata`, formato `[O quê] + [Quando usar] + [Quando NÃO usar]` na descrição, pasta `templates/`, arquivo `CLAUDE.md` como ponteiro de uma linha para `AGENTS.md`, formato de subagente com `name`/`description`/`model`/`tools`) foram extraídas de `agent-skills-main`, principalmente das skills `skill-architect`, `subagent-creator` e `playwright-skill`, e do próprio `AGENTS.md`/`CLAUDE.md` do repositório.
+As convenções estruturais do QAGente vêm de **[agent-skills](https://github.com/tech-leads-club/agent-skills)**,
+de **Tech Leads Club**, cujo conteúdo de skills é licenciado sob
+[CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
+
+O que foi adotado de lá:
+
+- frontmatter `name`/`description`/`license`/`metadata`;
+- o formato `[O quê] + [Quando usar] + [Quando NÃO usar]` na descrição;
+- a pasta `templates/` ao lado de cada `SKILL.md`;
+- `CLAUDE.md` como ponteiro de uma linha para `AGENTS.md`;
+- o formato de subagente com `name`/`description`/`model`/`tools`.
+
+Essas convenções foram observadas principalmente nas skills `skill-architect`, `subagent-creator`
+e `playwright-skill`, e no `AGENTS.md`/`CLAUDE.md` do repositório.
+
+**Indicação de mudanças:** o conteúdo das skills do QAGente é original, escrito para o domínio de
+QA/SDET — o que foi reaproveitado é a estrutura, não o texto. Nenhuma skill daqui é cópia ou
+adaptação de uma skill de lá.
