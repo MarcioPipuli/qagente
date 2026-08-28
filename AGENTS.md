@@ -13,6 +13,8 @@ Use esta precedência para decisões configuráveis:
 3. valores padrão documentados nas skills;
 4. defaults do QAGente.
 
+A escolha de framework é do perfil, não deste documento: `api.framework` e `ui.framework` decidem qual skill de automação se aplica. Se o perfil apontar um framework sem skill instalada, informe e pergunte — nunca gere código em outra ferramenta só porque a skill dela está disponível.
+
 O perfil não pode remover rastreabilidade, proteção de segredos, independência dos testes, identificação de lacunas ou evidência real de execução. Se o perfil estiver ausente, inválido ou contraditório, informe isso e use os defaults do QAGente sem inventar uma configuração.
 
 O arquivo `profiles/` do QAGente contém perfis iniciais que podem ser copiados e adaptados pelo time. A configuração efetiva deve ser resumida no início da entrega quando alterar o resultado, por exemplo: `Perfil aplicado: frontend-web`.
@@ -64,7 +66,7 @@ Técnicas de referência: particionamento de equivalência, análise de valor li
 
 ### 6. Verificação antes de "concluído"
 
-Nunca declare uma automação pronta sem executá-la e mostrar o resultado (saída do Robot Framework `output.xml`/`log.html`/`report.html`, ou o runner do Cypress). Se não for possível executar (ambiente indisponível), diga isso explicitamente — não presuma sucesso.
+Nunca declare uma automação pronta sem executá-la e mostrar o resultado do runner usado (por exemplo `output.xml`/`log.html`/`report.html` no Robot Framework, ou a saída do runner do Cypress). Se não for possível executar (ambiente indisponível), diga isso explicitamente — não presuma sucesso.
 
 ## Fluxo de trabalho (as 4 fases)
 
@@ -73,7 +75,7 @@ A função principal deste agente é a Fase 1 (análise de documentação) e a F
 Nem toda tarefa passa pelas quatro fases — entre pelo ponto que o usuário pedir — mas ao encadear fases, sempre mostre o artefato intermediário e aguarde confirmação antes de avançar para a próxima.
 
 ```
-DOCUMENTAÇÃO → CENÁRIOS → CASOS DE TESTE → [aprovação do usuário] → AUTOMAÇÃO (Robot Framework | Cypress)
+DOCUMENTAÇÃO → CENÁRIOS → CASOS DE TESTE → [aprovação do usuário] → AUTOMAÇÃO (framework do perfil)
 ```
 
 ### Fase 1 — Análise de documentação (`skills/analise-documentacao-testes`)
@@ -86,15 +88,19 @@ Saída: lista de cenários de teste priorizados, com técnica de design aplicada
 Entrada: cenários da Fase 1 (ou fornecidos diretamente pelo usuário).
 Saída: documento de cenários em Gherkin/BDD (português), organizado em Funcionalidade + Tópicos + Cenários/Esquemas do Cenário, com rastreabilidade até o requisito de origem (arquivo `.md`, com o Gherkin em um bloco de código dentro do Markdown). A gramática de cada passo (Dado/Quando/Então/E/Mas) segue `skills/gherkin-palavras-chave`.
 
-### Fase 3a — Automação de API (`skills/robot-framework-api`)
+### Fase 3a — Automação de API
+
+Framework definido por `api.framework` no perfil; sem perfil, Robot Framework (`skills/robot-framework-api`).
 
 Entrada: casos de teste que envolvem chamadas de API.
-Saída: suíte Robot Framework executável (`.robot`/`.resource`), organizada em keywords reutilizáveis, com evidência de execução.
+Saída: suíte executável no framework escolhido, organizada em unidades reutilizáveis (keywords/resources no Robot Framework), com evidência de execução.
 
-### Fase 3b — Automação de UI (`skills/cypress-ui-automation`)
+### Fase 3b — Automação de UI
+
+Framework definido por `ui.framework` no perfil; sem perfil, Cypress (`skills/cypress-ui-automation`).
 
 Entrada: casos de teste que envolvem interação de tela.
-Saída: spec Cypress executável, com seletores estáveis, comandos customizados quando fizer sentido, e evidência de execução.
+Saída: spec executável no framework escolhido, com seletores estáveis (atributo de `ui.selector_attribute`), abstrações para ações repetidas, e evidência de execução.
 
 **Critério de saída de cada fase**: o usuário confirmou o artefato (ou você tem alta confiança de que reflete fielmente a documentação/casos de origem) antes de avançar para a próxima fase. **Exceção**: a transição de Casos de Teste (Fase 2) para Automação (Fase 3a/3b) sempre exige aprovação explícita do usuário — "alta confiança" não é suficiente para pular essa aprovação.
 
@@ -120,7 +126,7 @@ Regras:
 
 - **Cenários**: cobrem caminho feliz + negativos + bordas relevantes; cada um tem prioridade e origem citada.
 - **Casos de teste**: têm ID único, pré-condições, passos numerados, resultado esperado verificável (não vago) e rastreabilidade para o requisito/cenário.
-- **Automação (Robot Framework ou Cypress)**: executa localmente sem depender de estado externo não documentado; falhas de asserção são claras (mensagem explica o que era esperado vs. obtido); segue os padrões da skill correspondente (keywords/resources para Robot Framework; comandos customizados e fixtures para Cypress); foi de fato executada e o resultado foi mostrado ao usuário.
+- **Automação**: executa localmente sem depender de estado externo não documentado; falhas de asserção são claras (mensagem explica o que era esperado vs. obtido); segue os padrões da skill do framework escolhido no perfil (keywords/resources no Robot Framework; comandos customizados e fixtures no Cypress); foi de fato executada e o resultado foi mostrado ao usuário.
 
 ## Fronteiras (o que este agente NÃO faz)
 

@@ -336,18 +336,40 @@ enquanto os artefatos saem em pt-BR. A skill de análise manda traduzir para o i
 `language`, mas isso é convenção em texto, não contrato. Se a 8.3 (validador de perfil) evoluir,
 vale decidir se o perfil deve trazer os rótulos já no idioma do time.
 
-### 8.3 Profile schema ainda é mínimo
+### 8.3 Profile schema ainda é mínimo — RESOLVIDO (2026-08-28)
 
-`resolve_profile()` valida apenas a presença de campos básicos. Ainda não valida:
+`validate_profile()` em `install.py` faz validação estrutural e semântica sem dependências
+externas (nada de `profiles/schema.json` — um schema JSON exigiria biblioteca de terceiros e
+não expressaria as regras semânticas, como a coerência entre `enabled` e `framework`).
 
-- tipos dos campos;
-- valores permitidos;
-- coerência entre `enabled` e `framework`;
-- existência de diretórios;
-- nomes de variáveis de ambiente;
-- versão suportada do perfil.
+Dois níveis de severidade, e a distinção é o cerne do desenho:
 
-Próxima correção recomendada: criar `profiles/schema.json` ou uma validação Python sem dependências externas.
+- **erro** — o perfil está estruturalmente quebrado e a instalação é interrompida: tipo errado,
+  `risk_levels` duplicado ou vazio, `enabled` não booleano, `framework` ausente com a fase
+  ligada, seção de automação que não é objeto, campo obrigatório ausente.
+- **aviso** — o perfil é utilizável e a instalação segue: chave desconhecida, caminho absoluto
+  ou com `..`, versão não reconhecida, nome de variável de ambiente fora do padrão,
+  `test_id_pattern` sem `{NUMBER}`, código de idioma do Gherkin malformado.
+
+Regra de coerência adotada: **todo problema de valor de caminho é aviso**, porque
+`profile_io_dirs()` já sabe ignorar o caminho e seguir. Travar a instalação por um caminho
+vazio enquanto um caminho absoluto só avisa seria arbitrário — as duas coisas são igualmente
+erro de digitação. Isso foi pego por um teste existente durante a implementação.
+
+Um aviso vale destaque: declarar `workflow.require_traceability: false` (ou as outras duas
+invariantes) não desliga nada — `AGENTS.md` as trata como universais. O validador avisa que o
+`false` será ignorado, para que ninguém acredite ter desativado a regra.
+
+Comando novo:
+
+```bash
+python QAGente/install.py --validate-profile fullstack
+python QAGente/install.py --validate-profile ./meu-time.json
+```
+
+Sai com 1 se houver erros. A mesma validação roda a cada instalação. Coberto por 23 testes
+(`ValidateProfileTest` e `ValidateProfileCliTest`), incluindo a verificação de que os 4 perfis
+embarcados passam sem nenhum problema.
 
 ### 8.4 Adaptadores não têm testes próprios — RESOLVIDO (2026-08-28)
 
@@ -538,38 +560,34 @@ Sugestão de roteiro: instalar com `--profile fullstack` numa pasta vazia, coloc
 curto em `docs/requisitos/`, pedir "analisa esse requisito e me diz o que testar", e conferir se
 a saída cita o perfil aplicado e cai em `qa/cenarios/`.
 
-### Etapa 5 — Criar validador de perfil
+### Etapa 5 — Criar validador de perfil — CONCLUÍDA (2026-08-28)
 
-Ver pendência 8.3. Adicionar validação estrutural e semântica dos perfis: tipos dos campos,
-valores permitidos, coerência entre `enabled` e `framework`, nomes de variáveis de ambiente.
+Ver pendência 8.3. Optou-se por `--validate-profile` no próprio `install.py`, em vez de um
+`validate.py` separado: reaproveita o carregamento do perfil e não acrescenta um segundo ponto
+de entrada para documentar e manter.
 
-Possíveis comandos:
+O ponto aberto sobre `risk_levels` **não** virou regra: a validação de que os níveis estão no
+idioma de `language` exigiria uma lista fechada de rótulos por idioma, o que engessaria escalas
+customizadas. Como a Etapa 4 mostrou que a tradução funciona na prática (`critical` → "Crítica"),
+a convenção em texto na skill foi considerada suficiente. Fica registrado como decisão, não como
+esquecimento.
 
-```bash
-python QAGente/install.py --validate-profile profiles/frontend-web.json
-```
+### Etapa 6 — Deixar de prescrever framework acima das skills — CONCLUÍDA (2026-08-28)
 
-ou um comando separado:
+`agent.md` e `AGENTS.md` deixaram de afirmar Robot Framework e Cypress como as ferramentas, e
+passaram a citar `api.framework`/`ui.framework` com elas como default. As Fases 3a/3b foram
+renomeadas para "Automação de API" e "Automação de UI", com a skill nomeada como implementação
+padrão em vez de fazer parte do título.
 
-```bash
-python QAGente/validate.py --profile profiles/frontend-web.json
-```
+Os nomes das ferramentas **continuam** na `description` de `agent.md` de propósito: é ela que
+guia o roteamento do agente no Claude Code, e um usuário que peça "automatiza em Cypress"
+precisa acionar o agente. O que mudou é deixarem de ser afirmados como única opção.
 
-Decidir junto o ponto aberto registrado na 8.2: os `risk_levels` são declarados em inglês e
-escritos nos artefatos no idioma de `language`. Hoje isso é convenção em texto, não contrato.
+Regra nova nos dois arquivos: se o perfil apontar um framework sem skill instalada, o agente
+informa e pergunta, em vez de gerar código na ferramenta errada só porque a skill dela existe.
 
-### Etapa 6 — Deixar de prescrever framework acima das skills
-
-As skills já respeitam `api.framework`/`ui.framework`, mas o nível acima delas não acompanhou:
-
-- a `description` de `agent.md` diz "automatizar testes com Robot Framework (APIs) e Cypress
-  (interfaces web)";
-- as fases em `AGENTS.md` se chamam "Fase 3a — Automação de API (`skills/robot-framework-api`)"
-  e "Fase 3b — Automação de UI (`skills/cypress-ui-automation`)".
-
-Num projeto com perfil Playwright, o agente se descreve pela ferramenta errada. Esta etapa é
-pré-requisito natural da pendência 8.5 (skill de Playwright): primeiro o núcleo deixa de assumir
-a ferramenta, depois a nova skill entra sem conflito.
+Coberto por `test_o_nucleo_nao_prescreve_framework_de_automacao`. A pendência 8.5 (skill de
+Playwright) agora pode ser feita sem conflito com o núcleo.
 
 ### Etapa 7 — Higiene do repositório
 
@@ -616,11 +634,10 @@ Próximas tarefas, na ordem da seção 9:
    validado com evidência (ver 8.6); Copilot, Cursor e Windsurf seguem como
    hipótese assumida, não como fato verificado. Depende do usuário abrir cada
    ferramenta; não tente automatizar nem declare como testado.
-2. Etapa 5 — validador de perfil, resolvendo junto o ponto aberto sobre
-   risk_levels registrado na 8.2.
-3. Etapa 6 — deixar de prescrever Robot Framework/Cypress em agent.md e
-   AGENTS.md, pré-requisito da skill de Playwright (8.5).
-4. Etapa 7 — LICENSE e alinhamento do perfil default.
+2. Etapa 7 — LICENSE e alinhamento do perfil default. Ambas dependem de
+   decisão do usuário, não são trabalho técnico.
+3. Pendência 8.5 — skill de Playwright. O núcleo já não prescreve framework
+   (Etapa 6), então ela entra sem conflito.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes

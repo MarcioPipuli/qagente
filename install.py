@@ -11,6 +11,7 @@ Uso:
     python install.py --tool copilot                Instala o adaptador de uma ferramenta
     python install.py --tools claude,cursor         Instala várias ferramentas de uma vez
     python install.py --profile backend-api         Usa um perfil de profiles/ ou um caminho JSON
+    python install.py --validate-profile <perfil>   Só valida o perfil e sai, sem instalar
 
 Idempotente: pode ser executado várias vezes. Skills e a definição do agente são
 sobrescritas apenas com --force; as regras (AGENTS.md/CLAUDE.md) são mescladas de
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -47,6 +49,22 @@ DEFAULT_IO_PATHS = {
     "api_tests": "saida/robot",
     "ui_tests": "saida/cypress",
 }
+
+REQUIRED_KEYS = ("profile_version", "profile_name", "language", "workflow", "paths")
+
+# Invariantes de AGENTS.md: o perfil não pode desligá-las. Declarar `false` aqui não
+# desativa nada — só cria uma expectativa falsa, então vira aviso.
+WORKFLOW_KEYS = (
+    "require_traceability",
+    "require_approval_before_automation",
+    "require_execution_evidence",
+)
+
+CONVENTION_KEYS = ("gherkin_language", "scenario_title_prefix", "test_id_pattern")
+
+ENV_VAR_KEYS = ("base_url_env", "user_env", "password_env")
+
+ENV_VAR_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 PATH_KEY_LABELS = {
     "input": "entrada",
@@ -78,6 +96,11 @@ def parse_args() -> argparse.Namespace:
         "--profile",
         default="default",
         help="Nome do perfil em profiles/ ou caminho para um arquivo JSON.",
+    )
+    parser.add_argument(
+        "--validate-profile",
+        metavar="CAMINHO_OU_NOME",
+        help="Valida um perfil e sai, sem instalar nada. Sai com 1 se houver erros.",
     )
     parser.add_argument(
         "--target",
@@ -120,6 +143,155 @@ def selected_tools(args: argparse.Namespace) -> list[str]:
     return list(dict.fromkeys(values))
 
 
+def _texto_nao_vazio(valor: object) -> bool:
+    return isinstance(valor, str) and bool(valor.strip())
+
+
+def _validar_caminho(valor: str) -> str | None:
+    """Devolve a razão pela qual o caminho é inválido, ou None se estiver ok."""
+    bruto = valor.strip().replace("\\", "/")
+    if PurePosixPath(bruto).is_absolute() or PureWindowsPath(bruto).is_absolute():
+        return "caminho absoluto — os caminhos do perfil são relativos à raiz do projeto"
+    partes = PurePosixPath(bruto.strip("/")).parts
+    if not partes:
+        return "caminho vazio"
+    if ".." in partes:
+        return "escapa da raiz do projeto"
+    return None
+
+
+def _validar_secao_automacao(dados: dict, secao: str, problemas: list[tuple[str, str, str]]) -> None:
+    config = dados.get(secao)
+    if config is None:
+        return
+    if not isinstance(config, dict):
+        problemas.append(("erro", secao, "precisa ser um objeto"))
+        return
+
+    habilitado = config.get("enabled")
+    if habilitado is not None and not isinstance(habilitado, bool):
+        problemas.append(("erro", f"{secao}.enabled", f"precisa ser true ou false (recebido: {habilitado!r})"))
+
+    framework = config.get("framework")
+    if framework is not None and not _texto_nao_vazio(framework):
+        problemas.append(("erro", f"{secao}.framework", "precisa ser um texto não vazio"))
+    elif habilitado is True and framework is None:
+        problemas.append(("erro", f"{secao}.framework", "obrigatório quando a fase está habilitada"))
+
+    for chave in ENV_VAR_KEYS:
+        valor = config.get(chave)
+        if valor is None:
+            continue
+        if not _texto_nao_vazio(valor):
+            problemas.append(("erro", f"{secao}.{chave}", "precisa ser um texto não vazio"))
+        elif not ENV_VAR_RE.match(valor):
+            problemas.append(
+                ("aviso", f"{secao}.{chave}", f"'{valor}' não parece nome de variável de ambiente (MAIÚSCULAS_COM_UNDERSCORE)")
+            )
+
+
+def validate_profile(dados: dict) -> list[tuple[str, str, str]]:
+    """Valida o perfil e devolve [(severidade, campo, mensagem)].
+
+    'erro' impede a instalação; 'aviso' é reportado e a instalação segue com os defaults.
+    """
+    problemas: list[tuple[str, str, str]] = []
+
+    faltando = sorted(set(REQUIRED_KEYS) - dados.keys())
+    if faltando:
+        problemas.append(("erro", "perfil", f"faltam campos obrigatórios: {', '.join(faltando)}"))
+
+    versao = dados.get("profile_version")
+    if versao is not None and versao not in SUPPORTED_PROFILE_VERSIONS:
+        suportadas = ", ".join(SUPPORTED_PROFILE_VERSIONS)
+        problemas.append(("aviso", "profile_version", f"'{versao}' não é reconhecida (suportadas: {suportadas})"))
+
+    for chave in ("profile_name", "language", "artifact_format", "risk_method"):
+        valor = dados.get(chave)
+        if valor is not None and not _texto_nao_vazio(valor):
+            problemas.append(("erro", chave, "precisa ser um texto não vazio"))
+
+    niveis = dados.get("risk_levels")
+    if niveis is not None:
+        if not isinstance(niveis, list) or not niveis:
+            problemas.append(("erro", "risk_levels", "precisa ser uma lista não vazia"))
+        elif not all(_texto_nao_vazio(n) for n in niveis):
+            problemas.append(("erro", "risk_levels", "todos os níveis precisam ser textos não vazios"))
+        elif len({n.lower() for n in niveis}) != len(niveis):
+            problemas.append(("erro", "risk_levels", "há níveis duplicados"))
+        elif len(niveis) < 2:
+            problemas.append(("aviso", "risk_levels", "uma escala de um nível só não prioriza nada"))
+
+    fluxo = dados.get("workflow")
+    if fluxo is not None:
+        if not isinstance(fluxo, dict):
+            problemas.append(("erro", "workflow", "precisa ser um objeto"))
+        else:
+            for chave, valor in fluxo.items():
+                if chave not in WORKFLOW_KEYS:
+                    problemas.append(("aviso", f"workflow.{chave}", "chave desconhecida — será ignorada"))
+                elif not isinstance(valor, bool):
+                    problemas.append(("erro", f"workflow.{chave}", f"precisa ser true ou false (recebido: {valor!r})"))
+                elif valor is False:
+                    problemas.append(
+                        ("aviso", f"workflow.{chave}", "é invariante de AGENTS.md e não pode ser desligada; o false será ignorado")
+                    )
+
+    caminhos = dados.get("paths")
+    if caminhos is not None:
+        if not isinstance(caminhos, dict):
+            problemas.append(("erro", "paths", "precisa ser um objeto"))
+        else:
+            for chave, valor in caminhos.items():
+                if chave not in DEFAULT_IO_PATHS:
+                    conhecidas = ", ".join(DEFAULT_IO_PATHS)
+                    problemas.append(("aviso", f"paths.{chave}", f"chave desconhecida (esperadas: {conhecidas})"))
+                if not _texto_nao_vazio(valor):
+                    problemas.append(("aviso", f"paths.{chave}", f"valor inválido ({valor!r}) — será ignorado"))
+                else:
+                    razao = _validar_caminho(valor)
+                    if razao:
+                        problemas.append(("aviso", f"paths.{chave}", f"{razao} — será ignorado"))
+
+    convencoes = dados.get("conventions")
+    if convencoes is not None:
+        if not isinstance(convencoes, dict):
+            problemas.append(("erro", "conventions", "precisa ser um objeto"))
+        else:
+            for chave in convencoes:
+                if chave not in CONVENTION_KEYS:
+                    problemas.append(("aviso", f"conventions.{chave}", "chave desconhecida — será ignorada"))
+            idioma = convencoes.get("gherkin_language")
+            if idioma is not None and not (isinstance(idioma, str) and re.fullmatch(r"[a-z]{2}(-[A-Za-z]{2})?", idioma)):
+                problemas.append(("aviso", "conventions.gherkin_language", f"'{idioma}' não parece um código de idioma do Gherkin (ex.: pt, en)"))
+            prefixo = convencoes.get("scenario_title_prefix")
+            if prefixo is not None and not isinstance(prefixo, str):
+                problemas.append(("erro", "conventions.scenario_title_prefix", "precisa ser texto (use \"\" para nenhum prefixo)"))
+            padrao = convencoes.get("test_id_pattern")
+            if padrao is not None:
+                if not _texto_nao_vazio(padrao):
+                    problemas.append(("erro", "conventions.test_id_pattern", "precisa ser um texto não vazio"))
+                elif "{NUMBER}" not in padrao:
+                    problemas.append(("aviso", "conventions.test_id_pattern", f"'{padrao}' não contém {{NUMBER}} — os IDs podem colidir"))
+
+    for secao in ("api", "ui"):
+        _validar_secao_automacao(dados, secao, problemas)
+
+    return problemas
+
+
+def report_problems(problemas: list[tuple[str, str, str]]) -> int:
+    """Imprime os problemas e devolve a quantidade de erros."""
+    if not problemas:
+        log("  nenhum problema encontrado")
+        return 0
+    erros = 0
+    for severidade, campo, mensagem in problemas:
+        log(f"  {severidade:5} {campo}: {mensagem}")
+        erros += severidade == "erro"
+    return erros
+
+
 def resolve_profile(profile_name: str) -> tuple[Path, dict]:
     """Localiza e carrega o perfil. Retorna (caminho, conteúdo já parseado)."""
     candidate = Path(profile_name)
@@ -135,15 +307,13 @@ def resolve_profile(profile_name: str) -> tuple[Path, dict]:
     if not isinstance(data, dict):
         log(f"Erro: perfil inválido ({path}): o conteúdo precisa ser um objeto JSON.")
         sys.exit(1)
-    required = {"profile_version", "profile_name", "language", "workflow", "paths"}
-    missing = sorted(required - data.keys())
-    if missing:
-        log(f"Erro: perfil sem campos obrigatórios: {', '.join(missing)}")
-        sys.exit(1)
-    version = data.get("profile_version")
-    if version not in SUPPORTED_PROFILE_VERSIONS:
-        supported = ", ".join(SUPPORTED_PROFILE_VERSIONS)
-        log(f"Aviso: profile_version '{version}' não é reconhecida (suportadas: {supported}); seguindo mesmo assim.")
+    problemas = validate_profile(data)
+    if problemas:
+        log(f"== Validação do perfil ({path.name}) ==")
+        if report_problems(problemas):
+            log("Instalação interrompida: corrija os erros acima ou escolha outro perfil.")
+            sys.exit(1)
+        log("")
     return path, data
 
 
@@ -420,8 +590,39 @@ def install_io_dirs(project_root: Path, profile_data: dict, *, dry_run: bool) ->
         log(f"  {rel} ({label}): criada -> {dir_path}")
 
 
+def run_validation(profile_name: str) -> int:
+    """Valida um perfil e devolve o código de saída (0 = sem erros)."""
+    candidate = Path(profile_name)
+    path = candidate if candidate.is_file() else PROFILES_SRC / f"{profile_name}.json"
+    if not path.is_file():
+        log(f"Erro: perfil não encontrado: {profile_name}")
+        return 1
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"Erro: perfil inválido ({path}): {exc}")
+        return 1
+    if not isinstance(data, dict):
+        log(f"Erro: perfil inválido ({path}): o conteúdo precisa ser um objeto JSON.")
+        return 1
+
+    log(f"== Validação do perfil ({path}) ==")
+    problemas = validate_profile(data)
+    erros = report_problems(problemas)
+    avisos = len(problemas) - erros
+    log("")
+    log(f"{erros} erro(s), {avisos} aviso(s).")
+    if erros:
+        log("Erros impedem a instalação. Avisos são aplicados como default e não a impedem.")
+    return 1 if erros else 0
+
+
 def main() -> None:
     args = parse_args()
+
+    if args.validate_profile:
+        sys.exit(run_validation(args.validate_profile))
+
     tools = selected_tools(args)
     profile_path, profile_data = resolve_profile(args.profile)
     project_root, skills_dir, agents_dir = resolve_dirs(args)

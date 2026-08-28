@@ -127,6 +127,23 @@ Caminhos absolutos ou que escapem da raiz do projeto (`../`) são recusados com 
 
 Use `--symlink` em vez de cópia se preferir manter os arquivos vinculados a este harness (pode exigir privilégio no Windows).
 
+### Validando um perfil
+
+```bash
+python QAGente/install.py --validate-profile fullstack
+python QAGente/install.py --validate-profile ./meu-time.json
+```
+
+Valida e sai, sem instalar nada. Reporta dois níveis:
+
+- **erro** — o perfil está estruturalmente quebrado (tipo errado, nível de risco duplicado,
+  `enabled` não booleano, framework ausente com a fase ligada). Impede a instalação.
+- **aviso** — o perfil é utilizável, mas algo será ignorado ou não faz o que parece: chave
+  desconhecida, caminho absoluto, nome de variável de ambiente fora do padrão, ou uma
+  invariante de `AGENTS.md` declarada como `false` (o que não a desliga).
+
+Sai com código 1 se houver erros. A mesma validação roda a cada instalação.
+
 ### Testes do instalador
 
 ```bash

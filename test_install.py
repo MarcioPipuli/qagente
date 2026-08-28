@@ -574,6 +574,134 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
 
 
 # --------------------------------------------------------------------------------------
+# Validador de perfil
+# --------------------------------------------------------------------------------------
+
+
+class ValidateProfileTest(unittest.TestCase):
+    """`validate_profile` — severidade importa: erro impede a instalação, aviso não."""
+
+    def problemas(self, **overrides) -> list[tuple[str, str, str]]:
+        return install.validate_profile(make_profile(**overrides))
+
+    def campos(self, severidade: str, **overrides) -> set[str]:
+        return {campo for sev, campo, _ in self.problemas(**overrides) if sev == severidade}
+
+    def test_perfil_minimo_valido_nao_gera_problema(self):
+        self.assertEqual(self.problemas(), [])
+
+    def test_perfis_embarcados_passam_limpos(self):
+        for caminho in sorted((HARNESS / "profiles").glob("*.json")):
+            with self.subTest(perfil=caminho.stem):
+                dados = json.loads(caminho.read_text(encoding="utf-8"))
+                self.assertEqual(install.validate_profile(dados), [])
+
+    # ---- erros (impedem a instalação) ----
+
+    def test_campo_obrigatorio_ausente_e_erro(self):
+        dados = make_profile()
+        del dados["paths"]
+        problemas = install.validate_profile(dados)
+        self.assertIn(("erro", "perfil", "faltam campos obrigatórios: paths"), problemas)
+
+    def test_texto_vazio_em_campo_de_texto_e_erro(self):
+        self.assertIn("profile_name", self.campos("erro", profile_name="   "))
+        self.assertIn("language", self.campos("erro", language=42))
+
+    def test_risk_levels_duplicados_ou_vazios_sao_erro(self):
+        self.assertIn("risk_levels", self.campos("erro", risk_levels=["Alta", "alta"]))
+        self.assertIn("risk_levels", self.campos("erro", risk_levels=[]))
+        self.assertIn("risk_levels", self.campos("erro", risk_levels=["Alta", 7]))
+
+    def test_workflow_com_valor_nao_booleano_e_erro(self):
+        self.assertIn("workflow.require_traceability", self.campos("erro", workflow={"require_traceability": "sim"}))
+
+    def test_enabled_nao_booleano_e_erro(self):
+        self.assertIn("api.enabled", self.campos("erro", api={"enabled": "sim", "framework": "robot-framework"}))
+
+    def test_framework_ausente_com_fase_habilitada_e_erro(self):
+        self.assertIn("ui.framework", self.campos("erro", ui={"enabled": True}))
+
+    def test_framework_ausente_com_fase_desligada_nao_e_erro(self):
+        self.assertNotIn("ui.framework", self.campos("erro", ui={"enabled": False}))
+
+    def test_secao_de_automacao_que_nao_e_objeto_e_erro(self):
+        self.assertIn("api", self.campos("erro", api="robot-framework"))
+
+    # ---- avisos (a instalação segue) ----
+
+    def test_versao_desconhecida_e_apenas_aviso(self):
+        self.assertEqual(self.campos("erro", profile_version="9.9"), set())
+        self.assertIn("profile_version", self.campos("aviso", profile_version="9.9"))
+
+    def test_invariante_de_agents_md_desligada_e_aviso(self):
+        """Declarar require_traceability: false não desliga nada — mas cria expectativa falsa."""
+        avisos = self.campos("aviso", workflow={"require_traceability": False})
+        self.assertIn("workflow.require_traceability", avisos)
+
+    def test_chaves_desconhecidas_sao_aviso(self):
+        self.assertIn("workflow.require_tudo", self.campos("aviso", workflow={"require_tudo": True}))
+        self.assertIn("conventions.cor", self.campos("aviso", conventions={"cor": "azul"}))
+        self.assertIn("paths.relatorios", self.campos("aviso", paths={"relatorios": "qa/rel"}))
+
+    def test_problemas_de_valor_de_caminho_sao_aviso_nao_erro(self):
+        """O instalador já sabe ignorar o caminho e seguir — travar aqui seria incoerente."""
+        for ruim in ("/etc/qa", "../fora", "", "C:/Windows"):
+            with self.subTest(caminho=ruim):
+                problemas = self.problemas(paths={"input": ruim})
+                self.assertEqual([p for p in problemas if p[0] == "erro"], [])
+                self.assertTrue([p for p in problemas if p[0] == "aviso"])
+
+    def test_nome_de_variavel_de_ambiente_fora_do_padrao_e_aviso(self):
+        avisos = self.campos("aviso", api={"enabled": True, "framework": "x", "user_env": "qa user"})
+        self.assertIn("api.user_env", avisos)
+
+    def test_id_pattern_sem_number_e_aviso(self):
+        self.assertIn("conventions.test_id_pattern", self.campos("aviso", conventions={"test_id_pattern": "CT"}))
+
+    def test_gherkin_language_fora_do_formato_e_aviso(self):
+        self.assertIn("conventions.gherkin_language", self.campos("aviso", conventions={"gherkin_language": "portugues"}))
+
+
+class ValidateProfileCliTest(InstallerTestCase):
+    """`--validate-profile` valida e sai, sem tocar no disco."""
+
+    def validar(self, alvo: str) -> subprocess.CompletedProcess:
+        return self.run_install("--validate-profile", alvo)
+
+    def test_perfil_valido_sai_com_zero(self):
+        resultado = self.validar("fullstack")
+        self.assertEqual(resultado.returncode, 0)
+        self.assertIn("0 erro(s)", resultado.stdout)
+
+    def test_perfil_com_erro_sai_com_um(self):
+        caminho = self.write_profile("ruim", make_profile(api={"enabled": "sim"}))
+        resultado = self.validar(str(caminho))
+        self.assertEqual(resultado.returncode, 1)
+        self.assertIn("api.enabled", resultado.stdout)
+
+    def test_perfil_so_com_avisos_sai_com_zero(self):
+        caminho = self.write_profile("avisos", make_profile(profile_version="9.9"))
+        resultado = self.validar(str(caminho))
+        self.assertEqual(resultado.returncode, 0)
+        self.assertIn("aviso(s)", resultado.stdout)
+
+    def test_perfil_inexistente_sai_com_um(self):
+        self.assertEqual(self.validar("nao-existe").returncode, 1)
+
+    def test_validacao_nao_escreve_nada_no_projeto(self):
+        self.validar("fullstack")
+        self.assertEqual(list(self.project.iterdir()), [])
+
+    def test_instalacao_e_interrompida_por_perfil_com_erro(self):
+        caminho = self.write_profile("bloqueia", make_profile(risk_levels=["Alta", "alta"]))
+        resultado = self.run_install("--target", str(self.project), "--profile", str(caminho))
+        self.assertEqual(resultado.returncode, 1)
+        self.assertIn("Instalação interrompida", resultado.stdout)
+        self.assertMissing("AGENTS.md")
+
+
+# --------------------------------------------------------------------------------------
 # Perfis embarcados
 # --------------------------------------------------------------------------------------
 
@@ -682,6 +810,36 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
             for campo in campos:
                 with self.subTest(skill=skill, campo=campo):
                     self.assertIn(campo, texto)
+
+    def test_a_missao_do_agente_amarra_o_framework_ao_perfil(self):
+        """Num projeto com perfil Playwright, um núcleo que afirma Cypress faz o agente se
+        descrever pela ferramenta errada. Citar a ferramenta é permitido; afirmá-la, não.
+
+        A regra é posicional de propósito: vale nas linhas prescritivas (a missão, os títulos
+        de fase), não nas ilustrativas — "o runner do Cypress" como exemplo de evidência de
+        execução continua correto e não deve ser generalizado.
+        """
+        linhas = (HARNESS / "agent.md").read_text(encoding="utf-8").splitlines()
+
+        # A description guia o roteamento no Claude Code, então PODE nomear as ferramentas —
+        # desde que as apresente como default do perfil, não como única opção.
+        descricao = next(l for l in linhas if l.startswith("description:"))
+        self.assertIn("perfil", descricao)
+
+        for marcador, campo in (("**Automação de API**", "api.framework"), ("**Automação de UI**", "ui.framework")):
+            linha = next((l for l in linhas if marcador in l), None)
+            self.assertIsNotNone(linha, f"linha da missão não encontrada: {marcador}")
+            with self.subTest(missao=marcador):
+                self.assertIn(campo, linha)
+
+    def test_as_fases_de_automacao_amarram_o_framework_ao_perfil(self):
+        linhas = (HARNESS / "AGENTS.md").read_text(encoding="utf-8").splitlines()
+        for titulo, campo in (("### Fase 3a", "api.framework"), ("### Fase 3b", "ui.framework")):
+            indice = next((n for n, l in enumerate(linhas) if l.startswith(titulo)), None)
+            self.assertIsNotNone(indice, f"título não encontrado: {titulo}")
+            with self.subTest(fase=titulo):
+                self.assertNotIn("skills/", linhas[indice], "a skill não deve fazer parte do título da fase")
+                self.assertIn(campo, "\n".join(linhas[indice : indice + 4]))
 
     def test_os_dois_arquivos_do_adaptador_copilot_concordam(self):
         base = HARNESS / "adapters" / "copilot"
