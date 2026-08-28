@@ -11,6 +11,38 @@ metadata:
 
 Escreve specs Cypress executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
+## Configuração
+
+Leia `.qagente/quality-profile.json` na raiz do projeto antes de começar. Quando um campo
+existir no perfil, ele vence os valores desta skill. Precedência: **instrução explícita do
+usuário → perfil do projeto → defaults desta skill**.
+
+| Decisão desta skill | Campo do perfil | Default |
+|---|---|---|
+| Fase de UI habilitada | `ui.enabled` | `true` |
+| Framework de UI | `ui.framework` | `cypress` |
+| Atributo de seletor | `ui.selector_attribute` | `data-cy` |
+| Linguagem dos specs | `ui.language` | `javascript` |
+| Variável da URL base | `ui.base_url_env` | `CYPRESS_BASE_URL` |
+| Onde salvar os specs | `paths.ui_tests` | `saida/cypress/` |
+| Idioma de comentários | `language` | idioma da conversa |
+
+Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
+universais de `AGENTS.md` — rastreabilidade, proteção de segredos, independência dos testes,
+registro de lacunas e evidência real de execução — valem sempre, e o perfil não pode removê-las.
+
+**Antes de escrever qualquer código, confira dois campos:**
+
+- Se `ui.framework` não for `cypress`, esta skill não se aplica. Diga isso ao usuário e
+  pergunte se ele quer o framework do perfil (Playwright, por exemplo) ou abrir uma exceção —
+  não gere Cypress em um projeto que decidiu usar outra ferramenta.
+- Se `ui.enabled` for `false`, o time desligou a automação de UI neste projeto (e o instalador
+  nem criou o diretório). Confirme com o usuário antes de prosseguir.
+
+Os exemplos desta skill usam `data-cy` e JavaScript porque são os defaults. **Use o atributo de
+`ui.selector_attribute` e a linguagem de `ui.language` em todo código que você gerar** — os
+exemplos abaixo são ilustrativos, não literais.
+
 ## Quando usar
 
 - Casos de teste envolvem navegação, formulários, cliques, ou verificação visual de estado na aplicação web.
@@ -20,6 +52,9 @@ Escreve specs Cypress executáveis a partir de casos de teste já definidos (ski
 Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`escrita-casos-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
 
 ## Estrutura de arquivos
+
+Os specs ficam sob o diretório de `paths.ui_tests` (`saida/cypress/` por default). A árvore
+abaixo mostra a organização interna, relativa a esse diretório:
 
 ```
 cypress/
@@ -38,11 +73,11 @@ cypress/
 
 Prioridade de seletor, da mais estável para a mais frágil:
 
-1. `data-cy`/`data-testid` dedicado a teste — `cy.get('[data-cy=submit-button]')`.
+1. Atributo dedicado a teste, definido em `ui.selector_attribute` (`data-cy` por default; `data-testid` é o outro valor comum) — `cy.get('[data-cy=submit-button]')`.
 2. Atributo semântico estável (`role`, `name`, `aria-label`) — `cy.get('[role=dialog]')`, `cy.findByRole('button', { name: /enviar/i })` se `@testing-library/cypress` estiver disponível.
 3. **Nunca** classe CSS de estilo (`.btn-primary-v2`) ou seletor posicional (`div > div:nth-child(3)`) — quebram a cada mudança visual sem relação com o comportamento testado.
 
-Se o projeto não tiver `data-cy` nos componentes ainda, sinalize isso ao usuário como recomendação (adicionar o atributo é responsabilidade do time de desenvolvimento, não algo para o teste "contornar" com seletor frágil).
+Se o projeto ainda não tiver o atributo de seletor do perfil nos componentes, sinalize isso ao usuário como recomendação (adicionar o atributo é responsabilidade do time de desenvolvimento, não algo para o teste "contornar" com seletor frágil).
 
 ## Passo 2 — Nunca usar espera fixa
 

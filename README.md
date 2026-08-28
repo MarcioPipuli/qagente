@@ -35,6 +35,30 @@ Uma fase desligada no perfil não ganha pasta: com `"api": {"enabled": false}` o
 
 O nome-base do documento de origem é preservado no arquivo gerado, para manter a rastreabilidade entre entrada e saída. Um caminho indicado explicitamente pelo usuário no pedido tem prioridade sobre o perfil e sobre essa convenção. Detalhes em [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas).
 
+## O que o perfil controla
+
+O perfil (`.qagente/quality-profile.json`) é o contrato entre o núcleo do QAGente e as decisões
+de cada time. Ele governa o instalador **e** o comportamento das skills:
+
+| Campo | Governa |
+|---|---|
+| `language`, `artifact_format` | Idioma e formato dos artefatos gerados |
+| `paths.*` | Onde o agente lê a entrada e grava cada fase; quais pastas o instalador cria |
+| `risk_levels`, `risk_method` | Escala e método de priorização dos cenários |
+| `conventions.gherkin_language` | Idioma das palavras-chave do Gherkin |
+| `conventions.scenario_title_prefix` | Prefixo dos títulos de cenário (`Validar que` por default) |
+| `conventions.test_id_pattern` | Padrão de ID para rastreabilidade |
+| `api.enabled`, `api.framework` | Se a automação de API existe e em qual ferramenta |
+| `api.base_url_env`, `api.user_env`, `api.password_env` | Nomes das variáveis de ambiente |
+| `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta |
+| `ui.selector_attribute`, `ui.language`, `ui.base_url_env` | Convenções dos specs de UI |
+
+Cada skill traz uma seção **Configuração** com os campos que a afetam e o default de cada um.
+A precedência é sempre: **instrução explícita do usuário → perfil do projeto → defaults da
+skill**. O perfil não pode desligar as regras universais de [AGENTS.md](AGENTS.md)
+(rastreabilidade, proteção de segredos, independência dos testes, registro de lacunas e
+evidência real de execução).
+
 ## Fluxo do agente
 
 ```

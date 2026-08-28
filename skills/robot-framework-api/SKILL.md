@@ -11,6 +11,37 @@ metadata:
 
 Escreve suítes de teste de API executáveis em Robot Framework a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de uma especificação de API. Terceira fase (ramo API) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
+## Configuração
+
+Leia `.qagente/quality-profile.json` na raiz do projeto antes de começar. Quando um campo
+existir no perfil, ele vence os valores desta skill. Precedência: **instrução explícita do
+usuário → perfil do projeto → defaults desta skill**.
+
+| Decisão desta skill | Campo do perfil | Default |
+|---|---|---|
+| Fase de API habilitada | `api.enabled` | `true` |
+| Framework de API | `api.framework` | `robot-framework` |
+| Variável da URL base | `api.base_url_env` | `API_BASE_URL` |
+| Variável de usuário | `api.user_env` | `QA_API_USER` |
+| Variável de senha | `api.password_env` | `QA_API_PASSWORD` |
+| Onde salvar a suíte | `paths.api_tests` | `saida/robot/` |
+| Idioma de comentários | `language` | idioma da conversa |
+
+Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
+universais de `AGENTS.md` — rastreabilidade, proteção de segredos, independência dos testes,
+registro de lacunas e evidência real de execução — valem sempre, e o perfil não pode removê-las.
+
+**Antes de escrever qualquer código, confira dois campos:**
+
+- Se `api.framework` não for `robot-framework`, esta skill não se aplica. Diga isso ao usuário
+  e pergunte se ele quer o framework do perfil ou abrir uma exceção — não gere Robot Framework
+  em um projeto que decidiu usar outra ferramenta.
+- Se `api.enabled` for `false`, o time desligou a automação de API neste projeto (e o
+  instalador nem criou o diretório). Confirme com o usuário antes de prosseguir.
+
+Os nomes de variável de ambiente nos exemplos abaixo são os defaults. Use os nomes do perfil no
+código gerado — os exemplos são ilustrativos, não literais.
+
 ## Quando usar
 
 - Casos de teste envolvem chamadas a endpoints REST ou GraphQL.
@@ -30,6 +61,9 @@ pip install robotframework robotframework-requests
 `RequestsLibrary` é a biblioteca padrão para chamadas HTTP. Para validação de schema JSON, use `JSONLibrary` ou `Collections` + `JSONSchemaValidator` conforme o que já estiver no projeto — não adicione uma dependência nova sem necessidade se o projeto já resolve isso de outra forma.
 
 ## Estrutura de arquivos
+
+A suíte fica sob o diretório de `paths.api_tests` (`saida/robot/` por default). A árvore abaixo
+mostra a organização interna, relativa a esse diretório:
 
 ```
 tests/
@@ -82,7 +116,10 @@ Criar Sessao Autenticada
     Create Session    ${alias}    ${BASE_URL}    headers=${{ {"Authorization": f"Bearer ${TOKEN}"} }}
 ```
 
-`${usuario}`/`${senha}` vêm de variáveis de ambiente (`QA_API_USER`, `QA_API_PASSWORD`), nunca de valor fixo no `.robot` — ver `AGENTS.md`, princípio "Dados e segredos".
+`${usuario}`/`${senha}` vêm de variáveis de ambiente — os nomes vêm de `api.user_env` e
+`api.password_env` (`QA_API_USER`/`QA_API_PASSWORD` por default), e a URL base de
+`api.base_url_env` (`API_BASE_URL`). Nunca use valor fixo no `.robot` — ver `AGENTS.md`,
+princípio "Dados e segredos".
 
 ## Passo 2 — Escrever keywords de domínio (uma responsabilidade cada)
 

@@ -11,6 +11,30 @@ metadata:
 
 Transforma cenários de teste (da skill `analise-documentacao-testes`, ou fornecidos diretamente) em um documento de cenários BDD formal, no formato Gherkin em português. Segunda fase do fluxo QA — ver `AGENTS.md`, na raiz do projeto. Esta skill define a **estrutura do documento**; para a gramática de cada passo individual (Dado/Quando/Então/E/Mas), use `gherkin-palavras-chave` em conjunto.
 
+## Configuração
+
+Leia `.qagente/quality-profile.json` na raiz do projeto antes de começar. Quando um campo
+existir no perfil, ele vence os valores desta skill. Precedência: **instrução explícita do
+usuário → perfil do projeto → defaults desta skill**.
+
+| Decisão desta skill | Campo do perfil | Default |
+|---|---|---|
+| Idioma dos artefatos | `language` | `pt-BR` |
+| Idioma do Gherkin | `conventions.gherkin_language` | `pt` (cabeçalho `# language: pt`) |
+| Prefixo do título dos cenários | `conventions.scenario_title_prefix` | `Validar que` |
+| Formato do artefato | `artifact_format` | `markdown-gherkin` |
+| Padrão de ID | `conventions.test_id_pattern` | herdado dos cenários de origem |
+| Onde salvar a saída | `paths.test_cases` | `saida/casos-de-teste/` |
+
+Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
+universais de `AGENTS.md` — rastreabilidade, proteção de segredos, independência dos testes,
+registro de lacunas e evidência real de execução — valem sempre, e o perfil não pode removê-las.
+
+Se `conventions.gherkin_language` não for `pt`, as palavras-chave mudam junto
+(`Given/When/Then` em `en`, etc.) e a skill `gherkin-palavras-chave` — que documenta apenas a
+gramática do português — deixa de se aplicar. Nesse caso, siga a gramática oficial do Gherkin
+para o idioma escolhido.
+
 ## Quando usar
 
 - O usuário já tem uma lista de cenários (própria ou gerada por `analise-documentacao-testes`) e quer o documento de cenários BDD formal.
@@ -19,7 +43,9 @@ Transforma cenários de teste (da skill `analise-documentacao-testes`, ou fornec
 
 ## Estrutura do documento
 
-Todo documento de cenários é salvo como arquivo Markdown (`.md`) — o Gherkin fica em um bloco de código dentro dele, nunca como `.feature` solto (ver convenção de pastas em `AGENTS.md`). A estrutura segue esta ordem:
+Com o formato padrão (`artifact_format: markdown-gherkin`), o documento é salvo como arquivo
+Markdown (`.md`) no diretório de `paths.test_cases` — o Gherkin fica em um bloco de código
+dentro dele, nunca como `.feature` solto (ver convenção de pastas em `AGENTS.md`). A estrutura segue esta ordem:
 
 ### 1. Cabeçalho
 
@@ -37,6 +63,8 @@ Abre com:
 ```gherkin
 # language: pt
 ````
+
+O código do idioma vem de `conventions.gherkin_language`; `pt` é o default.
 
 E fecha com ` ``` ` ao final de todos os cenários do documento.
 
@@ -92,7 +120,11 @@ Regra de decisão: se a mesma verificação se aplica a 3+ itens de uma lista (c
 
 ### 6. Nomenclatura dos títulos
 
-Todo título de `Cenário:` ou `Esquema do Cenário:` começa com **"Validar que..."** e descreve o comportamento esperado de forma afirmativa e específica. Nunca use títulos genéricos como "Teste 1" ou "Cenário de erro".
+Todo título de `Cenário:` ou `Esquema do Cenário:` começa com o prefixo definido em
+`conventions.scenario_title_prefix` — **"Validar que..."** é o default — e descreve o
+comportamento esperado de forma afirmativa e específica. Nunca use títulos genéricos como
+"Teste 1" ou "Cenário de erro". Se o perfil trouxer o prefixo vazio, escreva o título direto
+no comportamento esperado, mantendo a forma afirmativa.
 
 ### 7. Convenções de escrita dentro dos passos
 
@@ -123,7 +155,7 @@ Cada observação deve: (a) explicar o que foi assumido/deduzido e por quê, (b)
 1. Ler o requisito e identificar ator, objetivo e benefício (para o cabeçalho `Funcionalidade`).
 2. Quebrar o requisito em tópicos lógicos (um por campo/regra/tela/fluxo).
 3. Para cada tópico, decidir entre Cenário simples ou Esquema do Cenário (regra da seção 5).
-4. Escrever os títulos no padrão "Validar que...".
+4. Escrever os títulos no prefixo de `conventions.scenario_title_prefix` ("Validar que..." por default).
 5. Aplicar a gramática Dado/Quando/Então/E/Mas de `gherkin-palavras-chave` em cada passo.
 6. Cobrir explicitamente os pares positivo/negativo e casos de borda mencionados ou implícitos no requisito.
 7. Registrar em `## Observações` qualquer suposição, dedução ou lacuna do requisito original.
@@ -131,7 +163,7 @@ Cada observação deve: (a) explicar o que foi assumido/deduzido e por quê, (b)
 
 ## Revisão de qualidade antes de entregar
 
-- [ ] Todo título de Cenário/Esquema do Cenário começa com "Validar que..." e é específico.
+- [ ] Todo título de Cenário/Esquema do Cenário usa o prefixo do perfil ("Validar que..." por default) e é específico.
 - [ ] Esquema do Cenário foi usado (não Cenários repetidos) sempre que 3+ itens compartilham a mesma regra.
 - [ ] Valores literais estão entre aspas duplas.
 - [ ] Terminologia bate exatamente com o requisito original (nomes de campo, tela, botão).

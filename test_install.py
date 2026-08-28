@@ -607,6 +607,40 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
             with self.subTest(arquivo=path.name):
                 self.assertNotIn(".github/skills", path.read_text(encoding="utf-8"))
 
+    def test_toda_skill_manda_ler_o_perfil(self):
+        """Sem isto o perfil configura o instalador mas não muda o comportamento do agente."""
+        for path in self.skill_files():
+            with self.subTest(skill=path.parent.name):
+                texto = path.read_text(encoding="utf-8")
+                self.assertIn("## Configuração", texto)
+                self.assertIn(".qagente/quality-profile.json", texto)
+
+    def test_skills_de_automacao_citam_os_campos_de_framework_do_perfil(self):
+        """Gerar Cypress num projeto que escolheu Playwright é o modo de falhar mais caro aqui."""
+        casos = {
+            "robot-framework-api": ["api.framework", "api.enabled", "paths.api_tests"],
+            "cypress-ui-automation": ["ui.framework", "ui.enabled", "paths.ui_tests"],
+        }
+        for skill, campos in casos.items():
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            for campo in campos:
+                with self.subTest(skill=skill, campo=campo):
+                    self.assertIn(campo, texto)
+
+    def test_convencoes_prescritivas_estao_atreladas_ao_perfil(self):
+        """Cada default rígido precisa citar o campo que pode substituí-lo."""
+        casos = {
+            "escrita-casos-teste": ["conventions.scenario_title_prefix", "conventions.gherkin_language"],
+            "analise-documentacao-testes": ["risk_levels", "risk_method"],
+            "cypress-ui-automation": ["ui.selector_attribute"],
+            "robot-framework-api": ["api.base_url_env", "api.user_env", "api.password_env"],
+        }
+        for skill, campos in casos.items():
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            for campo in campos:
+                with self.subTest(skill=skill, campo=campo):
+                    self.assertIn(campo, texto)
+
     def test_os_dois_arquivos_do_adaptador_copilot_concordam(self):
         base = HARNESS / "adapters" / "copilot"
         for nome in ("copilot-instructions.md", "qa-especialista.agent.md"):

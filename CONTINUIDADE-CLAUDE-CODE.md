@@ -301,19 +301,34 @@ Decisões tomadas:
 
 `README.md` e `AGENTS.md` foram atualizados junto.
 
-### 8.2 As skills ainda contêm defaults prescritivos
+### 8.2 As skills ainda contêm defaults prescritivos — RESOLVIDO (2026-08-28)
 
-O agente já manda ler o perfil, mas as skills ainda mencionam diretamente padrões como:
+As 5 skills ganharam uma seção `## Configuração` logo após a introdução, com: a regra de
+precedência, uma tabela `decisão → campo do perfil → default`, e a ressalva de que o perfil não
+remove as regras universais de `AGENTS.md`.
 
-- Gherkin em português;
-- prefixo `Validar que`;
-- níveis `Alta/Média/Baixa`;
-- Robot Framework para API;
-- Cypress para UI;
-- `data-cy`/`data-testid`;
-- estruturas de diretórios fixas.
+As prescrições normativas viraram condicionais (prefixo do título, escala de risco, idioma do
+Gherkin, atributo de seletor, variáveis de ambiente, diretórios de saída). Os exemplos de
+código continuam concretos — `data-cy`, `QA_API_USER` — mas cada skill declara explicitamente
+que são ilustrativos e que o valor do perfil vence no código gerado. Reescrever cada ocorrência
+nos exemplos deixaria o código genérico e menos didático sem ganho real.
 
-Próxima correção recomendada: alterar cada skill para dizer “aplique o perfil; use este valor como default apenas quando o campo não existir”.
+Duas guardas foram acrescentadas nas skills de automação: se `api.framework`/`ui.framework` não
+for a ferramenta da skill, ela avisa que não se aplica em vez de gerar código na ferramenta
+errada; se `api.enabled`/`ui.enabled` for `false`, pede confirmação antes de prosseguir.
+
+`gherkin-palavras-chave` documenta só o português, então sua seção Configuração diz que a skill
+se aplica quando `conventions.gherkin_language` for `pt` e manda usar a gramática oficial do
+Gherkin nos demais idiomas.
+
+Coberto por `test_install.ReferenciasDeCaminhoTest` (3 testes novos): toda skill cita o perfil,
+as skills de automação citam os campos de framework, e cada default rígido cita o campo que
+pode substituí-lo.
+
+**Ponto aberto:** os `risk_levels` são declarados no perfil em inglês (`high`, `medium`, `low`)
+enquanto os artefatos saem em pt-BR. A skill de análise manda traduzir para o idioma de
+`language`, mas isso é convenção em texto, não contrato. Se a 8.3 (validador de perfil) evoluir,
+vale decidir se o perfil deve trazer os rótulos já no idioma do time.
 
 ### 8.3 Profile schema ainda é mínimo
 
@@ -516,14 +531,15 @@ alteração no instalador.
 
 Próximas tarefas, em ordem de custo/benefício:
 
-1. Etapa 4 — tornar as skills orientadas ao perfil (pendência 8.2). É a maior
-   lacuna restante: o agente lê o perfil, o instalador respeita o perfil, mas
-   nenhuma das 5 skills menciona .qagente/quality-profile.json — elas ainda
-   prescrevem Gherkin em português, "Validar que", Robot Framework, Cypress e
-   data-cy como se fossem fixos.
-2. Etapa 3 — validador de perfil (schema estrutural e semântico).
-3. Pendência 8.6 — validação manual dentro de cada ferramenta, que é o único
-   item que nenhum teste automatizado cobre.
+1. Pendência 8.6 — validação manual dentro de cada ferramenta. É o único item
+   que nenhum teste automatizado cobre e o que falta para confiar no MVP:
+   abrir um projeto de teste no Claude Code, Copilot, Cursor e Windsurf e
+   confirmar que cada um carrega o adaptador, acha o perfil e aplica a
+   configuração efetiva numa análise real de requisito.
+2. Etapa 3 — validador de perfil (schema estrutural e semântico). Ver o ponto
+   aberto sobre risk_levels registrado na 8.2.
+3. Pendência 8.5 — skill/perfil para Playwright, agora que as skills de
+   automação já sabem recusar um framework que não é o delas.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes
