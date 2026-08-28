@@ -20,7 +20,7 @@ O MVP de configuração multiplataforma foi implementado.
 ### Entregas concluídas
 
 - Criados perfis JSON configuráveis por projeto/time.
-- Criados os perfis `default`, `backend-api` e `frontend-web`.
+- Criados os perfis `default`, `backend-api`, `frontend-web` e `fullstack`.
 - `agent.md` passou a exigir a leitura de `.qagente/quality-profile.json` quando o arquivo existir.
 - `AGENTS.md` passou a definir a precedência de configuração e as regras que não podem ser removidas pelo perfil.
 - Criados adaptadores para Copilot, Cursor e Windsurf.
@@ -41,6 +41,7 @@ O MVP de configuração multiplataforma foi implementado.
 | `profiles/default.json` | Perfil base do QAGente |
 | `profiles/backend-api.json` | Perfil para times focados em API/backend |
 | `profiles/frontend-web.json` | Perfil para times focados em frontend/UI |
+| `profiles/fullstack.json` | Perfil para times que cuidam de API e UI no mesmo repositório |
 | `adapters/copilot/` | Instruções e agente customizado para GitHub Copilot |
 | `adapters/cursor/` | Regra `.mdc` para Cursor |
 | `adapters/windsurf/` | Regra Markdown para Windsurf |
@@ -58,7 +59,8 @@ QAGente/
 ├── profiles/
 │   ├── default.json
 │   ├── backend-api.json
-│   └── frontend-web.json
+│   ├── frontend-web.json
+│   └── fullstack.json
 ├── adapters/
 │   ├── copilot/
 │   │   ├── copilot-instructions.md

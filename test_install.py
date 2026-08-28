@@ -574,6 +574,48 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
 
 
 # --------------------------------------------------------------------------------------
+# Perfis embarcados
+# --------------------------------------------------------------------------------------
+
+
+class PerfisEmbarcadosTest(InstallerTestCase):
+    """Percorre profiles/*.json — um perfil novo entra na cobertura sem editar este arquivo."""
+
+    def perfis(self) -> list[Path]:
+        return sorted((HARNESS / "profiles").glob("*.json"))
+
+    def test_ha_perfis_embarcados(self):
+        # protege os testes abaixo de passarem por vacuidade
+        self.assertGreaterEqual(len(self.perfis()), 3)
+
+    def test_todo_perfil_embarcado_tem_os_campos_obrigatorios(self):
+        obrigatorios = {"profile_version", "profile_name", "language", "workflow", "paths"}
+        for caminho in self.perfis():
+            with self.subTest(perfil=caminho.stem):
+                dados = json.loads(caminho.read_text(encoding="utf-8"))
+                self.assertEqual(obrigatorios - dados.keys(), set())
+                self.assertEqual(dados["profile_name"], caminho.stem, "profile_name deve bater com o nome do arquivo")
+                self.assertIn(dados["profile_version"], install.SUPPORTED_PROFILE_VERSIONS)
+
+    def test_todo_perfil_embarcado_instala_e_cria_exatamente_os_seus_caminhos(self):
+        for caminho in self.perfis():
+            with self.subTest(perfil=caminho.stem):
+                projeto = self.parent / f"proj-{caminho.stem}"
+                projeto.mkdir()
+                resultado = self.run_install("--target", str(projeto), "--tool", "claude", "--profile", caminho.stem)
+                self.assertEqual(resultado.returncode, 0, resultado.stdout)
+
+                dados = json.loads(caminho.read_text(encoding="utf-8"))
+                desligadas = install.disabled_path_keys(dados)
+                for chave, relativo in dados["paths"].items():
+                    alvo = projeto / relativo
+                    if chave in desligadas:
+                        self.assertFalse(alvo.exists(), f"{relativo} não deveria existir ({chave} desligado)")
+                    else:
+                        self.assertTrue(alvo.is_dir(), f"{relativo} deveria ter sido criado")
+
+
+# --------------------------------------------------------------------------------------
 # Referências de caminho dentro do conteúdo instalado
 # --------------------------------------------------------------------------------------
 

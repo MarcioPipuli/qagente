@@ -12,7 +12,8 @@ QAGente/
 ├── profiles/               # Perfis configuráveis por tipo de time/projeto
 │   ├── default.json
 │   ├── backend-api.json
-│   └── frontend-web.json
+│   ├── frontend-web.json
+│   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
 ├── test_install.py         # Testes do instalador (unittest, sem dependências externas)
@@ -52,6 +53,19 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 | `api.base_url_env`, `api.user_env`, `api.password_env` | Nomes das variáveis de ambiente |
 | `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta |
 | `ui.selector_attribute`, `ui.language`, `ui.base_url_env` | Convenções dos specs de UI |
+
+### Perfis prontos
+
+| Perfil | API | UI | Para quem |
+|---|---|---|---|
+| `default` | ligada | ligada | Primeiro contato ou projeto sem convenção própria; pastas neutras (`entrada/`, `saida/`) |
+| `backend-api` | ligada | **desligada** | Time de API/backend |
+| `frontend-web` | **desligada** | ligada | Time de frontend/UI; specs em `cypress/e2e/` |
+| `fullstack` | ligada | ligada | Time que cuida das duas pontas; automação agrupada em `tests/api` e `tests/e2e` |
+
+Os três últimos compartilham a mesma família de convenções (4 níveis de risco com `critical`,
+IDs `TC-{DOMAIN}-{NUMBER}`, seletor `data-testid`, entrada em `docs/requisitos/`). Copie o mais
+próximo do seu contexto e ajuste.
 
 Cada skill traz uma seção **Configuração** com os campos que a afetam e o default de cada um.
 A precedência é sempre: **instrução explícita do usuário → perfil do projeto → defaults da
