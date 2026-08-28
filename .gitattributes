@@ -1,0 +1,3 @@
+# Normaliza as quebras de linha: LF no repositório, nativo na cópia de trabalho.
+# Evita diffs de arquivo inteiro entre Windows e Linux/macOS.
+* text=auto eol=lf
