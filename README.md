@@ -66,9 +66,12 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 | `frontend-web` | **desligada** | ligada | Time de frontend/UI; specs em `cypress/e2e/` |
 | `fullstack` | ligada | ligada | Time que cuida das duas pontas; automação agrupada em `tests/api` e `tests/e2e` |
 
-Os três últimos compartilham a mesma família de convenções (4 níveis de risco com `critical`,
-IDs `TC-{DOMAIN}-{NUMBER}`, seletor `data-testid`, entrada em `docs/requisitos/`). Copie o mais
-próximo do seu contexto e ajuste.
+Os quatro compartilham a mesma família de convenções: 4 níveis de risco com `critical`, IDs
+`TC-{DOMAIN}-{NUMBER}` e seletor `data-testid`. O que distingue o `default` são os caminhos
+neutros (`entrada/`, `saida/`), pensados para quem ainda não tem estrutura de repositório
+definida; os outros três assumem `docs/requisitos/`, `qa/` e `tests/`.
+
+Copie o mais próximo do seu contexto e ajuste.
 
 Cada skill traz uma seção **Configuração** com os campos que a afetam e o default de cada um.
 A precedência é sempre: **instrução explícita do usuário → perfil do projeto → defaults da
@@ -171,6 +174,13 @@ suposição de separador ou de quebra de linha passe despercebida.
 - "Automatiza esses testes de API em Robot Framework" → aciona `robot-framework-api`.
 - "Automatiza esse fluxo de checkout em Cypress" → aciona `cypress-ui-automation`.
 - "Pega esse ticket e já entrega os testes de API automatizados" → o agente percorre a análise e a escrita dos casos de teste (Fases 1-2), mostrando cada artefato intermediário, e então pede aprovação explícita antes de iniciar a automação (Fase 3a/3b) — mesmo que o pedido original já tenha pedido automação de ponta a ponta.
+
+## Licença
+
+O código (`install.py`, `test_install.py`) está sob a [licença MIT](LICENSE).
+
+O conteúdo das skills carrega `license: CC-BY-4.0` no frontmatter de cada `SKILL.md`, herdado do
+formato de origem — veja a seção abaixo. Se você redistribuir as skills, preserve a atribuição.
 
 ## Origem dos padrões
 

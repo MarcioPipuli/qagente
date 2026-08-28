@@ -3,7 +3,12 @@
   "profile_name": "default",
   "language": "pt-BR",
   "artifact_format": "markdown-gherkin",
-  "risk_levels": ["high", "medium", "low"],
+  "risk_levels": [
+    "critical",
+    "high",
+    "medium",
+    "low"
+  ],
   "risk_method": "probability-impact",
   "workflow": {
     "require_traceability": true,
@@ -20,7 +25,7 @@
   "conventions": {
     "gherkin_language": "pt",
     "scenario_title_prefix": "Validar que",
-    "test_id_pattern": "CT-{DOMAIN}-{NUMBER}"
+    "test_id_pattern": "TC-{DOMAIN}-{NUMBER}"
   },
   "api": {
     "enabled": true,
@@ -33,7 +38,7 @@
     "enabled": true,
     "framework": "cypress",
     "language": "javascript",
-    "selector_attribute": "data-cy",
+    "selector_attribute": "data-testid",
     "base_url_env": "CYPRESS_BASE_URL"
   }
 }

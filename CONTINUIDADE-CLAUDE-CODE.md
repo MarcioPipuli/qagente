@@ -51,6 +51,7 @@ O MVP de configuração multiplataforma foi implementado.
 | `README.md` | Visão geral, uso e instalação |
 | `test_install.py` | Testes do instalador e do conteúdo do harness |
 | `.github/workflows/tests.yml` | CI: suíte em Linux e Windows a cada push |
+| `LICENSE` | MIT (o conteúdo das skills mantém CC-BY-4.0 no frontmatter) |
 
 ## 3. Arquitetura atual
 
@@ -589,13 +590,30 @@ informa e pergunta, em vez de gerar código na ferramenta errada só porque a sk
 Coberto por `test_o_nucleo_nao_prescreve_framework_de_automacao`. A pendência 8.5 (skill de
 Playwright) agora pode ser feita sem conflito com o núcleo.
 
-### Etapa 7 — Higiene do repositório
+### Etapa 7 — Higiene do repositório — CONCLUÍDA (2026-08-28)
 
-- `LICENSE`: as 5 skills declaram `license: CC-BY-4.0` no frontmatter e o README credita o
-  `agent-skills-main` como origem dos padrões, mas o repositório não tem arquivo de licença.
-  Resolver antes de tornar o repositório público.
-- Alinhar o perfil `default` com a família dos outros três, ou documentar por que ele diverge:
-  3 níveis de risco contra 4, `CT-` contra `TC-`, `data-cy` contra `data-testid`.
+**Licença: MIT** (decisão do usuário em 2026-08-28). O código fica sob MIT; o conteúdo das
+skills mantém o `license: CC-BY-4.0` declarado no frontmatter de cada `SKILL.md`, herdado do
+formato de origem. O README explica o arranjo.
+
+**Ponto que segue aberto e depende do usuário:** a licença do `agent-skills-main`, creditado
+no README como origem dos padrões estruturais, **não foi verificada** — o projeto não está
+nesta máquina. Se ela for copyleft ou restringir obras derivadas, a escolha de MIT pode
+precisar de revisão. Conferir antes de tornar o repositório público.
+
+**Perfil `default` alinhado** com a família dos outros três: passou a 4 níveis de risco com
+`critical`, IDs `TC-{DOMAIN}-{NUMBER}` e seletor `data-testid`. O que o distingue agora é
+apenas o que tem justificativa — os caminhos neutros (`entrada/`, `saida/`), para quem ainda
+não tem estrutura de repositório definida. As três divergências anteriores eram deriva, não
+decisão.
+
+Projetos já instalados com o `default` antigo mantêm a cópia em `.qagente/quality-profile.json`
+até rodarem com `--force`. Isso é intencional: o perfil pertence ao projeto consumidor.
+
+**Distinção que continua valendo:** o valor da coluna "Default" nas seções `## Configuração`
+das skills é o que vale **sem nenhum perfil** — não é o perfil chamado `default`. São coisas
+diferentes, e a skill de Cypress segue citando `data-cy` como fallback sem perfil, por ser a
+convenção nativa da ferramenta.
 
 ## 10. Prompt para retomada no Claude Code
 
@@ -634,10 +652,10 @@ Próximas tarefas, na ordem da seção 9:
    validado com evidência (ver 8.6); Copilot, Cursor e Windsurf seguem como
    hipótese assumida, não como fato verificado. Depende do usuário abrir cada
    ferramenta; não tente automatizar nem declare como testado.
-2. Etapa 7 — LICENSE e alinhamento do perfil default. Ambas dependem de
-   decisão do usuário, não são trabalho técnico.
-3. Pendência 8.5 — skill de Playwright. O núcleo já não prescreve framework
+2. Pendência 8.5 — skill de Playwright. O núcleo já não prescreve framework
    (Etapa 6), então ela entra sem conflito.
+3. Verificar a licença do agent-skills-main (ver Etapa 7) antes de tornar o
+   repositório público.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes
