@@ -1,5 +1,7 @@
 # QAGente
 
+[![Testes](https://github.com/MarcioPipuli/qagente/actions/workflows/tests.yml/badge.svg)](https://github.com/MarcioPipuli/qagente/actions/workflows/tests.yml)
+
 Harness de um agente especialista em Qualidade de Software (QA/SDET), extraído dos padrões de qualidade e estrutura observados no repositório [`agent-skills-main`](../agent-skills-main) (Tech Leads Club — formato `SKILL.md`, convenção `AGENTS.md`/`CLAUDE.md`, definição de subagente).
 
 ## O que tem aqui
@@ -17,6 +19,7 @@ QAGente/
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
 ├── test_install.py         # Testes do instalador (unittest, sem dependências externas)
+├── .github/workflows/      # CI: roda a suíte no Linux e no Windows a cada push
 └── skills/
     ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)
@@ -133,6 +136,10 @@ python -m unittest test_install -v
 Só usa `unittest` da biblioteca padrão. Os testes de integração executam o `install.py` real
 como subprocesso dentro de um diretório temporário — nenhum teste escreve no harness nem em
 `~/.claude`.
+
+O CI roda a mesma suíte a cada push, em `ubuntu-latest` e `windows-latest`, nos Python 3.9 e
+3.13. O instalador manipula caminhos nos dois sistemas, então rodar nos dois evita que uma
+suposição de separador ou de quebra de linha passe despercebida.
 
 ### Opção B — Manual
 

@@ -29,6 +29,8 @@ O MVP de configuração multiplataforma foi implementado.
 - O instalador passou a copiar skills para `.qagente/skills/` em instalações não-Claude.
 - O instalador evita criar `CLAUDE.md` quando a instalação é exclusiva para Copilot, Cursor ou Windsurf.
 - O README foi atualizado com os novos comandos.
+- Suíte de testes (`test_install.py`, 70 testes em `unittest` puro).
+- CI no GitHub Actions rodando a suíte em Linux e Windows, Python 3.9 e 3.13.
 
 ### Arquivos principais
 
@@ -47,6 +49,8 @@ O MVP de configuração multiplataforma foi implementado.
 | `adapters/windsurf/` | Regra Markdown para Windsurf |
 | `skills/` | Workflows de análise, BDD, Robot Framework e Cypress |
 | `README.md` | Visão geral, uso e instalação |
+| `test_install.py` | Testes do instalador e do conteúdo do harness |
+| `.github/workflows/tests.yml` | CI: suíte em Linux e Windows a cada push |
 
 ## 3. Arquitetura atual
 
@@ -424,7 +428,7 @@ Todos os critérios de aceite foram validados com instalação real em pasta tem
 
 ### Etapa 2 — Testar o instalador — CONCLUÍDA (2026-08-28)
 
-`test_install.py`: 60 testes, `unittest` puro, ~9 s. Estrutura em duas camadas — testes de
+`test_install.py`: 70 testes na última contagem, `unittest` puro, ~9 s (eram 60 ao fim desta etapa; as demais cresceram a suíte). Estrutura em duas camadas — testes de
 unidade para as funções puras (`profile_io_dirs`, `disabled_path_keys`, `is_skill_dir`,
 `merge_block`) e testes de integração que executam o `install.py` real como subprocesso em
 diretório temporário.
@@ -462,9 +466,31 @@ Decisão tomada durante os testes: um caminho de perfil com barra inicial (`/qa/
 tratado como absoluto e recusado, em vez de ser reinterpretado como relativo à raiz do
 projeto — recusar com aviso é mais previsível do que adivinhar a intenção.
 
-### Etapa 3 — Criar validador de perfil
+### Etapa 3 — Tornar as skills orientadas ao perfil — CONCLUÍDA (2026-08-28)
 
-Adicionar validação estrutural e semântica dos perfis.
+Ver pendência 8.2. As 5 skills ganharam a seção `## Configuração` e as prescrições normativas
+viraram condicionais. Coberto por 3 testes em `ReferenciasDeCaminhoTest`.
+
+### Etapa 4 — Validar cada ferramenta (PRÓXIMA — depende do usuário)
+
+É o único item que nenhum teste automatizado cobre, e o que decide se o MVP multiplataforma é
+real ou apenas plausível. Abrir um projeto de teste separado em cada ferramenta e confirmar:
+
+1. o adaptador é carregado;
+2. o perfil é localizado;
+3. as skills estão acessíveis;
+4. o agente produz uma análise simples de requisito;
+5. a configuração efetiva aparece na resposta;
+6. os artefatos são criados nos caminhos do perfil.
+
+Sugestão de roteiro: instalar com `--profile fullstack` numa pasta vazia, colocar um requisito
+curto em `docs/requisitos/`, pedir "analisa esse requisito e me diz o que testar", e conferir se
+a saída cita o perfil aplicado e cai em `qa/cenarios/`.
+
+### Etapa 5 — Criar validador de perfil
+
+Ver pendência 8.3. Adicionar validação estrutural e semântica dos perfis: tipos dos campos,
+valores permitidos, coerência entre `enabled` e `framework`, nomes de variáveis de ambiente.
 
 Possíveis comandos:
 
@@ -478,30 +504,29 @@ ou um comando separado:
 python QAGente/validate.py --profile profiles/frontend-web.json
 ```
 
-### Etapa 4 — Tornar as skills orientadas ao perfil
+Decidir junto o ponto aberto registrado na 8.2: os `risk_levels` são declarados em inglês e
+escritos nos artefatos no idioma de `language`. Hoje isso é convenção em texto, não contrato.
 
-Adicionar, no início de cada skill, uma seção equivalente a:
+### Etapa 6 — Deixar de prescrever framework acima das skills
 
-```markdown
-## Configuração
+As skills já respeitam `api.framework`/`ui.framework`, mas o nível acima delas não acompanhou:
 
-Leia `.qagente/quality-profile.json`. Quando uma configuração estiver presente,
-aplique-a. Os valores desta skill são defaults e não devem substituir uma decisão
-explícita do perfil ou do usuário.
-```
+- a `description` de `agent.md` diz "automatizar testes com Robot Framework (APIs) e Cypress
+  (interfaces web)";
+- as fases em `AGENTS.md` se chamam "Fase 3a — Automação de API (`skills/robot-framework-api`)"
+  e "Fase 3b — Automação de UI (`skills/cypress-ui-automation`)".
 
-Depois substituir as prescrições rígidas por regras condicionais.
+Num projeto com perfil Playwright, o agente se descreve pela ferramenta errada. Esta etapa é
+pré-requisito natural da pendência 8.5 (skill de Playwright): primeiro o núcleo deixa de assumir
+a ferramenta, depois a nova skill entra sem conflito.
 
-### Etapa 5 — Validar cada ferramenta
+### Etapa 7 — Higiene do repositório
 
-Abrir um projeto de teste separado em cada ferramenta e confirmar:
-
-1. o adaptador é carregado;
-2. o perfil é localizado;
-3. as skills estão acessíveis;
-4. o agente produz uma análise simples de requisito;
-5. a configuração efetiva aparece na resposta;
-6. os artefatos são criados nos caminhos do perfil.
+- `LICENSE`: as 5 skills declaram `license: CC-BY-4.0` no frontmatter e o README credita o
+  `agent-skills-main` como origem dos padrões, mas o repositório não tem arquivo de licença.
+  Resolver antes de tornar o repositório público.
+- Alinhar o perfil `default` com a família dos outros três, ou documentar por que ele diverge:
+  3 níveis de risco contra 4, `CT-` contra `TC-`, `data-cy` contra `data-testid`.
 
 ## 10. Prompt para retomada no Claude Code
 
@@ -511,37 +536,39 @@ Copie o texto abaixo em uma nova janela do Claude Code:
 Estamos continuando o desenvolvimento do projeto QAGente.
 
 Leia primeiro:
-- CONTINUIDADE-CLAUDE-CODE.md
+- CONTINUIDADE-CLAUDE-CODE.md (seções 8 e 9 dizem o que já está feito)
 - README.md
 - agent.md
 - AGENTS.md
 - install.py
-- profiles/default.json
-- profiles/backend-api.json
-- profiles/frontend-web.json
+- test_install.py
+- profiles/
 - adapters/
 
-O MVP multiplataforma já foi implementado para Claude Code, GitHub Copilot,
-Cursor e Windsurf. O instalador aceita --tool, --tools e --profile, cria
-.qagente/quality-profile.json, instala skills portáteis e gera adaptadores.
-A Etapa 1 (caminhos vindos de profile.paths) está concluída e validada — veja
-a seção 8.1 e a Etapa 1 na seção 9 antes de mexer em install_io_dirs().
+Estado: o MVP multiplataforma está implementado para Claude Code, GitHub
+Copilot, Cursor e Windsurf. O instalador aceita --tool, --tools e --profile,
+cria .qagente/quality-profile.json, instala skills portáteis, gera adaptadores
+e cria as pastas declaradas em profile.paths. As 5 skills leem o perfil. Há 4
+perfis embarcados: default, backend-api, frontend-web e fullstack.
 
-A Etapa 2 também está concluída: test_install.py tem 60 testes em unittest puro
-(python -m unittest test_install -v). Rode a suíte antes e depois de qualquer
-alteração no instalador.
+As Etapas 1, 2 e 3 estão concluídas (caminhos configuráveis, suíte de testes,
+skills orientadas ao perfil). test_install.py tem 70 testes em unittest puro:
 
-Próximas tarefas, em ordem de custo/benefício:
+    python -m unittest test_install -v
 
-1. Pendência 8.6 — validação manual dentro de cada ferramenta. É o único item
-   que nenhum teste automatizado cobre e o que falta para confiar no MVP:
-   abrir um projeto de teste no Claude Code, Copilot, Cursor e Windsurf e
-   confirmar que cada um carrega o adaptador, acha o perfil e aplica a
-   configuração efetiva numa análise real de requisito.
-2. Etapa 3 — validador de perfil (schema estrutural e semântico). Ver o ponto
-   aberto sobre risk_levels registrado na 8.2.
-3. Pendência 8.5 — skill/perfil para Playwright, agora que as skills de
-   automação já sabem recusar um framework que não é o delas.
+Rode a suíte antes e depois de qualquer alteração. O CI (.github/workflows)
+roda a mesma suíte em Linux e Windows a cada push.
+
+Próximas tarefas, na ordem da seção 9:
+
+1. Etapa 4 — validação manual dentro de cada ferramenta. Único item que nenhum
+   teste cobre e o que decide se o MVP multiplataforma é real. Depende do
+   usuário abrir cada ferramenta; não tente automatizar.
+2. Etapa 5 — validador de perfil, resolvendo junto o ponto aberto sobre
+   risk_levels registrado na 8.2.
+3. Etapa 6 — deixar de prescrever Robot Framework/Cypress em agent.md e
+   AGENTS.md, pré-requisito da skill de Playwright (8.5).
+4. Etapa 7 — LICENSE e alinhamento do perfil default.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes

@@ -1,0 +1,34 @@
+name: Testes
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unittest:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # O instalador manipula caminhos nos dois sistemas e é desenvolvido no Windows.
+        # Rodar nos dois evita que uma suposição de separador ou de linha passe despercebida.
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Compilar
+        run: python -m py_compile install.py test_install.py
+
+      - name: Rodar a suíte
+        run: python -m unittest test_install -v
+        env:
+          PYTHONIOENCODING: utf-8
