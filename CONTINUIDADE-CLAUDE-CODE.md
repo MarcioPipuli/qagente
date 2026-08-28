@@ -20,7 +20,7 @@ O MVP de configuração multiplataforma foi implementado.
 ### Entregas concluídas
 
 - Criados perfis JSON configuráveis por projeto/time.
-- Criados os perfis `default`, `backend-api`, `frontend-web` e `fullstack`.
+- Criados os perfis `default`, `backend-api`, `frontend-web`, `frontend-playwright` e `fullstack`.
 - `agent.md` passou a exigir a leitura de `.qagente/quality-profile.json` quando o arquivo existir.
 - `AGENTS.md` passou a definir a precedência de configuração e as regras que não podem ser removidas pelo perfil.
 - Criados adaptadores para Copilot, Cursor e Windsurf.
@@ -44,6 +44,7 @@ O MVP de configuração multiplataforma foi implementado.
 | `profiles/backend-api.json` | Perfil para times focados em API/backend |
 | `profiles/frontend-web.json` | Perfil para times focados em frontend/UI |
 | `profiles/fullstack.json` | Perfil para times que cuidam de API e UI no mesmo repositório |
+| `profiles/frontend-playwright.json` | Perfil para times de frontend que usam Playwright |
 | `adapters/copilot/` | Instruções e agente customizado para GitHub Copilot |
 | `adapters/cursor/` | Regra `.mdc` para Cursor |
 | `adapters/windsurf/` | Regra Markdown para Windsurf |
@@ -310,7 +311,7 @@ Decisões tomadas:
 
 ### 8.2 As skills ainda contêm defaults prescritivos — RESOLVIDO (2026-08-28)
 
-As 5 skills ganharam uma seção `## Configuração` logo após a introdução, com: a regra de
+As 5 skills existentes à época ganharam uma seção `## Configuração` logo após a introdução (a de Playwright, criada depois, já nasceu com ela), com: a regra de
 precedência, uma tabela `decisão → campo do perfil → default`, e a ressalva de que o perfil não
 remove as regras universais de `AGENTS.md`.
 
@@ -369,8 +370,9 @@ python QAGente/install.py --validate-profile ./meu-time.json
 ```
 
 Sai com 1 se houver erros. A mesma validação roda a cada instalação. Coberto por 23 testes
-(`ValidateProfileTest` e `ValidateProfileCliTest`), incluindo a verificação de que os 4 perfis
-embarcados passam sem nenhum problema.
+(`ValidateProfileTest` e `ValidateProfileCliTest`), incluindo a verificação de que todos os
+perfis embarcados passam sem nenhum problema — o teste percorre `profiles/*.json`, então um
+perfil novo entra na cobertura sozinho.
 
 ### 8.4 Adaptadores não têm testes próprios — RESOLVIDO (2026-08-28)
 
@@ -384,9 +386,35 @@ Ainda fora de cobertura, de propósito:
 - `--symlink` (depende de privilégio no Windows);
 - carregamento real dos adaptadores dentro de cada ferramenta (isso é a 8.6).
 
-### 8.5 Não há adaptador Playwright
+### 8.5 Não há adaptador Playwright — RESOLVIDO (2026-08-28)
 
-O núcleo menciona Cypress e Robot Framework. Um próximo perfil frontend pode escolher Playwright, mas ainda não há skill/template/adaptador específico para essa opção.
+Criada a skill `playwright-ui-automation` com três templates (`spec_template.spec.ts`,
+`page-object-template.ts`, `playwright.config.ts`) e o perfil `frontend-playwright`.
+
+**Não é a skill de Cypress traduzida.** O conteúdo cobre o que a ferramenta faz de fato
+diferente, e onde a diferença muda a decisão do QA:
+
+- **Ordem de locators invertida** — no Cypress a skill manda começar por `data-cy`; aqui a
+  ordem é `getByRole` → `getByLabel`/`getByText` → `getByTestId`. Um locator por papel falha
+  quando a acessibilidade quebra, e isso é uma feature: o teste encontrou um bug de produto.
+- **Asserção web-first** — `await expect(locator).toBeVisible()` repete até o timeout, enquanto
+  `expect(await locator.isVisible())` captura o estado uma vez. É a origem mais comum de teste
+  intermitente em Playwright e está documentada como erro a evitar.
+- **Paralelismo por padrão** — teste dependente de ordem não falha sempre, falha às vezes. Isso
+  transforma o princípio 4 de `AGENTS.md` de boa prática em exigência operacional.
+- **`storageState` + projeto de setup** para autenticação, em vez de login por teste.
+- **Trace como evidência** — DOM, rede, console e screenshot por passo. É a evidência mais forte
+  disponível para o princípio 6 de `AGENTS.md`, e a skill manda configurar `on-first-retry`.
+
+Ponto de integração com o perfil que merece atenção: `ui.selector_attribute` precisa ser
+espelhado em `testIdAttribute` no `playwright.config`. Sem isso, `getByTestId()` procura
+`data-testid` e **ignora silenciosamente** o atributo do time. Está no template e na lista de
+erros comuns.
+
+Duas skills passam a disputar `ui.framework`, então cada uma precisa recusar quando não é a
+dela e apontar a alternativa. Coberto por `test_skills_de_ui_concorrentes_se_excluem_mutuamente`.
+`SKILLS_DE_AUTOMACAO` no teste passou a ser a fonte única — uma skill de automação nova entra
+na cobertura acrescentando uma linha.
 
 ### 8.6 Integração com o formato real de cada ferramenta — PARCIAL (1 de 4 validada)
 
@@ -635,8 +663,11 @@ Leia primeiro:
 Estado: o MVP multiplataforma está implementado para Claude Code, GitHub
 Copilot, Cursor e Windsurf. O instalador aceita --tool, --tools e --profile,
 cria .qagente/quality-profile.json, instala skills portáteis, gera adaptadores
-e cria as pastas declaradas em profile.paths. As 5 skills leem o perfil. Há 4
-perfis embarcados: default, backend-api, frontend-web e fullstack.
+e cria as pastas declaradas em profile.paths. As 6 skills leem o perfil. Há 5
+perfis embarcados: default, backend-api, frontend-web, frontend-playwright e
+fullstack. A automação de UI tem duas skills concorrentes (Cypress e
+Playwright); quem responde é a de ui.framework, e a outra recusa apontando
+para ela.
 
 As Etapas 1, 2 e 3 estão concluídas (caminhos configuráveis, suíte de testes,
 skills orientadas ao perfil). test_install.py tem 70 testes em unittest puro:
@@ -652,10 +683,10 @@ Próximas tarefas, na ordem da seção 9:
    validado com evidência (ver 8.6); Copilot, Cursor e Windsurf seguem como
    hipótese assumida, não como fato verificado. Depende do usuário abrir cada
    ferramenta; não tente automatizar nem declare como testado.
-2. Pendência 8.5 — skill de Playwright. O núcleo já não prescreve framework
-   (Etapa 6), então ela entra sem conflito.
-3. Verificar a licença do agent-skills-main (ver Etapa 7) antes de tornar o
+2. Verificar a licença do agent-skills-main (ver Etapa 7) antes de tornar o
    repositório público.
+3. Nenhuma outra pendência técnica em aberto. A 8.6 é a única que resta, e
+   depende do usuário abrir cada ferramenta.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes

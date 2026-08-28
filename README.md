@@ -15,6 +15,7 @@ QAGente/
 │   ├── default.json
 │   ├── backend-api.json
 │   ├── frontend-web.json
+│   ├── frontend-playwright.json
 │   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
@@ -27,7 +28,9 @@ QAGente/
     │   └── templates/
     ├── robot-framework-api/           # Fase 3a: casos de teste → automação de API em Robot Framework
     │   └── templates/
-    └── cypress-ui-automation/         # Fase 3b: casos de teste → automação de UI em Cypress
+    ├── cypress-ui-automation/         # Fase 3b: casos de teste → automação de UI em Cypress
+    │   └── templates/
+    └── playwright-ui-automation/      # Fase 3b (alternativa): automação de UI em Playwright
         └── templates/
 ```
 
@@ -54,7 +57,7 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 | `conventions.test_id_pattern` | Padrão de ID para rastreabilidade |
 | `api.enabled`, `api.framework` | Se a automação de API existe e em qual ferramenta |
 | `api.base_url_env`, `api.user_env`, `api.password_env` | Nomes das variáveis de ambiente |
-| `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta |
+| `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta (`cypress` ou `playwright`) |
 | `ui.selector_attribute`, `ui.language`, `ui.base_url_env` | Convenções dos specs de UI |
 
 ### Perfis prontos
@@ -63,7 +66,8 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 |---|---|---|---|
 | `default` | ligada | ligada | Primeiro contato ou projeto sem convenção própria; pastas neutras (`entrada/`, `saida/`) |
 | `backend-api` | ligada | **desligada** | Time de API/backend |
-| `frontend-web` | **desligada** | ligada | Time de frontend/UI; specs em `cypress/e2e/` |
+| `frontend-web` | **desligada** | ligada | Time de frontend/UI usando Cypress; specs em `cypress/e2e/` |
+| `frontend-playwright` | **desligada** | ligada | Time de frontend/UI usando Playwright e TypeScript |
 | `fullstack` | ligada | ligada | Time que cuida das duas pontas; automação agrupada em `tests/api` e `tests/e2e` |
 
 Os quatro compartilham a mesma família de convenções: 4 níveis de risco com `critical`, IDs
@@ -173,6 +177,7 @@ suposição de separador ou de quebra de linha passe despercebida.
 - "Escreve os casos de teste em Gherkin para esses cenários" → aciona `escrita-casos-teste`.
 - "Automatiza esses testes de API em Robot Framework" → aciona `robot-framework-api`.
 - "Automatiza esse fluxo de checkout em Cypress" → aciona `cypress-ui-automation`.
+- "Automatiza esse fluxo em Playwright" → aciona `playwright-ui-automation`. A skill de UI que responde é a de `ui.framework`; a outra recusa e aponta para ela.
 - "Pega esse ticket e já entrega os testes de API automatizados" → o agente percorre a análise e a escrita dos casos de teste (Fases 1-2), mostrando cada artefato intermediário, e então pede aprovação explícita antes de iniciar a automação (Fase 3a/3b) — mesmo que o pedido original já tenha pedido automação de ponta a ponta.
 
 ## Licença

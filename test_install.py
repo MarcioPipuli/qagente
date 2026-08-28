@@ -35,7 +35,15 @@ SKILL_NAMES = {
     "cypress-ui-automation",
     "escrita-casos-teste",
     "gherkin-palavras-chave",
+    "playwright-ui-automation",
     "robot-framework-api",
+}
+
+# Skills que geram código de automação: precisam recusar um framework que não é o delas.
+SKILLS_DE_AUTOMACAO = {
+    "robot-framework-api": "api",
+    "cypress-ui-automation": "ui",
+    "playwright-ui-automation": "ui",
 }
 
 
@@ -761,8 +769,8 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
     def adapter_files(self) -> list[Path]:
         return sorted(p for p in (HARNESS / "adapters").rglob("*.md*") if p.is_file())
 
-    def test_o_harness_tem_as_cinco_skills_esperadas(self):
-        # protege os dois testes abaixo de passarem por vacuidade
+    def test_o_harness_tem_as_skills_esperadas(self):
+        # protege os testes abaixo de passarem por vacuidade
         self.assertEqual({p.parent.name for p in self.skill_files()}, SKILL_NAMES)
 
     def test_skills_nao_referenciam_agents_md_por_caminho_relativo(self):
@@ -787,15 +795,23 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
 
     def test_skills_de_automacao_citam_os_campos_de_framework_do_perfil(self):
         """Gerar Cypress num projeto que escolheu Playwright é o modo de falhar mais caro aqui."""
-        casos = {
-            "robot-framework-api": ["api.framework", "api.enabled", "paths.api_tests"],
-            "cypress-ui-automation": ["ui.framework", "ui.enabled", "paths.ui_tests"],
-        }
-        for skill, campos in casos.items():
+        for skill, secao in SKILLS_DE_AUTOMACAO.items():
             texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
-            for campo in campos:
+            for campo in (f"{secao}.framework", f"{secao}.enabled", f"paths.{secao}_tests"):
                 with self.subTest(skill=skill, campo=campo):
                     self.assertIn(campo, texto)
+
+    def test_skills_de_ui_concorrentes_se_excluem_mutuamente(self):
+        """Duas skills disputam ui.framework — cada uma precisa mandar a outra quando não é a dela."""
+        pares = (
+            ("cypress-ui-automation", "cypress", "playwright"),
+            ("playwright-ui-automation", "playwright", "cypress"),
+        )
+        for skill, propria, concorrente in pares:
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8").lower()
+            with self.subTest(skill=skill):
+                self.assertIn(f"`ui.framework` não for `{propria}`", texto)
+                self.assertIn(concorrente, texto, "a skill deve citar a alternativa ao recusar")
 
     def test_convencoes_prescritivas_estao_atreladas_ao_perfil(self):
         """Cada default rígido precisa citar o campo que pode substituí-lo."""

@@ -1,0 +1,39 @@
+{
+  "profile_version": "1.0",
+  "profile_name": "frontend-playwright",
+  "language": "pt-BR",
+  "artifact_format": "markdown-gherkin",
+  "risk_levels": ["critical", "high", "medium", "low"],
+  "risk_method": "probability-impact",
+  "workflow": {
+    "require_traceability": true,
+    "require_approval_before_automation": true,
+    "require_execution_evidence": true
+  },
+  "paths": {
+    "input": "docs/requisitos",
+    "scenarios": "qa/cenarios",
+    "test_cases": "qa/casos-de-teste",
+    "api_tests": "tests/api",
+    "ui_tests": "tests/e2e"
+  },
+  "conventions": {
+    "gherkin_language": "pt",
+    "scenario_title_prefix": "Validar que",
+    "test_id_pattern": "TC-{DOMAIN}-{NUMBER}"
+  },
+  "api": {
+    "enabled": false,
+    "framework": "robot-framework",
+    "base_url_env": "API_BASE_URL",
+    "user_env": "QA_API_USER",
+    "password_env": "QA_API_PASSWORD"
+  },
+  "ui": {
+    "enabled": true,
+    "framework": "playwright",
+    "language": "typescript",
+    "selector_attribute": "data-testid",
+    "base_url_env": "PLAYWRIGHT_BASE_URL"
+  }
+}

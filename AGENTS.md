@@ -97,7 +97,7 @@ Saída: suíte executável no framework escolhido, organizada em unidades reutil
 
 ### Fase 3b — Automação de UI
 
-Framework definido por `ui.framework` no perfil; sem perfil, Cypress (`skills/cypress-ui-automation`).
+Framework definido por `ui.framework` no perfil: Cypress (`skills/cypress-ui-automation`) ou Playwright (`skills/playwright-ui-automation`). Sem perfil, Cypress.
 
 Entrada: casos de teste que envolvem interação de tela.
 Saída: spec executável no framework escolhido, com seletores estáveis (atributo de `ui.selector_attribute`), abstrações para ações repetidas, e evidência de execução.
