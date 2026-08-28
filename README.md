@@ -12,7 +12,8 @@ QAGente/
 ├── profiles/               # Perfis configuráveis por tipo de time/projeto
 │   ├── default.json
 │   ├── backend-api.json
-│   └── frontend-web.json
+│   ├── frontend-web.json
+│   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
 ├── test_install.py         # Testes do instalador (unittest, sem dependências externas)
@@ -34,6 +35,43 @@ Os caminhos vêm do bloco `paths` do perfil (`.qagente/quality-profile.json`) �
 Uma fase desligada no perfil não ganha pasta: com `"api": {"enabled": false}` o `api_tests` é pulado, e o mesmo vale para `ui_tests` com `"ui": {"enabled": false}`.
 
 O nome-base do documento de origem é preservado no arquivo gerado, para manter a rastreabilidade entre entrada e saída. Um caminho indicado explicitamente pelo usuário no pedido tem prioridade sobre o perfil e sobre essa convenção. Detalhes em [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas).
+
+## O que o perfil controla
+
+O perfil (`.qagente/quality-profile.json`) é o contrato entre o núcleo do QAGente e as decisões
+de cada time. Ele governa o instalador **e** o comportamento das skills:
+
+| Campo | Governa |
+|---|---|
+| `language`, `artifact_format` | Idioma e formato dos artefatos gerados |
+| `paths.*` | Onde o agente lê a entrada e grava cada fase; quais pastas o instalador cria |
+| `risk_levels`, `risk_method` | Escala e método de priorização dos cenários |
+| `conventions.gherkin_language` | Idioma das palavras-chave do Gherkin |
+| `conventions.scenario_title_prefix` | Prefixo dos títulos de cenário (`Validar que` por default) |
+| `conventions.test_id_pattern` | Padrão de ID para rastreabilidade |
+| `api.enabled`, `api.framework` | Se a automação de API existe e em qual ferramenta |
+| `api.base_url_env`, `api.user_env`, `api.password_env` | Nomes das variáveis de ambiente |
+| `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta |
+| `ui.selector_attribute`, `ui.language`, `ui.base_url_env` | Convenções dos specs de UI |
+
+### Perfis prontos
+
+| Perfil | API | UI | Para quem |
+|---|---|---|---|
+| `default` | ligada | ligada | Primeiro contato ou projeto sem convenção própria; pastas neutras (`entrada/`, `saida/`) |
+| `backend-api` | ligada | **desligada** | Time de API/backend |
+| `frontend-web` | **desligada** | ligada | Time de frontend/UI; specs em `cypress/e2e/` |
+| `fullstack` | ligada | ligada | Time que cuida das duas pontas; automação agrupada em `tests/api` e `tests/e2e` |
+
+Os três últimos compartilham a mesma família de convenções (4 níveis de risco com `critical`,
+IDs `TC-{DOMAIN}-{NUMBER}`, seletor `data-testid`, entrada em `docs/requisitos/`). Copie o mais
+próximo do seu contexto e ajuste.
+
+Cada skill traz uma seção **Configuração** com os campos que a afetam e o default de cada um.
+A precedência é sempre: **instrução explícita do usuário → perfil do projeto → defaults da
+skill**. O perfil não pode desligar as regras universais de [AGENTS.md](AGENTS.md)
+(rastreabilidade, proteção de segredos, independência dos testes, registro de lacunas e
+evidência real de execução).
 
 ## Fluxo do agente
 

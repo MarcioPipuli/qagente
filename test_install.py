@@ -573,5 +573,122 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
         self.assertExists(".windsurf/rules/qagente.md")
 
 
+# --------------------------------------------------------------------------------------
+# Perfis embarcados
+# --------------------------------------------------------------------------------------
+
+
+class PerfisEmbarcadosTest(InstallerTestCase):
+    """Percorre profiles/*.json — um perfil novo entra na cobertura sem editar este arquivo."""
+
+    def perfis(self) -> list[Path]:
+        return sorted((HARNESS / "profiles").glob("*.json"))
+
+    def test_ha_perfis_embarcados(self):
+        # protege os testes abaixo de passarem por vacuidade
+        self.assertGreaterEqual(len(self.perfis()), 3)
+
+    def test_todo_perfil_embarcado_tem_os_campos_obrigatorios(self):
+        obrigatorios = {"profile_version", "profile_name", "language", "workflow", "paths"}
+        for caminho in self.perfis():
+            with self.subTest(perfil=caminho.stem):
+                dados = json.loads(caminho.read_text(encoding="utf-8"))
+                self.assertEqual(obrigatorios - dados.keys(), set())
+                self.assertEqual(dados["profile_name"], caminho.stem, "profile_name deve bater com o nome do arquivo")
+                self.assertIn(dados["profile_version"], install.SUPPORTED_PROFILE_VERSIONS)
+
+    def test_todo_perfil_embarcado_instala_e_cria_exatamente_os_seus_caminhos(self):
+        for caminho in self.perfis():
+            with self.subTest(perfil=caminho.stem):
+                projeto = self.parent / f"proj-{caminho.stem}"
+                projeto.mkdir()
+                resultado = self.run_install("--target", str(projeto), "--tool", "claude", "--profile", caminho.stem)
+                self.assertEqual(resultado.returncode, 0, resultado.stdout)
+
+                dados = json.loads(caminho.read_text(encoding="utf-8"))
+                desligadas = install.disabled_path_keys(dados)
+                for chave, relativo in dados["paths"].items():
+                    alvo = projeto / relativo
+                    if chave in desligadas:
+                        self.assertFalse(alvo.exists(), f"{relativo} não deveria existir ({chave} desligado)")
+                    else:
+                        self.assertTrue(alvo.is_dir(), f"{relativo} deveria ter sido criado")
+
+
+# --------------------------------------------------------------------------------------
+# Referências de caminho dentro do conteúdo instalado
+# --------------------------------------------------------------------------------------
+
+
+class ReferenciasDeCaminhoTest(unittest.TestCase):
+    """O texto das skills e dos adaptadores é lido pelo agente como instrução.
+
+    Um caminho errado ali não quebra o instalador — só faz o agente procurar arquivo no
+    lugar errado em silêncio, que é pior. Estes testes leem o conteúdo do harness.
+    """
+
+    def skill_files(self) -> list[Path]:
+        return sorted((HARNESS / "skills").glob("*/SKILL.md"))
+
+    def adapter_files(self) -> list[Path]:
+        return sorted(p for p in (HARNESS / "adapters").rglob("*.md*") if p.is_file())
+
+    def test_o_harness_tem_as_cinco_skills_esperadas(self):
+        # protege os dois testes abaixo de passarem por vacuidade
+        self.assertEqual({p.parent.name for p in self.skill_files()}, SKILL_NAMES)
+
+    def test_skills_nao_referenciam_agents_md_por_caminho_relativo(self):
+        """`../../AGENTS.md` resolve certo no repositório e em `.qagente/skills/`, mas aponta
+        para `.claude/AGENTS.md` — que não existe — na instalação do Claude Code."""
+        ofensores = [p.parent.name for p in self.skill_files() if "../../AGENTS.md" in p.read_text(encoding="utf-8")]
+        self.assertEqual(ofensores, [], "use `AGENTS.md`, na raiz do projeto — não um caminho relativo")
+
+    def test_nada_no_harness_aponta_para_um_diretorio_de_skills_inexistente(self):
+        """As skills portáteis vão para `.qagente/skills/`; `.github/skills/` nunca é criado."""
+        for path in self.skill_files() + self.adapter_files():
+            with self.subTest(arquivo=path.name):
+                self.assertNotIn(".github/skills", path.read_text(encoding="utf-8"))
+
+    def test_toda_skill_manda_ler_o_perfil(self):
+        """Sem isto o perfil configura o instalador mas não muda o comportamento do agente."""
+        for path in self.skill_files():
+            with self.subTest(skill=path.parent.name):
+                texto = path.read_text(encoding="utf-8")
+                self.assertIn("## Configuração", texto)
+                self.assertIn(".qagente/quality-profile.json", texto)
+
+    def test_skills_de_automacao_citam_os_campos_de_framework_do_perfil(self):
+        """Gerar Cypress num projeto que escolheu Playwright é o modo de falhar mais caro aqui."""
+        casos = {
+            "robot-framework-api": ["api.framework", "api.enabled", "paths.api_tests"],
+            "cypress-ui-automation": ["ui.framework", "ui.enabled", "paths.ui_tests"],
+        }
+        for skill, campos in casos.items():
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            for campo in campos:
+                with self.subTest(skill=skill, campo=campo):
+                    self.assertIn(campo, texto)
+
+    def test_convencoes_prescritivas_estao_atreladas_ao_perfil(self):
+        """Cada default rígido precisa citar o campo que pode substituí-lo."""
+        casos = {
+            "escrita-casos-teste": ["conventions.scenario_title_prefix", "conventions.gherkin_language"],
+            "analise-documentacao-testes": ["risk_levels", "risk_method"],
+            "cypress-ui-automation": ["ui.selector_attribute"],
+            "robot-framework-api": ["api.base_url_env", "api.user_env", "api.password_env"],
+        }
+        for skill, campos in casos.items():
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            for campo in campos:
+                with self.subTest(skill=skill, campo=campo):
+                    self.assertIn(campo, texto)
+
+    def test_os_dois_arquivos_do_adaptador_copilot_concordam(self):
+        base = HARNESS / "adapters" / "copilot"
+        for nome in ("copilot-instructions.md", "qa-especialista.agent.md"):
+            with self.subTest(arquivo=nome):
+                self.assertIn(".qagente/skills/", (base / nome).read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

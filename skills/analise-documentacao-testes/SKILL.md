@@ -9,7 +9,29 @@ metadata:
 
 # Análise de Documentação para Testes
 
-Lê documentação de requisitos e a transforma em uma lista de cenários de teste rastreáveis e priorizados por risco. É a primeira fase do fluxo QA (ver `../../AGENTS.md`) — a saída desta skill alimenta `escrita-casos-teste`.
+Lê documentação de requisitos e a transforma em uma lista de cenários de teste rastreáveis e priorizados por risco. É a primeira fase do fluxo QA (ver `AGENTS.md`, na raiz do projeto) — a saída desta skill alimenta `escrita-casos-teste`.
+
+## Configuração
+
+Leia `.qagente/quality-profile.json` na raiz do projeto antes de começar. Quando um campo
+existir no perfil, ele vence os valores desta skill. Precedência: **instrução explícita do
+usuário → perfil do projeto → defaults desta skill**.
+
+| Decisão desta skill | Campo do perfil | Default |
+|---|---|---|
+| Idioma dos artefatos | `language` | idioma da documentação de origem |
+| Níveis de prioridade | `risk_levels` | Alta / Média / Baixa |
+| Método de priorização | `risk_method` | probabilidade × impacto |
+| Padrão de ID dos cenários | `conventions.test_id_pattern` | `CT-01`, `CT-02`, ... |
+| Onde salvar a saída | `paths.scenarios` | `saida/cenarios/` |
+
+Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
+universais de `AGENTS.md` — rastreabilidade, proteção de segredos, independência dos testes,
+registro de lacunas e evidência real de execução — valem sempre, e o perfil não pode removê-las.
+
+Os `risk_levels` são declarados no perfil em inglês (`critical`, `high`, `medium`, `low`),
+mas devem ser **escritos no idioma dos artefatos**. Com quatro níveis, use a escala completa —
+não colapse para três só porque os exemplos desta skill mostram três.
 
 ## Quando usar
 
@@ -45,13 +67,13 @@ Escolha a(s) técnica(s) adequada(s) a cada elemento — não force todas em tud
 | **Análise de valor limite** | Campo numérico/data com limite (mín/máx, idade, quantidade) | Testes no limite, um abaixo, um acima |
 | **Tabela de decisão** | Regra de negócio com múltiplas condições combinadas (ex.: desconto = f(cliente VIP, cupom, valor do carrinho)) | Uma linha por combinação relevante de condições |
 | **Transição de estados** | Entidade com ciclo de vida (pedido, assinatura, ticket) | Um teste por transição válida + um por transição inválida |
-| **Análise de risco** | Priorização final de tudo acima | Prioridade Alta/Média/Baixa por probabilidade × impacto |
+| **Análise de risco** | Priorização final de tudo acima | Uma prioridade por cenário, na escala de `risk_levels` e pelo método de `risk_method` |
 
 Sempre cubra, no mínimo: 1 caminho feliz, 1+ cenário negativo por regra de validação, e os limites de qualquer valor com faixa/limite definido.
 
 ## Passo 4 — Produzir a lista de cenários
 
-Salve o resultado como arquivo Markdown (`.md`, ver convenção de pastas em `AGENTS.md`). Formato de saída (ajuste a granularidade ao tamanho do requisito — uma funcionalidade pequena não precisa de 20 cenários):
+Salve o resultado como arquivo Markdown (`.md`) no diretório de `paths.scenarios` — sem perfil, `saida/cenarios/` (ver convenção de pastas em `AGENTS.md`). Formato de saída (ajuste a granularidade ao tamanho do requisito — uma funcionalidade pequena não precisa de 20 cenários):
 
 ```markdown
 ## Cenários de Teste — [Nome da Funcionalidade]
@@ -73,11 +95,19 @@ Marque toda suposição assumida na coluna "Observação" — nunca a apresente 
 
 ## Passo 5 — Priorizar por risco
 
-Prioridade = probabilidade de o cenário falhar × impacto no negócio se falhar em produção:
+Use a escala de `risk_levels` e o método de `risk_method` do perfil. Com o método padrão
+(`probability-impact`), a prioridade é a probabilidade de o cenário falhar × o impacto no
+negócio se ele falhar em produção.
+
+Na escala padrão de três níveis:
 
 - **Alta**: fluxo core do produto, envolve dinheiro/dados sensíveis, ou alta probabilidade de regressão.
 - **Média**: funcionalidade secundária, mas com uso real.
 - **Baixa**: caso de borda raro ou cosmético.
+
+Quando o perfil declarar um nível acima do mais alto (ex.: `critical`), reserve-o para o que
+para o produto inteiro se quebrar — não o use como sinônimo de "importante", senão a escala
+perde poder de discriminação e volta a ser de três níveis na prática.
 
 ## Exemplo
 

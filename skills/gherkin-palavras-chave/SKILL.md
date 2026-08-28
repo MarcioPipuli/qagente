@@ -11,6 +11,15 @@ metadata:
 
 Referência gramatical para os cinco conectores usados na escrita de passos em Gherkin em português. Não define a estrutura do documento de cenários (isso é escopo de `escrita-casos-teste`) — define apenas como escrever cada linha corretamente.
 
+## Configuração
+
+Esta skill documenta a gramática do Gherkin **em português**. Ela se aplica quando
+`conventions.gherkin_language` em `.qagente/quality-profile.json` for `pt` — o default — ou
+quando não houver perfil e o idioma da conversa for português.
+
+Se o perfil definir outro idioma, avise que esta skill não se aplica e use a gramática oficial
+do Gherkin para o idioma escolhido; a estrutura do documento continua em `escrita-casos-teste`.
+
 ## Quando usar
 
 - O usuário está escrevendo ou revisando cenários em Gherkin e precisa saber se um passo é um Dado, um Quando ou um Então.
