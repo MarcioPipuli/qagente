@@ -365,14 +365,63 @@ Ainda fora de cobertura, de propósito:
 
 O núcleo menciona Cypress e Robot Framework. Um próximo perfil frontend pode escolher Playwright, mas ainda não há skill/template/adaptador específico para essa opção.
 
-### 8.6 Integração com o formato real de cada ferramenta precisa de validação manual
+### 8.6 Integração com o formato real de cada ferramenta — PARCIAL (1 de 4 validada)
 
-Os arquivos foram gerados e têm sintaxe Markdown/frontmatter coerente, mas é necessário validar dentro de cada ferramenta:
+| Ferramenta | Estado |
+|---|---|
+| Claude Code | **Validado com evidência** em 2026-08-28 |
+| GitHub Copilot | Não validado — hipótese |
+| Cursor | Não validado — hipótese |
+| Windsurf | Não validado — hipótese |
 
-- se o Claude Code carrega corretamente skills e agente;
-- se o Copilot reconhece o `.agent.md` e `copilot-instructions.md`;
-- se o Cursor aplica o `.mdc`;
-- se o Windsurf carrega a regra no workspace.
+#### Claude Code — validado
+
+Instalação real em `C:\Users\<usuário>\Desktop\QAGente` com `--tool claude --profile fullstack`,
+a partir de um PDF de requisito colocado em `docs/requisitos/`. Artefato gerado:
+`qa/cenarios/Requisitos.cenarios.md`, com 53 cenários. Confirmados os 6 pontos da Etapa 4:
+
+1. o agente e as skills foram carregados (a saída segue a estrutura de `analise-documentacao-testes`);
+2. o perfil foi localizado;
+3. as skills estavam acessíveis;
+4. o agente produziu a análise a partir do requisito real;
+5. a configuração efetiva apareceu na resposta (`Perfil aplicado: fullstack`);
+6. o artefato caiu no caminho de `paths.scenarios`, preservando o nome-base da origem.
+
+O perfil de fato alterou o comportamento — não só os diretórios:
+
+- `risk_levels` de 4 níveis aplicado, com "Crítica" reservada às regras centrais (com o perfil
+  `default`, de 3 níveis, isso não existiria);
+- `conventions.test_id_pattern` respeitado: IDs no formato `TC-CRONO-001`, com o domínio inferido;
+- `conventions.scenario_title_prefix` respeitado nos 53 títulos;
+- rastreabilidade até a seção do documento, 16 lacunas registradas explicitamente, e as
+  fronteiras de `AGENTS.md` respeitadas (cenários de segurança e de carga foram identificados
+  mas encaminhados para fora do escopo do agente).
+
+Isso também valida na prática a tradução dos `risk_levels` do inglês do perfil para o idioma
+dos artefatos (`critical` → "Crítica"), que era o ponto aberto registrado na 8.2. A convenção
+se sustentou; formalizá-la no validador de perfil (Etapa 5) continua valendo.
+
+#### Copilot, Cursor e Windsurf — hipótese, não verificação
+
+**Decisão de 2026-08-28: assumidos como funcionais por ora, sem evidência.** Registrar isso
+como suposição e não como fato é deliberado — quem retomar o projeto não deve tratar estas três
+ferramentas como testadas.
+
+O que sustenta a hipótese: os arquivos são gerados nos caminhos que cada ferramenta documenta,
+com frontmatter de sintaxe coerente; o conteúdo é o mesmo núcleo já validado no Claude Code; e
+os adaptadores são ponteiros finos para `AGENTS.md` e o perfil, não lógica própria.
+
+O que ainda pode quebrar, e é o que a validação precisa olhar:
+
+- **Copilot** — se `.github/agents/*.agent.md` é mesmo lido como agente customizado, e se o
+  `copilot-instructions.md` é aplicado sem ação do usuário;
+- **Cursor** — se `alwaysApply: true` no `.mdc` funciona como esperado e se a regra aparece nas
+  configurações do projeto;
+- **Windsurf** — se uma regra em `.windsurf/rules/` é carregada automaticamente no workspace;
+- **as três** — se conseguem de fato ler as skills de `.qagente/skills/`, que é um diretório
+  fora das convenções nativas delas. Este é o ponto de maior risco: nenhuma das três tem um
+  mecanismo de skills equivalente ao do Claude Code, então elas dependem de seguir um ponteiro
+  em texto até um diretório arbitrário.
 
 ### 8.7 Bugs corrigidos junto com a 8.1 (2026-08-28)
 
@@ -471,10 +520,12 @@ projeto — recusar com aviso é mais previsível do que adivinhar a intenção.
 Ver pendência 8.2. As 5 skills ganharam a seção `## Configuração` e as prescrições normativas
 viraram condicionais. Coberto por 3 testes em `ReferenciasDeCaminhoTest`.
 
-### Etapa 4 — Validar cada ferramenta (PRÓXIMA — depende do usuário)
+### Etapa 4 — Validar cada ferramenta — PARCIAL (Claude Code feito; 3 pendentes)
 
-É o único item que nenhum teste automatizado cobre, e o que decide se o MVP multiplataforma é
-real ou apenas plausível. Abrir um projeto de teste separado em cada ferramenta e confirmar:
+Ver 8.6 para a evidência do Claude Code e para o que olhar em cada ferramenta restante.
+Copilot, Cursor e Windsurf seguem assumidos como funcionais, sem verificação.
+
+Abrir um projeto de teste separado em cada ferramenta pendente e confirmar:
 
 1. o adaptador é carregado;
 2. o perfil é localizado;
@@ -561,9 +612,10 @@ roda a mesma suíte em Linux e Windows a cada push.
 
 Próximas tarefas, na ordem da seção 9:
 
-1. Etapa 4 — validação manual dentro de cada ferramenta. Único item que nenhum
-   teste cobre e o que decide se o MVP multiplataforma é real. Depende do
-   usuário abrir cada ferramenta; não tente automatizar.
+1. Etapa 4 — validação manual nas ferramentas restantes. O Claude Code já foi
+   validado com evidência (ver 8.6); Copilot, Cursor e Windsurf seguem como
+   hipótese assumida, não como fato verificado. Depende do usuário abrir cada
+   ferramenta; não tente automatizar nem declare como testado.
 2. Etapa 5 — validador de perfil, resolvendo junto o ponto aberto sobre
    risk_levels registrado na 8.2.
 3. Etapa 6 — deixar de prescrever Robot Framework/Cypress em agent.md e
