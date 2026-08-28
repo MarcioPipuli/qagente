@@ -9,7 +9,7 @@ metadata:
 
 # Escrita de Casos de Teste (BDD/Gherkin, pt)
 
-Transforma cenários de teste (da skill `analise-documentacao-testes`, ou fornecidos diretamente) em um documento de cenários BDD formal, no formato Gherkin em português. Segunda fase do fluxo QA — ver `../../AGENTS.md`. Esta skill define a **estrutura do documento**; para a gramática de cada passo individual (Dado/Quando/Então/E/Mas), use `gherkin-palavras-chave` em conjunto.
+Transforma cenários de teste (da skill `analise-documentacao-testes`, ou fornecidos diretamente) em um documento de cenários BDD formal, no formato Gherkin em português. Segunda fase do fluxo QA — ver `AGENTS.md`, na raiz do projeto. Esta skill define a **estrutura do documento**; para a gramática de cada passo individual (Dado/Quando/Então/E/Mas), use `gherkin-palavras-chave` em conjunto.
 
 ## Quando usar
 

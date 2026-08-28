@@ -9,7 +9,7 @@ metadata:
 
 # Análise de Documentação para Testes
 
-Lê documentação de requisitos e a transforma em uma lista de cenários de teste rastreáveis e priorizados por risco. É a primeira fase do fluxo QA (ver `../../AGENTS.md`) — a saída desta skill alimenta `escrita-casos-teste`.
+Lê documentação de requisitos e a transforma em uma lista de cenários de teste rastreáveis e priorizados por risco. É a primeira fase do fluxo QA (ver `AGENTS.md`, na raiz do projeto) — a saída desta skill alimenta `escrita-casos-teste`.
 
 ## Quando usar
 

@@ -9,7 +9,7 @@ metadata:
 
 # Automação de UI com Cypress
 
-Escreve specs Cypress executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `../../AGENTS.md`.
+Escreve specs Cypress executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
 ## Quando usar
 

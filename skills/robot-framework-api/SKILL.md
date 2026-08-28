@@ -9,7 +9,7 @@ metadata:
 
 # Automação de API com Robot Framework
 
-Escreve suítes de teste de API executáveis em Robot Framework a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de uma especificação de API. Terceira fase (ramo API) do fluxo QA — ver `../../AGENTS.md`.
+Escreve suítes de teste de API executáveis em Robot Framework a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de uma especificação de API. Terceira fase (ramo API) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
 ## Quando usar
 

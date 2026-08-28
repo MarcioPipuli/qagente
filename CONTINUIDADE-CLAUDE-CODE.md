@@ -365,18 +365,30 @@ Os arquivos foram gerados e têm sintaxe Markdown/frontmatter coerente, mas é n
   aviso (não erro) para versões desconhecidas — a validação estrita fica para a 8.3.
 - Docstring incorreta de `resolve_dirs()` (dizia que `project_root` era vazio no modo `--global`).
 
-### 8.8 Referência `../../AGENTS.md` quebra na instalação Claude
+### 8.8 Referência `../../AGENTS.md` quebra na instalação Claude — RESOLVIDO (2026-08-28)
 
-As 4 skills apontam para `../../AGENTS.md`. O caminho resolve corretamente no repositório do
-QAGente e em `.qagente/skills/`, mas em `.claude/skills/<skill>/SKILL.md` ele aponta para
-`.claude/AGENTS.md`, que não existe — o arquivo fica na raiz do projeto. A ferramenta principal
-é justamente a única com o link quebrado.
+As 4 skills passaram a citar ``AGENTS.md``, na raiz do projeto, em vez de um caminho relativo.
+A referência descritiva vale nos três contextos (repositório do QAGente, `.claude/skills/` e
+`.qagente/skills/`), enquanto `../../AGENTS.md` só valia em dois.
 
-### 8.9 Adaptador do Copilot é contraditório
+O import `../../resources/api_client.resource` na skill de Robot Framework **não** foi
+alterado: aquilo é um caminho do próprio Robot dentro da suíte gerada, não uma referência a
+arquivo do harness.
 
-`adapters/copilot/copilot-instructions.md` manda usar `.qagente/skills/` (correto, é o que o
-instalador cria); `adapters/copilot/qa-especialista.agent.md` manda usar `.github/skills/`, que
-o instalador nunca cria.
+### 8.9 Adaptador do Copilot é contraditório — RESOLVIDO (2026-08-28)
+
+`adapters/copilot/qa-especialista.agent.md` passou a apontar para `.qagente/skills/`, que é
+onde o instalador de fato copia as skills portáteis. Os dois arquivos do adaptador concordam.
+
+### 8.10 Guarda de regressão para 8.8 e 8.9
+
+`test_install.ReferenciasDeCaminhoTest` lê o conteúdo das skills e dos adaptadores e falha se
+`../../AGENTS.md` ou `.github/skills` reaparecerem. Inclui um teste que confere que as cinco
+skills existem, para que os outros não passem por vacuidade caso o diretório mude de lugar.
+
+Vale como modelo: erro em texto de skill não quebra o instalador — faz o agente procurar
+arquivo no lugar errado em silêncio, que é pior. Referências de caminho no conteúdo merecem
+teste como código.
 
 ## 9. Próxima sequência recomendada
 
@@ -504,12 +516,14 @@ alteração no instalador.
 
 Próximas tarefas, em ordem de custo/benefício:
 
-1. Pendências 8.8 e 8.9 — correções pequenas e independentes: a referência
-   ../../AGENTS.md quebra em .claude/skills/, e o adaptador do Copilot aponta
-   para .github/skills/, que o instalador não cria.
+1. Etapa 4 — tornar as skills orientadas ao perfil (pendência 8.2). É a maior
+   lacuna restante: o agente lê o perfil, o instalador respeita o perfil, mas
+   nenhuma das 5 skills menciona .qagente/quality-profile.json — elas ainda
+   prescrevem Gherkin em português, "Validar que", Robot Framework, Cypress e
+   data-cy como se fossem fixos.
 2. Etapa 3 — validador de perfil (schema estrutural e semântico).
-3. Etapa 4 — tornar as skills orientadas ao perfil (pendência 8.2): hoje
-   nenhuma das 5 skills menciona .qagente/quality-profile.json.
+3. Pendência 8.6 — validação manual dentro de cada ferramenta, que é o único
+   item que nenhum teste automatizado cobre.
 
 Antes de editar, formule uma hipótese local e um teste discriminante. Faça a
 menor alteração possível, valide imediatamente com py_compile e os testes

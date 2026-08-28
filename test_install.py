@@ -573,5 +573,46 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
         self.assertExists(".windsurf/rules/qagente.md")
 
 
+# --------------------------------------------------------------------------------------
+# Referências de caminho dentro do conteúdo instalado
+# --------------------------------------------------------------------------------------
+
+
+class ReferenciasDeCaminhoTest(unittest.TestCase):
+    """O texto das skills e dos adaptadores é lido pelo agente como instrução.
+
+    Um caminho errado ali não quebra o instalador — só faz o agente procurar arquivo no
+    lugar errado em silêncio, que é pior. Estes testes leem o conteúdo do harness.
+    """
+
+    def skill_files(self) -> list[Path]:
+        return sorted((HARNESS / "skills").glob("*/SKILL.md"))
+
+    def adapter_files(self) -> list[Path]:
+        return sorted(p for p in (HARNESS / "adapters").rglob("*.md*") if p.is_file())
+
+    def test_o_harness_tem_as_cinco_skills_esperadas(self):
+        # protege os dois testes abaixo de passarem por vacuidade
+        self.assertEqual({p.parent.name for p in self.skill_files()}, SKILL_NAMES)
+
+    def test_skills_nao_referenciam_agents_md_por_caminho_relativo(self):
+        """`../../AGENTS.md` resolve certo no repositório e em `.qagente/skills/`, mas aponta
+        para `.claude/AGENTS.md` — que não existe — na instalação do Claude Code."""
+        ofensores = [p.parent.name for p in self.skill_files() if "../../AGENTS.md" in p.read_text(encoding="utf-8")]
+        self.assertEqual(ofensores, [], "use `AGENTS.md`, na raiz do projeto — não um caminho relativo")
+
+    def test_nada_no_harness_aponta_para_um_diretorio_de_skills_inexistente(self):
+        """As skills portáteis vão para `.qagente/skills/`; `.github/skills/` nunca é criado."""
+        for path in self.skill_files() + self.adapter_files():
+            with self.subTest(arquivo=path.name):
+                self.assertNotIn(".github/skills", path.read_text(encoding="utf-8"))
+
+    def test_os_dois_arquivos_do_adaptador_copilot_concordam(self):
+        base = HARNESS / "adapters" / "copilot"
+        for nome in ("copilot-instructions.md", "qa-especialista.agent.md"):
+            with self.subTest(arquivo=nome):
+                self.assertIn(".qagente/skills/", (base / nome).read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
