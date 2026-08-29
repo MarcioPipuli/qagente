@@ -1,13 +1,18 @@
 ---
 name: playwright-ui-automation
-description: Escreve e organiza testes automatizados de interface web (E2E) em Playwright, usando locators semânticos, asserções web-first com auto-retry, interceptação de rede via page.route, fixtures do @playwright/test e storageState para autenticação, com trace como evidência de execução. Use quando o usuário pedir para automatizar testes de tela/UI em Playwright, escrever uma spec .spec.ts/.spec.js, testar um fluxo de formulário/navegação/checkout com Playwright, migrar testes de Cypress para Playwright, ou revisar/corrigir testes Playwright existentes (flaky, locator quebrado, teste dependente de ordem). Do NOT use quando o perfil do projeto define outro framework de UI (use `cypress-ui-automation` para Cypress), para automação de API pura sem interface (use `robot-framework-api`), para testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use `escrita-casos-teste`).
+description: Escreve e organiza testes automatizados de interface web (E2E) em Playwright, usando locators semânticos, asserções web-first com auto-retry, interceptação de rede via page.route, fixtures do @playwright/test e storageState para autenticação, com trace como evidência de execução. Use quando o usuário pedir para automatizar testes de tela/UI em Playwright, escrever uma spec .spec.ts/.spec.js, testar um fluxo de formulário/navegação/checkout com Playwright, migrar testes de Cypress para Playwright, ou revisar/corrigir testes Playwright existentes (flaky, locator quebrado, teste dependente de ordem). Não use quando o perfil do projeto define outro framework de UI (use `cypress-ui-automation` para Cypress), para automação de API pura sem interface (use `robot-framework-api`), para testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use `escrita-casos-teste`).
 license: CC-BY-4.0
 metadata:
   author: QAGente
   version: '1.0.0'
+  category: automacao
 ---
 
 # Automação de UI com Playwright
+
+<objetivo>
+Impede os erros que fazem uma suíte Playwright parecer saudável e falhar em paralelo: `expect(await locator.isVisible())`, que captura o estado uma vez e perde o auto-retry; `waitForTimeout` no lugar de asserção web-first; `getByTestId` para tudo, jogando fora a validação de acessibilidade que vem de graça; e `describe.serial` mascarando dependência entre testes. Entrega specs com locators semânticos, autenticação reaproveitada e trace como evidência.
+</objetivo>
 
 Escreve specs Playwright executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
@@ -16,6 +21,12 @@ Escreve specs Playwright executáveis a partir de casos de teste já definidos (
 Leia `.qagente/quality-profile.json` na raiz do projeto antes de começar. Quando um campo
 existir no perfil, ele vence os valores desta skill. Precedência: **instrução explícita do
 usuário → perfil do projeto → defaults desta skill**.
+
+Leia também `.qagente/contexto-projeto.md`, quando existir. O perfil diz **como** trabalhar;
+o contexto diz **o que é o produto** — fluxos críticos, áreas de risco com impacto de negócio,
+terminologia do domínio, ambientes e maturidade do time. Ele não substitui o perfil nem as
+regras de `AGENTS.md`: é fato sobre o sistema, não configuração. Se não existir, siga sem ele
+e diga ao usuário o que teria mudado se existisse.
 
 | Decisão desta skill | Campo do perfil | Default |
 |---|---|---|
@@ -29,7 +40,8 @@ usuário → perfil do projeto → defaults desta skill**.
 
 Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
 universais de `AGENTS.md` — rastreabilidade, proteção de segredos, independência dos testes,
-registro de lacunas e evidência real de execução — valem sempre, e o perfil não pode removê-las.
+entrada tratada como dado não confiável, registro de lacunas e evidência real de execução —
+valem sempre, e o perfil não pode removê-las.
 
 **Antes de escrever qualquer código, confira dois campos:**
 
@@ -43,6 +55,15 @@ O `ui.selector_attribute` do perfil precisa ser refletido em `testIdAttribute` n
 `playwright.config`, senão `getByTestId()` procura `data-testid` e ignora o atributo do time.
 Os exemplos desta skill usam `data-testid` e TypeScript por serem os defaults — use os valores
 do perfil no código gerado.
+
+## Perguntas de descoberta
+
+Leia `.qagente/quality-profile.json` primeiro — ele define `ui.framework`, `ui.selector_attribute`, `ui.language` e onde salvar — e `.qagente/contexto-projeto.md`, que traz ambientes, preparação de dados e a suíte que já existe. Depois pergunte só o que faltar:
+
+- **Já existe suíte Playwright no projeto?** Fixtures, projetos e o `playwright.config.ts` existentes vencem os exemplos desta skill.
+- **A aplicação tem papéis e rótulos acessíveis nos elementos do fluxo?** Se tem, `getByRole` é o caminho e o teste passa a cobrir acessibilidade de graça. Se não tem, isso é um achado a reportar antes de cair em test id para tudo.
+- **A autenticação cabe em `storageState`?** Login por formulário sim; SSO externo com MFA normalmente não, e a estratégia muda.
+- **A suíte vai rodar em paralelo no CI?** É o padrão do Playwright, e é o que transforma dependência entre testes em falha intermitente em vez de falha determinística.
 
 ## Quando usar
 
@@ -226,3 +247,19 @@ Para depurar interativamente: `npx playwright test --ui`.
 - Versionar `tests/.auth/` — contém sessão autenticada real.
 - `test.describe.serial` para mascarar dependência entre testes.
 - Declarar a suíte pronta sem rodar, ou sem mostrar o relatório ao usuário.
+
+## Pronto quando
+
+- As specs existem em `paths.ui_tests`.
+- Toda verificação de estado usa `await expect(locator)`, nunca `expect(await locator...)`.
+- Nenhum `waitForTimeout` sem um comentário explicando qual animação sem sinal observável o justifica.
+- `testIdAttribute` no config é igual ao `ui.selector_attribute` do perfil.
+- O diretório de `storageState` está ignorado no controle de versão, e as credenciais vêm de variáveis de ambiente.
+- A suíte passa com `fullyParallel`, e nenhum `test.describe.serial` é usado para mascarar dependência.
+- `npx playwright test` foi executado de verdade e o relatório (ou o trace da falha) foi mostrado ao usuário.
+
+## Skills relacionadas
+
+- **`cypress-ui-automation`** — a alternativa para o mesmo ramo. Quem responde é a skill de `ui.framework`; se o perfil disser `cypress`, é ela, e esta recusa apontando para lá.
+- **`robot-framework-api`** — o ramo de API da mesma fase. Fluxo sem interface é lá; e vale usá-la para preparar estado por requisição antes de um teste de tela.
+- **`escrita-casos-teste`** — a origem. Sem casos de teste aprovados, a automação não começa.

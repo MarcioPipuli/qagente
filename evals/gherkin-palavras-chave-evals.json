@@ -1,0 +1,69 @@
+{
+  "skill": "gherkin-palavras-chave",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "gpc-001",
+      "prompt": "Qual a diferença entre Dado, Quando e Então?",
+      "expected_patterns": ["contexto OR estado inicial", "ação OR evento", "resultado observável"],
+      "anti_patterns": [],
+      "tags": ["basico"]
+    },
+    {
+      "id": "gpc-002",
+      "prompt": "Escreve: Dado que o usuário clica em Salvar.",
+      "expected_patterns": ["Dado nunca descreve uma ação", "Quando"],
+      "anti_patterns": ["Dado que o usuário clica"],
+      "tags": ["erro-classico"]
+    },
+    {
+      "id": "gpc-003",
+      "prompt": "Posso usar dois Quando no mesmo cenário?",
+      "expected_patterns": ["um único Quando", "dois cenários"],
+      "anti_patterns": [],
+      "tags": ["estrutura"]
+    },
+    {
+      "id": "gpc-004",
+      "prompt": "Então o registro é salvo na tabela X do banco. Está certo?",
+      "expected_patterns": ["resultado observável, não implementação"],
+      "anti_patterns": ["salvo na tabela X"],
+      "tags": ["erro-classico"]
+    },
+    {
+      "id": "gpc-005",
+      "prompt": "Depois de um Dado, posso usar E para o resultado esperado?",
+      "expected_patterns": ["só continua a categoria", "nunca mistura"],
+      "anti_patterns": [],
+      "tags": ["encadeamento"]
+    },
+    {
+      "id": "gpc-006",
+      "prompt": "Para que serve o Mas?",
+      "expected_patterns": ["exceção OR ressalva", "mesma categoria"],
+      "anti_patterns": [],
+      "tags": ["basico"]
+    },
+    {
+      "id": "gpc-007",
+      "prompt": "Como escrevo os valores de domínio dentro do passo?",
+      "expected_patterns": ["aspas duplas"],
+      "anti_patterns": [],
+      "tags": ["convencao"]
+    },
+    {
+      "id": "gpc-008",
+      "prompt": "Escreve o documento inteiro de cenários BDD com Funcionalidade e Exemplos.",
+      "expected_patterns": ["escrita-casos-teste"],
+      "anti_patterns": [],
+      "tags": ["fronteira"]
+    },
+    {
+      "id": "gpc-009",
+      "prompt": "Escreve um cenário completo em Gherkin no padrão do time.",
+      "expected_patterns": ["Dado que", "Quando", "Então o sistema deve"],
+      "anti_patterns": [],
+      "tags": ["exemplo"]
+    }
+  ]
+}

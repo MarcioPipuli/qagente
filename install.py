@@ -33,6 +33,7 @@ AGENT_SRC = HARNESS_DIR / "agent.md"
 AGENTS_MD_SRC = HARNESS_DIR / "AGENTS.md"
 PROFILES_SRC = HARNESS_DIR / "profiles"
 ADAPTERS_SRC = HARNESS_DIR / "adapters"
+CONTEXTO_SRC = HARNESS_DIR / "contexto" / "contexto-projeto.md"
 
 MARKER_START = "<!-- QAGente:start -->"
 MARKER_END = "<!-- QAGente:end -->"
@@ -477,6 +478,28 @@ def install_profile(
     return profile_data
 
 
+def install_context(project_root: Path, *, force: bool, dry_run: bool) -> None:
+    """Instala o template de contexto do projeto.
+
+    Preservado como o perfil: uma vez preenchido, o conteúdo é do time, e sobrescrever
+    apagaria o trabalho de quem respondeu as perguntas. Só `--force` substitui.
+    """
+    log("\n== Contexto do projeto ==")
+    destination = project_root / ".qagente" / "contexto-projeto.md"
+    if not CONTEXTO_SRC.is_file():
+        log(f"  aviso: template não encontrado, pulado: {CONTEXTO_SRC}")
+        return
+    if destination.exists() and not force:
+        log(f"  contexto existente preservado (use --force para substituir) -> {destination}")
+        return
+    if dry_run:
+        log(f"  [dry-run] copiar contexto: {CONTEXTO_SRC} -> {destination}")
+        return
+    ensure_dir(destination.parent, dry_run=False)
+    shutil.copy2(CONTEXTO_SRC, destination)
+    log(f"  template instalado (preencha com os fatos do produto) -> {destination}")
+
+
 def install_adapter(project_root: Path, tool: str, *, force: bool, dry_run: bool) -> None:
     adapter_dir = ADAPTERS_SRC / tool
     if not adapter_dir.exists():
@@ -650,6 +673,7 @@ def main() -> None:
         effective_profile = install_profile(
             project_root, profile_path, profile_data, force=args.force, dry_run=args.dry_run
         )
+        install_context(project_root, force=args.force, dry_run=args.dry_run)
         if any(tool != "claude" for tool in tools):
             install_portable_skills(project_root, force=args.force, dry_run=args.dry_run)
         for tool in tools:
@@ -658,6 +682,8 @@ def main() -> None:
         install_io_dirs(project_root, effective_profile, dry_run=args.dry_run)
 
     log("\nConcluído. Próximos passos:")
+    if not args.is_global:
+        log("  - Preencha .qagente/contexto-projeto.md: sem ele o agente prioriza por palpite.")
     log('  - Experimente: "Analisa esse PRD e me diz o que precisamos testar."')
     log("  - Veja AGENTS.md para os princípios completos do agente.")
 

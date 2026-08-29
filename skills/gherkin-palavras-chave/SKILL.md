@@ -1,13 +1,18 @@
 ---
 name: gherkin-palavras-chave
-description: Explica e aplica corretamente as palavras-chave do Gherkin em português — Dado, Quando, Então, E, Mas — cobrindo o papel de cada uma, a gramática correta dos passos e os erros mais comuns. Use quando o usuário for escrever, revisar ou corrigir passos de cenários em Gherkin/BDD e precisar decidir qual palavra-chave usar, ou pedir para explicar a diferença entre elas. Do NOT use para estruturar o documento de cenários inteiro (Funcionalidade, Tópicos, Esquema do Cenário, Exemplos) — para isso use `escrita-casos-teste`, que consome esta skill apenas para a gramática de cada passo.
+description: Explica e aplica corretamente as palavras-chave do Gherkin em português — Dado, Quando, Então, E, Mas — cobrindo o papel de cada uma, a gramática correta dos passos e os erros mais comuns. Use quando o usuário for escrever, revisar ou corrigir passos de cenários em Gherkin/BDD e precisar decidir qual palavra-chave usar, ou pedir para explicar a diferença entre elas. Não use para estruturar o documento de cenários inteiro (Funcionalidade, Tópicos, Esquema do Cenário, Exemplos) — para isso use `escrita-casos-teste`, que consome esta skill apenas para a gramática de cada passo.
 license: CC-BY-4.0
 metadata:
   author: QAGente
   version: '1.0.0'
+  category: referencia
 ---
 
 # Palavras-chave do Gherkin (pt)
+
+<objetivo>
+Impede os quatro erros que tornam um cenário ambíguo e a automação posterior errada: ação dentro de um `Dado`, estado dentro de um `Quando`, implementação interna dentro de um `Então`, e um `E` que herda a categoria do passo anterior sem pertencer a ela. É uma referência gramatical consultada durante a Fase 2 — não produz artefato próprio.
+</objetivo>
 
 Referência gramatical para os cinco conectores usados na escrita de passos em Gherkin em português. Não define a estrutura do documento de cenários (isso é escopo de `escrita-casos-teste`) — define apenas como escrever cada linha corretamente.
 
@@ -19,6 +24,10 @@ quando não houver perfil e o idioma da conversa for português.
 
 Se o perfil definir outro idioma, avise que esta skill não se aplica e use a gramática oficial
 do Gherkin para o idioma escolhido; a estrutura do documento continua em `escrita-casos-teste`.
+
+Esta skill não lê `.qagente/contexto-projeto.md`: a gramática de Dado/Quando/Então não
+depende de nenhum fato do produto. Quem consome o contexto — terminologia do domínio,
+principalmente — é `escrita-casos-teste`, que chama esta aqui só para a forma de cada passo.
 
 ## Quando usar
 
@@ -100,6 +109,19 @@ Cenário: Validar que o campo Mnemônico fica limpo e desabilitado para tipos de
   Mas o valor anteriormente preenchido não deve ser exibido
 ```
 
+## Pronto quando
+
+- Cada passo começa por exatamente uma das cinco palavras-chave, e ela corresponde ao papel do passo.
+- Nenhum `Dado` contém ação do usuário; nenhum `Quando` contém estado; nenhum `Então` verifica estrutura interna do sistema.
+- Cada `E` continua a categoria do passo imediatamente anterior; cada `Mas` introduz ressalva dentro dessa mesma categoria.
+- Há um único `Quando` por cenário, ou uma justificativa explícita quando não houver.
+- Todo valor literal está entre aspas duplas, e o sujeito e o tempo verbal são coerentes ao longo do cenário.
+
 ## Ao usar em conjunto com `escrita-casos-teste`
 
 Esta skill cobre a gramática de cada passo. A estrutura do documento inteiro (cabeçalho, `Funcionalidade`, organização em Tópicos, quando usar `Cenário` simples vs. `Esquema do Cenário` com `Exemplos`, e a seção de Observações) é definida em `escrita-casos-teste` — aplique as duas em conjunto ao gerar um arquivo de cenários completo.
+
+## Skills relacionadas
+
+- **`escrita-casos-teste`** — quem consome esta. Vá para lá para tudo que é estrutura do documento: cabeçalho, `Funcionalidade`, tópicos, `Esquema do Cenário`, `Exemplos` e a seção de Observações. Esta skill não decide nada disso.
+- **`analise-documentacao-testes`** — se a dúvida não é qual palavra-chave usar, mas *o que* o cenário deveria verificar, o problema é de análise e está uma fase atrás.

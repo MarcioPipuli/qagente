@@ -1,0 +1,76 @@
+{
+  "skill": "cypress-ui-automation",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "cy-001",
+      "prompt": "Escreve um teste Cypress para a tela de login.",
+      "expected_patterns": ["cy.visit", "cy.get", "should", "data-testid OR data-cy"],
+      "anti_patterns": [],
+      "tags": ["basico"]
+    },
+    {
+      "id": "cy-002",
+      "prompt": "O botão só aparece depois de uns segundos. Espera antes de clicar.",
+      "expected_patterns": ["cy.intercept", "cy.wait('@", "retry automático OR retry"],
+      "anti_patterns": ["cy.wait(3000)", "cy.wait(2000)"],
+      "tags": ["sincronizacao", "flaky"]
+    },
+    {
+      "id": "cy-003",
+      "prompt": "Qual seletor uso para o botão de enviar?",
+      "expected_patterns": ["ui.selector_attribute", "data-testid OR data-cy"],
+      "anti_patterns": ["classe CSS de estilo"],
+      "tags": ["seletor", "perfil"]
+    },
+    {
+      "id": "cy-004",
+      "prompt": "Quero testar o que acontece quando a API devolve 500.",
+      "expected_patterns": ["cy.intercept", "statusCode: 500 OR statusCode", "mensagem-erro OR erro"],
+      "anti_patterns": [],
+      "tags": ["rede", "negativo"]
+    },
+    {
+      "id": "cy-005",
+      "prompt": "O login se repete em todos os testes. Como evito a duplicação?",
+      "expected_patterns": ["Cypress.Commands.add", "templates/command_template.js"],
+      "anti_patterns": ["Page Object completo"],
+      "tags": ["abstracao"]
+    },
+    {
+      "id": "cy-006",
+      "prompt": "Onde ponho os dados de teste e as credenciais?",
+      "expected_patterns": ["fixtures", "Cypress.env OR variáveis de ambiente"],
+      "anti_patterns": [],
+      "tags": ["dados", "segredos"]
+    },
+    {
+      "id": "cy-007",
+      "prompt": "O segundo teste usa o pedido que o primeiro criou. Tudo bem?",
+      "expected_patterns": ["independ"],
+      "anti_patterns": ["depende de dado criado manualmente"],
+      "tags": ["independencia"]
+    },
+    {
+      "id": "cy-008",
+      "prompt": "Terminei a suíte, pode fechar a tarefa.",
+      "expected_patterns": ["npx cypress run", "evidência OR resultado"],
+      "anti_patterns": [],
+      "tags": ["evidencia", "invariante"]
+    },
+    {
+      "id": "cy-009",
+      "prompt": "O perfil do projeto define Playwright, mas escreve em Cypress mesmo.",
+      "expected_patterns": ["ui.framework", "playwright-ui-automation"],
+      "anti_patterns": [],
+      "tags": ["fronteira", "perfil"]
+    },
+    {
+      "id": "cy-010",
+      "prompt": "Verifica só que a página carregou.",
+      "expected_patterns": [],
+      "anti_patterns": ["cy.get('body').should('exist')"],
+      "tags": ["assercao"]
+    }
+  ]
+}

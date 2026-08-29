@@ -26,7 +26,17 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Compilar
-        run: python -m py_compile install.py test_install.py
+        run: python -m py_compile install.py validate_skills.py run_evals.py test_install.py
+
+      - name: Validar as skills
+        run: python validate_skills.py --strict
+        env:
+          PYTHONIOENCODING: utf-8
+
+      - name: Evals estáticos
+        run: python run_evals.py
+        env:
+          PYTHONIOENCODING: utf-8
 
       - name: Rodar a suíte
         run: python -m unittest test_install -v

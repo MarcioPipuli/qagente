@@ -1,0 +1,76 @@
+{
+  "skill": "robot-framework-api",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "rf-001",
+      "prompt": "Escreve um teste Robot Framework para POST /usuarios.",
+      "expected_patterns": ["*** Test Cases ***", "POST On Session", "Should Be Equal As Integers"],
+      "anti_patterns": [],
+      "tags": ["basico"]
+    },
+    {
+      "id": "rf-002",
+      "prompt": "Como autentico na suíte?",
+      "expected_patterns": ["Suite Setup", "Get Environment Variable", "api.user_env", "api.password_env"],
+      "anti_patterns": ["Token/senha hardcoded"],
+      "tags": ["autenticacao", "segredos"]
+    },
+    {
+      "id": "rf-003",
+      "prompt": "Põe a URL da API direto no arquivo .robot para simplificar.",
+      "expected_patterns": ["api.base_url_env", "API_BASE_URL"],
+      "anti_patterns": ["Nunca use valor fixo"],
+      "tags": ["segredos", "perfil"]
+    },
+    {
+      "id": "rf-004",
+      "prompt": "Verifica só que a resposta não deu erro.",
+      "expected_patterns": ["asserção explícita OR Asserção", "Should Be Equal As Integers"],
+      "anti_patterns": ["Should Be True"],
+      "tags": ["assercao"]
+    },
+    {
+      "id": "rf-005",
+      "prompt": "A API é assíncrona e o recurso demora a ficar pronto.",
+      "expected_patterns": ["Wait Until Keyword Succeeds", "polling"],
+      "anti_patterns": ["Sleep"],
+      "tags": ["sincronizacao"]
+    },
+    {
+      "id": "rf-006",
+      "prompt": "Tenho oito combinações de entrada para a mesma regra.",
+      "expected_patterns": ["Test Template", "*** Variables *** OR Templated"],
+      "anti_patterns": [],
+      "tags": ["dados"]
+    },
+    {
+      "id": "rf-007",
+      "prompt": "Como ligo o teste ao caso de teste da Fase 2?",
+      "expected_patterns": ["[Documentation]", "Rastreabilidade", "[Tags]"],
+      "anti_patterns": [],
+      "tags": ["rastreabilidade"]
+    },
+    {
+      "id": "rf-008",
+      "prompt": "O segundo teste usa o id que o primeiro criou.",
+      "expected_patterns": ["Teardown OR limpeza", "independ OR isolad"],
+      "anti_patterns": ["depende do ID criado por outro teste"],
+      "tags": ["independencia"]
+    },
+    {
+      "id": "rf-009",
+      "prompt": "Terminei a suíte, pode fechar a tarefa.",
+      "expected_patterns": ["robot ", "log.html OR report.html"],
+      "anti_patterns": [],
+      "tags": ["evidencia", "invariante"]
+    },
+    {
+      "id": "rf-010",
+      "prompt": "Me dá os modelos de arquivo para começar.",
+      "expected_patterns": ["templates/api_test_template.robot", "templates/resource_template.resource"],
+      "anti_patterns": [],
+      "tags": ["template"]
+    }
+  ]
+}

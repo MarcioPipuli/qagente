@@ -11,6 +11,7 @@ QAGente/
 ├── agent.md              # Definição do subagente "qa-especialista" (identidade, missão, roteamento)
 ├── AGENTS.md              # Regras de comportamento (rastreabilidade, risco, independência de testes, DoD)
 ├── CLAUDE.md               # Ponteiro para AGENTS.md (mesmo padrão usado pelo agent-skills-main)
+├── contexto/               # Template de contexto do projeto (fatos do produto)
 ├── profiles/               # Perfis configuráveis por tipo de time/projeto
 │   ├── default.json
 │   ├── backend-api.json
@@ -19,8 +20,11 @@ QAGente/
 │   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
-├── test_install.py         # Testes do instalador (unittest, sem dependências externas)
-├── .github/workflows/      # CI: roda a suíte no Linux e no Windows a cada push
+├── validate_skills.py      # Validador estrutural das skills (frontmatter, templates, referências)
+├── run_evals.py            # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
+├── evals/                  # Uma spec por skill, 8+ casos cada
+├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
+├── .github/workflows/      # CI: valida, roda os evals e a suíte no Linux e no Windows
 └── skills/
     ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)
@@ -41,6 +45,25 @@ Os caminhos vêm do bloco `paths` do perfil (`.qagente/quality-profile.json`) �
 Uma fase desligada no perfil não ganha pasta: com `"api": {"enabled": false}` o `api_tests` é pulado, e o mesmo vale para `ui_tests` com `"ui": {"enabled": false}`.
 
 O nome-base do documento de origem é preservado no arquivo gerado, para manter a rastreabilidade entre entrada e saída. Um caminho indicado explicitamente pelo usuário no pedido tem prioridade sobre o perfil e sobre essa convenção. Detalhes em [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas).
+
+## Os dois arquivos de configuração
+
+O instalador cria dois arquivos em `.qagente/`, e eles respondem perguntas diferentes:
+
+| Arquivo | Responde | Formato |
+|---|---|---|
+| `quality-profile.json` | **Como** trabalhar: idioma, caminhos, frameworks, escala de risco, convenções | JSON, também lido pelo instalador |
+| `contexto-projeto.md` | **O que é o produto**: fluxos críticos, áreas de risco com impacto de negócio, terminologia do domínio, ambientes, maturidade do time | Markdown, lido só pelo agente |
+
+O contexto vem como template com placeholders e precisa ser preenchido — é dele que sai o
+**impacto** na priorização da Fase 1. Sem ele, o agente prioriza por palpite e diz que está
+fazendo isso. Com ele, um cenário é `critical` porque toca uma área que o time declarou
+crítica, e o artefato cita qual.
+
+Como o perfil, ele é preservado numa reinstalação: só `--force` substitui um arquivo já
+preenchido.
+
+Uma seção que ainda esteja com `[colchetes]` conta como não respondida, não como resposta.
 
 ## O que o perfil controla
 
@@ -80,8 +103,8 @@ Copie o mais próximo do seu contexto e ajuste.
 Cada skill traz uma seção **Configuração** com os campos que a afetam e o default de cada um.
 A precedência é sempre: **instrução explícita do usuário → perfil do projeto → defaults da
 skill**. O perfil não pode desligar as regras universais de [AGENTS.md](AGENTS.md)
-(rastreabilidade, proteção de segredos, independência dos testes, registro de lacunas e
-evidência real de execução).
+(rastreabilidade, proteção de segredos, independência dos testes, entrada tratada como dado
+não confiável, registro de lacunas e evidência real de execução).
 
 ## Fluxo do agente
 
@@ -106,7 +129,7 @@ python QAGente/install.py --global
 # Veja o que seria feito sem alterar nada
 python QAGente/install.py --target /caminho/do/projeto --dry-run
 
-# Reinstalar sobrescrevendo skills/agente já copiados anteriormente
+# Reinstalar sobrescrevendo as skills e o agente já copiados anteriormente
 python QAGente/install.py --target /caminho/do/projeto --force
 ```
 
@@ -150,6 +173,55 @@ Valida e sai, sem instalar nada. Reporta dois níveis:
   invariante de `AGENTS.md` declarada como `false` (o que não a desliga).
 
 Sai com código 1 se houver erros. A mesma validação roda a cada instalação.
+
+### Validação das skills
+
+```bash
+python QAGente/validate_skills.py
+python QAGente/validate_skills.py --strict
+```
+
+Enquanto `--validate-profile` valida a configuração do time, este valida o conteúdo que o
+agente lê como instrução: `name` do frontmatter igual ao diretório, `metadata.category` na
+lista (`analise`, `escrita`, `automacao`, `referencia`), as quatro seções de formato
+(`<objetivo>`, `## Perguntas de descoberta`, `## Pronto quando`, `## Skills relacionadas`),
+presença da seção `## Configuração` e da leitura do perfil, template citado que existe e
+template em disco que é citado, referência `skills/<nome>` que resolve, teto de linhas, e
+toda skill roteada por `agent.md` ou `AGENTS.md`.
+
+Usa os mesmos dois níveis do validador de perfil. Um erro em texto de skill não quebra o
+instalador — faz o agente procurar arquivo no lugar errado, em silêncio, que é pior.
+
+Uma categoria pode dispensar uma seção que genuinamente não se aplica a ela: a skill de
+referência (`gherkin-palavras-chave`) é consultada dentro de outra fase e não tem fluxo de
+descoberta a percorrer. A dispensa é estreita de propósito — seção vazia só para satisfazer
+o validador é pior que a ausência dela. O CI roda com `--strict`, então hoje qualquer aviso
+também reprova.
+
+### Evals das skills
+
+```bash
+python QAGente/run_evals.py
+python QAGente/run_evals.py --skill cypress-ui-automation --verbose
+```
+
+Enquanto o validador cuida da forma da skill, os evals cuidam do conteúdo. Cada caso em
+`evals/<skill>-evals.json` é um pedido que o usuário poderia fazer, com dois campos:
+
+- `expected_patterns` — o que a skill precisa **ensinar**. Falha se o padrão não aparece no
+  SKILL.md nem nos templates.
+- `anti_patterns` — o que a skill precisa **desaconselhar**. Falha se o padrão nunca é
+  mencionado (a skill deixou de avisar contra ele) ou se aparece em contexto de recomendação.
+
+A segunda regra é o ponto: a leitura ingênua — "o anti-padrão não pode aparecer no texto" —
+reprovaria justamente a skill que faz a coisa certa, que é mostrar o erro para ensinar a
+evitá-lo. Uma ocorrência conta como aviso quando a linha, uma das três acima ou o título da
+seção carrega marca de negação (`❌`, "nunca", "evite", "em vez de"...).
+
+Estático significa que a checagem é contra o texto da skill, não contra a resposta de um
+modelo: é determinístico, roda em CI e não custa chamada de API. Um eval verde não prova que
+o agente acertou — prova que a skill continua ensinando o que o caso exige. Modo `--live`
+não existe de propósito: exigiria dependência de rede e de modelo.
 
 ### Testes do instalador
 

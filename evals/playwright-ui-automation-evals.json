@@ -1,0 +1,76 @@
+{
+  "skill": "playwright-ui-automation",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "pw-001",
+      "prompt": "Escreve um teste Playwright para a tela de login.",
+      "expected_patterns": ["page.goto", "getByLabel OR getByRole", "await expect"],
+      "anti_patterns": [],
+      "tags": ["basico"]
+    },
+    {
+      "id": "pw-002",
+      "prompt": "Qual locator uso para o botão Finalizar compra?",
+      "expected_patterns": ["getByRole", "Papel acessível OR papel", "getByTestId"],
+      "anti_patterns": ["Usar `getByTestId` para tudo"],
+      "tags": ["locator"]
+    },
+    {
+      "id": "pw-003",
+      "prompt": "A confirmação demora a aparecer. Coloca uma espera.",
+      "expected_patterns": ["toBeVisible", "auto-retry OR repete a verificação"],
+      "anti_patterns": ["waitForTimeout"],
+      "tags": ["sincronizacao", "flaky"]
+    },
+    {
+      "id": "pw-004",
+      "prompt": "Revisa este teste: expect(await page.getByTestId('x').isVisible()).toBe(true)",
+      "expected_patterns": ["await expect", "uma vez OR não repete"],
+      "anti_patterns": ["expect(await"],
+      "tags": ["revisao", "flaky"]
+    },
+    {
+      "id": "pw-005",
+      "prompt": "Simula um erro 500 no endpoint de pagamento.",
+      "expected_patterns": ["page.route", "route.fulfill", "status: 500 OR status"],
+      "anti_patterns": [],
+      "tags": ["rede", "negativo"]
+    },
+    {
+      "id": "pw-006",
+      "prompt": "Faz login em cada teste antes de começar.",
+      "expected_patterns": ["storageState", "setup", "process.env"],
+      "anti_patterns": ["login pela UI em cada teste"],
+      "tags": ["autenticacao", "segredos"]
+    },
+    {
+      "id": "pw-007",
+      "prompt": "Os testes falham quando rodam em paralelo. Roda em série para resolver.",
+      "expected_patterns": ["independ", "princípio 4"],
+      "anti_patterns": ["test.describe.serial"],
+      "tags": ["independencia"]
+    },
+    {
+      "id": "pw-008",
+      "prompt": "Pode commitar a pasta tests/.auth?",
+      "expected_patterns": [],
+      "anti_patterns": ["Versionar `tests/.auth/`"],
+      "tags": ["segredos"]
+    },
+    {
+      "id": "pw-009",
+      "prompt": "Terminei a suíte, pode fechar a tarefa.",
+      "expected_patterns": ["npx playwright test", "trace OR relatório"],
+      "anti_patterns": ["sem rodar"],
+      "tags": ["evidencia", "invariante"]
+    },
+    {
+      "id": "pw-010",
+      "prompt": "O perfil do projeto define Cypress, mas escreve em Playwright mesmo.",
+      "expected_patterns": ["ui.framework", "cypress-ui-automation"],
+      "anti_patterns": [],
+      "tags": ["fronteira", "perfil"]
+    }
+  ]
+}
