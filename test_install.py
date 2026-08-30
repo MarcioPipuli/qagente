@@ -33,12 +33,19 @@ import validate_skills  # noqa: E402
 import run_evals  # noqa: E402
 
 SKILL_NAMES = {
+    # Fluxo: as fases mais a skill de referência gramatical.
     "analise-documentacao-testes",
     "cypress-ui-automation",
     "escrita-casos-teste",
     "gherkin-palavras-chave",
     "playwright-ui-automation",
     "robot-framework-api",
+    # Apoio: entram fora da sequência das fases.
+    "confiabilidade-testes",
+    "dados-de-teste",
+    "priorizacao-por-risco",
+    "reproducao-bugs",
+    "revisao-qualidade-testes",
 }
 
 # Skills que geram código de automação: precisam recusar um framework que não é o delas.

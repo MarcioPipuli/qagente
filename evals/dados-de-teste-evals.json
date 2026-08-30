@@ -1,0 +1,90 @@
+{
+  "skill": "dados-de-teste",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "dt-001",
+      "prompt": "Uso arquivo JSON ou função para gerar os dados dos testes?",
+      "expected_patterns": ["ciclo de vida", "referência", "fábrica"],
+      "anti_patterns": [],
+      "tags": ["decisao"]
+    },
+    {
+      "id": "dt-002",
+      "prompt": "Os testes se atrapalham quando rodam juntos.",
+      "expected_patterns": ["paralelismo", "ordem embaralhada", "cria exatamente o que precisa"],
+      "anti_patterns": ["Dado compartilhado e mutável"],
+      "tags": ["isolamento"]
+    },
+    {
+      "id": "dt-003",
+      "prompt": "Vamos copiar o banco de produção pra homologação pra testar com dado realista.",
+      "expected_patterns": ["LGPD", "anonimiz"],
+      "anti_patterns": ["Dado de produção sem anonimização"],
+      "tags": ["privacidade"]
+    },
+    {
+      "id": "dt-004",
+      "prompt": "Como anonimizo sem quebrar as relações entre as tabelas?",
+      "expected_patterns": ["semente fixa", "registros pais", "transação"],
+      "anti_patterns": ["guarde a tabela de correspondência"],
+      "tags": ["privacidade", "integridade"]
+    },
+    {
+      "id": "dt-005",
+      "prompt": "Posso gerar nomes aleatórios pra massa ficar variada?",
+      "expected_patterns": ["semente", "data fixa"],
+      "anti_patterns": ["Math.random()", "Massa não determinística"],
+      "tags": ["determinismo"]
+    },
+    {
+      "id": "dt-006",
+      "prompt": "Meu script de seed duplica os países toda vez que roda.",
+      "expected_patterns": ["ON CONFLICT", "chave natural", "idempotente"],
+      "anti_patterns": ["Apagar tudo e inserir de novo"],
+      "tags": ["semeadura"]
+    },
+    {
+      "id": "dt-007",
+      "prompt": "Como limpo os dados depois dos testes de ponta a ponta?",
+      "expected_patterns": ["Rollback de transação", "ordem inversa da criação", "bloco pós-uso"],
+      "anti_patterns": ["Sem estratégia de limpeza"],
+      "tags": ["limpeza"]
+    },
+    {
+      "id": "dt-008",
+      "prompt": "Onde coloco o usuário e a senha que os testes usam?",
+      "expected_patterns": ["api.user_env", "api.password_env", "variáveis de ambiente"],
+      "anti_patterns": ["Credencial dentro do arquivo de massa"],
+      "tags": ["seguranca", "perfil"]
+    },
+    {
+      "id": "dt-009",
+      "prompt": "Posso usar o id 1 no teste, já existe no banco.",
+      "expected_patterns": ["sequência de fábrica", "colide em paralelo"],
+      "anti_patterns": ["Identificador fixo no teste"],
+      "tags": ["isolamento"]
+    },
+    {
+      "id": "dt-010",
+      "prompt": "Vou criar um arquivo de fixture pra cada combinação de usuário.",
+      "expected_patterns": ["Variantes nomeadas", "sobrescrita"],
+      "anti_patterns": ["Explosão de arquivos de fixture", "Massa superespecificada"],
+      "tags": ["fabrica"]
+    },
+    {
+      "id": "dt-011",
+      "prompt": "Preciso de massa pros casos de borda que levantamos na análise.",
+      "expected_patterns": ["ano bissexto", "valor limite", "analise-documentacao-testes"],
+      "anti_patterns": [],
+      "tags": ["borda", "fronteira"]
+    },
+    {
+      "id": "dt-012",
+      "prompt": "Tem esqueleto pronto pra Cypress e pra Robot Framework?",
+      "expected_patterns": ["templates/fabrica-dados.js", "templates/massa_template.resource"],
+      "anti_patterns": [],
+      "tags": ["template", "perfil"]
+    }
+  ]
+}

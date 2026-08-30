@@ -1,0 +1,90 @@
+{
+  "skill": "priorizacao-por-risco",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "pbr-001",
+      "prompt": "Monta uma matriz de risco para o módulo de checkout.",
+      "expected_patterns": ["impacto × probabilidade", "Composto", "zona"],
+      "anti_patterns": [],
+      "tags": ["estrutura"]
+    },
+    {
+      "id": "pbr-002",
+      "prompt": "Como pontuo o impacto e a probabilidade de cada item?",
+      "expected_patterns": ["Catastrófico", "Desprezível", "Frequente", "separadamente"],
+      "anti_patterns": [],
+      "tags": ["pontuacao"]
+    },
+    {
+      "id": "pbr-003",
+      "prompt": "A pontuação virou um número. Como isso vira a prioridade que a Fase 1 usa?",
+      "expected_patterns": ["risk_levels", "critical", "Crítica", "analise-documentacao-testes"],
+      "anti_patterns": [],
+      "tags": ["perfil", "fronteira"]
+    },
+    {
+      "id": "pbr-004",
+      "prompt": "O item de pagamento ficou com 20. O que mais preciso produzir para ele?",
+      "expected_patterns": ["Raio de impacto", "Forma de detecção", "Mitigação atual", "Lacuna"],
+      "anti_patterns": [],
+      "tags": ["modo-de-falha"]
+    },
+    {
+      "id": "pbr-005",
+      "prompt": "De onde sai a nota de impacto de cada item?",
+      "expected_patterns": [".qagente/contexto-projeto.md", "área de risco"],
+      "anti_patterns": [],
+      "tags": ["contexto", "rastreabilidade"]
+    },
+    {
+      "id": "pbr-006",
+      "prompt": "A matriz está pronta. Como ela muda o que a gente testa?",
+      "expected_patterns": ["cobertura prescrita", "api.framework", "ui.framework"],
+      "anti_patterns": ["Teatro de risco"],
+      "tags": ["cobertura"]
+    },
+    {
+      "id": "pbr-007",
+      "prompt": "Tivemos um incidente em produção ontem. E agora?",
+      "expected_patterns": ["48 horas", "quase-incidente"],
+      "anti_patterns": ["Matriz feita uma vez"],
+      "tags": ["reavaliacao"]
+    },
+    {
+      "id": "pbr-008",
+      "prompt": "Queremos 90% de cobertura em tudo. Está certo?",
+      "expected_patterns": ["90%"],
+      "anti_patterns": ["Testar tudo igual"],
+      "tags": ["priorizacao"]
+    },
+    {
+      "id": "pbr-009",
+      "prompt": "Esse bug é catastrófico, então é o mais prioritário, certo?",
+      "expected_patterns": ["composto"],
+      "anti_patterns": ["Confundir severidade com prioridade", "Ancorar no risco histórico"],
+      "tags": ["priorizacao", "decisao"]
+    },
+    {
+      "id": "pbr-010",
+      "prompt": "Como descubro quais partes do código têm probabilidade alta de falhar?",
+      "expected_patterns": ["git log --since", "rotatividade"],
+      "anti_patterns": [],
+      "tags": ["evidencia"]
+    },
+    {
+      "id": "pbr-011",
+      "prompt": "Onde salvo a matriz e em que formato?",
+      "expected_patterns": ["paths.risk_matrix", "paths.scenarios", "templates/matriz-risco.md"],
+      "anti_patterns": [],
+      "tags": ["perfil", "saida"]
+    },
+    {
+      "id": "pbr-012",
+      "prompt": "O perfil do projeto só declara três níveis de risco. O que faço?",
+      "expected_patterns": ["risk_levels", "colapse", "nunca invente"],
+      "anti_patterns": [],
+      "tags": ["perfil"]
+    }
+  ]
+}

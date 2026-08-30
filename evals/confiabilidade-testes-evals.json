@@ -1,0 +1,90 @@
+{
+  "skill": "confiabilidade-testes",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "cft-001",
+      "prompt": "Esse teste falha de vez em quando. Corrige.",
+      "expected_patterns": ["Dependência de dado", "Dependência de ordem", "Sensibilidade a data", "classificar"],
+      "anti_patterns": [],
+      "tags": ["classificacao"]
+    },
+    {
+      "id": "cft-002",
+      "prompt": "Como decido qual é a causa raiz da oscilação?",
+      "expected_patterns": ["Passa quando roda sozinho", "classificação padrão"],
+      "anti_patterns": ["Tratar toda oscilação igual"],
+      "tags": ["arvore-decisao"]
+    },
+    {
+      "id": "cft-003",
+      "prompt": "Nossos seletores quebram toda semana. Como priorizo o que trocar?",
+      "expected_patterns": ["ui.selector_attribute", "3,5", "XPath posicional"],
+      "anti_patterns": ["Troca silenciosa de seletor"],
+      "tags": ["seletores"]
+    },
+    {
+      "id": "cft-004",
+      "prompt": "A gente configurou 3 tentativas e agora passa. Resolvido?",
+      "expected_patterns": ["detecção"],
+      "anti_patterns": ["Só repete"],
+      "tags": ["decisao"]
+    },
+    {
+      "id": "cft-005",
+      "prompt": "Adiciono uma espera maior antes do clique pra estabilizar?",
+      "expected_patterns": ["resposta interceptada", "estado atingido"],
+      "anti_patterns": ["cy.wait(3000)", "Sleep"],
+      "tags": ["tempo"]
+    },
+    {
+      "id": "cft-006",
+      "prompt": "Vou pular esse teste até alguém ter tempo de olhar.",
+      "expected_patterns": ["14 dias", "ticket", "5%"],
+      "anti_patterns": ["test.skip", "Quarentena permanente", "Desativar o teste instável para sempre"],
+      "tags": ["quarentena"]
+    },
+    {
+      "id": "cft-007",
+      "prompt": "O teste começou a receber 401 no meio da execução.",
+      "expected_patterns": ["401", "409", "429", "fixture"],
+      "anti_patterns": [],
+      "tags": ["massa"]
+    },
+    {
+      "id": "cft-008",
+      "prompt": "Troquei o seletor e o teste ficou verde. Fecho?",
+      "expected_patterns": ["checagem de intenção", "Papel de acessibilidade mudou", "reverta"],
+      "anti_patterns": [],
+      "tags": ["intencao"]
+    },
+    {
+      "id": "cft-009",
+      "prompt": "A máquina da CI estava sobrecarregada e o teste falhou.",
+      "expected_patterns": ["disputa de recurso", "diagnóstico"],
+      "anti_patterns": ["Contar falha de ambiente como oscilação"],
+      "tags": ["ambiente", "metrica"]
+    },
+    {
+      "id": "cft-010",
+      "prompt": "Apliquei a correção. Como provo que resolveu?",
+      "expected_patterns": ["50 execuções", "zero falhas", "saída real"],
+      "anti_patterns": ["Declarar corrigido sem repetir a execução"],
+      "tags": ["evidencia"]
+    },
+    {
+      "id": "cft-011",
+      "prompt": "Quero montar um framework de autocorreção de seletores antes de tudo.",
+      "expected_patterns": ["seletor resiliente", "espera correta"],
+      "anti_patterns": ["Construir automação de cura antes de ter teste estável"],
+      "tags": ["ordem"]
+    },
+    {
+      "id": "cft-012",
+      "prompt": "Onde estão os testes e onde registro a quarentena?",
+      "expected_patterns": ["paths.ui_tests", "paths.api_tests", "ui.framework", "templates/registro-quarentena.md"],
+      "anti_patterns": [],
+      "tags": ["perfil", "saida"]
+    }
+  ]
+}

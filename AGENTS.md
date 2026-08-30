@@ -139,6 +139,20 @@ Saída: spec executável no framework escolhido, com seletores estáveis (atribu
 
 **Critério de saída de cada fase**: o usuário confirmou o artefato (ou você tem alta confiança de que reflete fielmente a documentação/casos de origem) antes de avançar para a próxima fase. **Exceção**: a transição de Casos de Teste (Fase 2) para Automação (Fase 3a/3b) sempre exige aprovação explícita do usuário — "alta confiança" não é suficiente para pular essa aprovação.
 
+## Skills de apoio (fora da sequência das fases)
+
+Cinco skills não são fases: elas entram por uma porta diferente, quando o pedido do usuário não é "transforme este requisito em teste". Todas continuam sujeitas às regras universais deste documento — inclusive a aprovação explícita antes de gerar código de automação.
+
+| Skill | Entra quando | Relação com as fases |
+|---|---|---|
+| `skills/priorizacao-por-risco` | O time precisa decidir onde concentrar esforço, ou recalibrar prioridade depois de um incidente | Roda **antes** da Fase 1; a matriz alimenta a coluna de prioridade dos cenários |
+| `skills/reproducao-bugs` | A origem é um **defeito**, não um requisito: reproduzir, achar o commit que quebrou, escrever o teste de regressão | Substitui a Fase 1 nesse caminho; a reprodução mínima é o artefato que o usuário aprova antes da automação |
+| `skills/revisao-qualidade-testes` | O pedido é avaliar testes que **já existem** — revisão de pull request, auditoria de suíte, testabilidade | Roda **depois** das Fases 3a/3b, inclusive sobre o que este próprio agente gerou |
+| `skills/confiabilidade-testes` | Um teste oscila, ou a suíte perdeu a confiança do time | Corrige o que as Fases 3a/3b produziram; classificar a causa raiz vem antes de corrigir |
+| `skills/dados-de-teste` | O problema é a massa: testes que se atrapalham, dado não determinístico, limpeza, anonimização | Camada de suporte às Fases 3a/3b; materializa o princípio 4 deste documento |
+
+Duas fronteiras valem para todas: nenhuma delas altera código de aplicação (problema de testabilidade é **achado a reportar**), e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da execução.
+
 ## Entradas e saídas (convenção de pastas)
 
 Salvo instrução explícita do usuário em contrário, use os caminhos definidos no bloco `paths` de `.qagente/quality-profile.json` — o instalador cria exatamente essas pastas, então elas devem existir no projeto. Sem perfil, use estes defaults na raiz do projeto:
@@ -148,6 +162,13 @@ Salvo instrução explícita do usuário em contrário, use os caminhos definido
 - `saida/casos-de-teste/` — resultado da Fase 2 (documentos Gherkin/BDD), como arquivo `.md`.
 - `saida/robot/` — resultado da Fase 3a (suíte Robot Framework: `.robot`/`.resource`).
 - `saida/cypress/` — resultado da Fase 3b (specs, page objects e comandos Cypress).
+
+As skills de apoio produzem artefatos que o instalador não cria, porque não correspondem a uma fase. Elas usam a chave de perfil correspondente quando ela existir e, na falta dela, criam a própria pasta:
+
+- `paths.risk_matrix`, senão `paths.scenarios` — matriz de risco de `skills/priorizacao-por-risco`.
+- `paths.reviews`, senão `paths.test_cases` — relatórios de `skills/revisao-qualidade-testes` e de `skills/confiabilidade-testes`.
+- `paths.test_cases` — relato de reprodução de `skills/reproducao-bugs`; o teste de regressão em si vai para `paths.api_tests` ou `paths.ui_tests`, conforme a camada.
+- `paths.api_tests` / `paths.ui_tests` — fábricas e massa de `skills/dados-de-teste`, junto dos testes que as consomem.
 
 Regras:
 

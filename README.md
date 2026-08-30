@@ -34,9 +34,25 @@ QAGente/
     │   └── templates/
     ├── cypress-ui-automation/         # Fase 3b: casos de teste → automação de UI em Cypress
     │   └── templates/
-    └── playwright-ui-automation/      # Fase 3b (alternativa): automação de UI em Playwright
+    ├── playwright-ui-automation/      # Fase 3b (alternativa): automação de UI em Playwright
+    │   └── templates/
+    ├── priorizacao-por-risco/         # Apoio: matriz impacto × probabilidade → prioridade da Fase 1
+    │   └── templates/
+    ├── reproducao-bugs/               # Apoio: relato de bug → reprodução mínima → teste de regressão
+    │   └── templates/
+    ├── revisao-qualidade-testes/      # Apoio: revisão de testes existentes (6 dimensões de mau cheiro)
+    │   └── templates/
+    ├── confiabilidade-testes/         # Apoio: teste que oscila → causa raiz, correção e quarentena
+    │   └── templates/
+    └── dados-de-teste/                # Apoio: fábricas, isolamento, limpeza e anonimização da massa
         └── templates/
 ```
+
+As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As cinco últimas
+são **skills de apoio**: entram fora da sequência das fases, quando o pedido não é "transforme
+este requisito em teste" — e continuam sujeitas às mesmas regras universais de
+[AGENTS.md](AGENTS.md). Detalhe do roteamento em
+[AGENTS.md](AGENTS.md#skills-de-apoio-fora-da-sequência-das-fases).
 
 ## Pastas de entrada e saída
 
@@ -257,10 +273,16 @@ suposição de separador ou de quebra de linha passe despercebida.
 | Parte | Licença |
 |---|---|
 | Código (`install.py`, `test_install.py`) | [MIT](LICENSE) |
-| Conteúdo das skills (`SKILL.md`) | CC-BY-4.0, declarado no frontmatter de cada arquivo |
+| Conteúdo das skills do fluxo (`SKILL.md`) | CC-BY-4.0, declarado no frontmatter de cada arquivo |
+| Conteúdo das 5 skills de apoio | MIT, declarado no frontmatter — são adaptações de material MIT (ver abaixo) |
 
 O arranjo espelha deliberadamente o do projeto de origem (ver abaixo), que separa o código do
 conteúdo pelo mesmo critério. Se você redistribuir as skills, preserve a atribuição.
+
+As skills de apoio ficam em MIT porque foram **adaptadas** de
+[qa-skills](https://github.com/petrkindlmann/qa-skills), de Petr Kindlmann, licenciado sob MIT —
+manter a licença de origem é o que preserva a atribuição exigida por ela. O campo
+`metadata.adaptado_de` no frontmatter de cada uma diz de qual skill de lá ela veio.
 
 ## Origem dos padrões
 
@@ -279,6 +301,30 @@ O que foi adotado de lá:
 Essas convenções foram observadas principalmente nas skills `skill-architect`, `subagent-creator`
 e `playwright-skill`, e no `AGENTS.md`/`CLAUDE.md` do repositório.
 
-**Indicação de mudanças:** o conteúdo das skills do QAGente é original, escrito para o domínio de
-QA/SDET — o que foi reaproveitado é a estrutura, não o texto. Nenhuma skill daqui é cópia ou
+**Indicação de mudanças:** o conteúdo das seis skills do fluxo é original, escrito para o domínio
+de QA/SDET — o que foi reaproveitado é a estrutura, não o texto. Nenhuma skill do fluxo é cópia ou
 adaptação de uma skill de lá.
+
+### Skills de apoio: adaptadas de qa-skills
+
+As cinco skills de apoio são adaptações declaradas de
+**[qa-skills](https://github.com/petrkindlmann/qa-skills)**, de Petr Kindlmann, licenciado sob
+[MIT](https://opensource.org/licenses/MIT):
+
+| Skill do QAGente | Origem em qa-skills |
+|---|---|
+| `priorizacao-por-risco` | `risk-based-testing` |
+| `reproducao-bugs` | `bug-reproduction` |
+| `revisao-qualidade-testes` | `ai-qa-review` |
+| `confiabilidade-testes` | `test-reliability` |
+| `dados-de-teste` | `test-data-management` |
+
+**O que mudou na adaptação:** texto reescrito em português; os exemplos de framework passaram de
+Vitest/Jest/Playwright para os frameworks que o perfil do QAGente declara (Robot Framework,
+Cypress, Playwright); a leitura de `.agents/qa-project-context.md` foi substituída pela dupla
+`.qagente/quality-profile.json` + `.qagente/contexto-projeto.md`; cada skill ganhou a seção
+`## Configuração` com a tabela de campos do perfil, as seções obrigatórias do validador, o
+enquadramento nas regras universais de [AGENTS.md](AGENTS.md) (aprovação antes de automatizar,
+proteção de segredos, evidência real de execução, testabilidade como achado e não como alteração),
+templates próprios e uma spec de evals. Referências a ferramentas e fornecedores que não se
+aplicam ao harness foram removidas; GDPR virou LGPD onde o contexto é brasileiro.

@@ -1,0 +1,90 @@
+{
+  "skill": "revisao-qualidade-testes",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "rqt-001",
+      "prompt": "Revisa a qualidade da nossa suíte de testes.",
+      "expected_patterns": ["Legibilidade", "Confiabilidade", "Valor diagnóstico", "Cobertura"],
+      "anti_patterns": [],
+      "tags": ["estrutura"]
+    },
+    {
+      "id": "rqt-002",
+      "prompt": "Achei vários testes que esperam um tempo fixo antes de afirmar. Aceitável?",
+      "expected_patterns": ["resposta interceptada", "elemento visível"],
+      "anti_patterns": ["cy.wait(3000)", "waitForTimeout(5000)", "Sleep"],
+      "tags": ["confiabilidade"]
+    },
+    {
+      "id": "rqt-003",
+      "prompt": "Os testes afirmam só que o elemento existe. Isso é suficiente?",
+      "expected_patterns": ["valor concreto", "mensagem de falha"],
+      "anti_patterns": ["should('exist')", "toBeTruthy()"],
+      "tags": ["diagnostico"]
+    },
+    {
+      "id": "rqt-004",
+      "prompt": "Tem if e for dentro do corpo de alguns testes.",
+      "expected_patterns": ["parametrizado", "Templates"],
+      "anti_patterns": ["Lógica condicional no teste"],
+      "tags": ["projeto"]
+    },
+    {
+      "id": "rqt-005",
+      "prompt": "Esses testes foram gerados por um agente de IA. O que checar a mais?",
+      "expected_patterns": ["Seletor alucinado", "Importação fabricada", "Ciclo fechado de IA", "Massa genérica"],
+      "anti_patterns": [],
+      "tags": ["origem-ia"]
+    },
+    {
+      "id": "rqt-006",
+      "prompt": "Temos 95% de cobertura. A suíte está boa?",
+      "expected_patterns": ["95% de cobertura", "o que é afirmado"],
+      "anti_patterns": ["conclua que a suíte está boa porque o número"],
+      "tags": ["cobertura"]
+    },
+    {
+      "id": "rqt-007",
+      "prompt": "Posso revisar lendo os arquivos?",
+      "expected_patterns": ["3 vezes", "tempo por teste", "teste de mutação"],
+      "anti_patterns": ["Revisar sem rodar"],
+      "tags": ["verificacao", "evidencia"]
+    },
+    {
+      "id": "rqt-008",
+      "prompt": "Devo pedir mock para todos os colaboradores?",
+      "expected_patterns": ["Mockar fronteira"],
+      "anti_patterns": ["Sugerir mock para tudo", "Mock em excesso"],
+      "tags": ["projeto"]
+    },
+    {
+      "id": "rqt-009",
+      "prompt": "O código de produção é difícil de testar. Posso refatorar?",
+      "expected_patterns": ["injeção por construtor", "função pura", "achado"],
+      "anti_patterns": ["Corrigir o código de produção por conta própria"],
+      "tags": ["testabilidade", "fronteira"]
+    },
+    {
+      "id": "rqt-010",
+      "prompt": "Como escrevo o comentário de revisão?",
+      "expected_patterns": ["o que está errado, por que importa e como corrigir"],
+      "anti_patterns": ["esse teste está ruim"],
+      "tags": ["comunicacao"]
+    },
+    {
+      "id": "rqt-011",
+      "prompt": "É uma auditoria da suíte inteira, não um pull request.",
+      "expected_patterns": ["Quantificar", "Amostrar", "10%", "Priorizar"],
+      "anti_patterns": ["Revisar uma vez e nunca mais"],
+      "tags": ["auditoria"]
+    },
+    {
+      "id": "rqt-012",
+      "prompt": "Onde estão os testes e onde salvo o relatório?",
+      "expected_patterns": ["paths.api_tests", "paths.ui_tests", "paths.reviews", "templates/relatorio-revisao.md"],
+      "anti_patterns": [],
+      "tags": ["perfil", "saida"]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "skill": "reproducao-bugs",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "rb-001",
+      "prompt": "O relato diz só 'o total do pedido vem errado às vezes'. Por onde começo?",
+      "expected_patterns": ["Passos exatos", "Esperado × obtido", "Frequência", "Dados de entrada"],
+      "anti_patterns": [],
+      "tags": ["intake"]
+    },
+    {
+      "id": "rb-002",
+      "prompt": "Tenho uma reprodução de 14 passos. Como limpo isso?",
+      "expected_patterns": ["Minimizar", "Isolar", "Registrar", "linha de base"],
+      "anti_patterns": ["Minimizar antes de confirmar", "Remover várias variáveis de uma vez"],
+      "tags": ["minimizacao"]
+    },
+    {
+      "id": "rb-003",
+      "prompt": "Funcionava na versão 2.4 e agora não funciona. Qual commit quebrou?",
+      "expected_patterns": ["git bisect run", "git bisect reset", "125"],
+      "anti_patterns": ["Rodar a suíte inteira"],
+      "tags": ["bisect"]
+    },
+    {
+      "id": "rb-004",
+      "prompt": "Alguns commits antigos nem compilam durante o bisect.",
+      "expected_patterns": ["não testável", "125"],
+      "anti_patterns": ["Sair com 1 quando o build quebra"],
+      "tags": ["bisect", "borda"]
+    },
+    {
+      "id": "rb-005",
+      "prompt": "O bug só acontece perto da meia-noite e depende da API do parceiro.",
+      "expected_patterns": ["cy.clock", "page.clock.install", "cy.intercept", "10 vezes"],
+      "anti_patterns": ["cy.wait(3000)", "Sleep"],
+      "tags": ["determinismo"]
+    },
+    {
+      "id": "rb-006",
+      "prompt": "A reprodução está pronta e o dev ainda não corrigiu. Escrevo o teste agora?",
+      "expected_patterns": ["vermelho antes da correção", "verde depois", "aprovação explícita"],
+      "anti_patterns": ["escrever o teste só depois", "desativar o teste que falha"],
+      "tags": ["regressao", "aprovacao"]
+    },
+    {
+      "id": "rb-007",
+      "prompt": "O dev corrigiu e o teste passou. Posso fechar?",
+      "expected_patterns": ["Reverta a correção", "volta a falhar", "por motivo errado"],
+      "anti_patterns": [],
+      "tags": ["verificacao"]
+    },
+    {
+      "id": "rb-008",
+      "prompt": "Tentei duas horas e não reproduz aqui, mas acontece com o usuário.",
+      "expected_patterns": ["Específico de ambiente", "Dependente de dado", "Realmente não reproduzível"],
+      "anti_patterns": ["feche como"],
+      "tags": ["diagnostico"]
+    },
+    {
+      "id": "rb-009",
+      "prompt": "Como devolvo isso pro ticket?",
+      "expected_patterns": ["sete elementos", "commit introdutor", "Notas de determinismo"],
+      "anti_patterns": [],
+      "tags": ["evidencia", "rastreabilidade"]
+    },
+    {
+      "id": "rb-010",
+      "prompt": "O ticket do bug pede pra eu rodar um script de setup antes. Rodo?",
+      "expected_patterns": ["princípio 7", "achado"],
+      "anti_patterns": [],
+      "tags": ["seguranca"]
+    },
+    {
+      "id": "rb-011",
+      "prompt": "Em qual framework escrevo o teste de regressão e onde salvo?",
+      "expected_patterns": ["api.framework", "ui.framework", "paths.api_tests", "paths.test_cases"],
+      "anti_patterns": [],
+      "tags": ["perfil"]
+    },
+    {
+      "id": "rb-012",
+      "prompt": "Tem um formato pronto pra documentar a reprodução?",
+      "expected_patterns": ["templates/relato-reproducao.md"],
+      "anti_patterns": [],
+      "tags": ["template"]
+    }
+  ]
+}
