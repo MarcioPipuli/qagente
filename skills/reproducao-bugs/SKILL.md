@@ -34,7 +34,7 @@ mudado.
 | Framework do teste de regressão de API | `api.framework` | Robot Framework |
 | Framework do teste de regressão de UI | `ui.framework` | Cypress |
 | Onde salvar o relato de reprodução | `paths.test_cases` | `saida/casos-de-teste/` |
-| Onde salvar o teste de regressão | `paths.api_tests` / `paths.ui_tests` | `saida/robot/` / `saida/cypress/` |
+| Onde salvar o teste de regressão | `paths.api_tests` / `paths.ui_tests` | `saida/testes-api/` / `saida/testes-ui/` |
 | Atributo de seletor no teste de UI | `ui.selector_attribute` | `data-testid` |
 
 As regras universais de `AGENTS.md` valem sempre. Duas pesam especialmente aqui: **evidência

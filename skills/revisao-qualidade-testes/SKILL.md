@@ -31,8 +31,8 @@ diga isso no relatório.
 | Decisão desta skill | Campo do perfil | Default |
 |---|---|---|
 | Idioma do relatório | `language` | idioma da conversa |
-| Onde estão os testes de API a revisar | `paths.api_tests` | `saida/robot/` |
-| Onde estão os testes de UI a revisar | `paths.ui_tests` | `saida/cypress/` |
+| Onde estão os testes de API a revisar | `paths.api_tests` | `saida/testes-api/` |
+| Onde estão os testes de UI a revisar | `paths.ui_tests` | `saida/testes-ui/` |
 | Convenções esperadas nos testes de UI | `ui.framework`, `ui.selector_attribute`, `ui.language` | Cypress, `data-testid`, JavaScript |
 | Convenções esperadas nos testes de API | `api.framework` | Robot Framework |
 | Onde salvar o relatório | `paths.reviews`, senão `paths.test_cases` | `saida/revisoes/` |

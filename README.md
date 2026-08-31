@@ -4,6 +4,23 @@
 
 Harness de um agente especialista em Qualidade de Software (QA/SDET), extraído dos padrões de qualidade e estrutura observados no repositório [`agent-skills-main`](../agent-skills-main) (Tech Leads Club — formato `SKILL.md`, convenção `AGENTS.md`/`CLAUDE.md`, definição de subagente).
 
+> ### 👤 Vai usar o agente? Comece por aqui
+>
+> **[PRIMEIROS-PASSOS-QAGENTE.md](PRIMEIROS-PASSOS-QAGENTE.md)** — manual do usuário: 15 passos
+> numerados, do "tenho Python instalado?" até o primeiro teste pronto, em linguagem sem jargão.
+>
+> Este README é a referência do harness: serve a quem instala, configura ou mantém o projeto.
+
+## Documentação
+
+| Documento | Para quem |
+|---|---|
+| [PRIMEIROS-PASSOS-QAGENTE.md](PRIMEIROS-PASSOS-QAGENTE.md) | **Quem vai usar o agente.** Manual do usuário em 15 passos |
+| [GUIA-DE-USO-QAGENTE.md](GUIA-DE-USO-QAGENTE.md) | Quem já usa e quer referência: catálogo de pedidos, fluxos, checklists de revisão, solução de problemas |
+| [DOCUMENTACAO-TECNICA-QAGENTE.md](DOCUMENTACAO-TECNICA-QAGENTE.md) | Quem quer entender o funcionamento interno ou estender o harness |
+| Este README | Referência do instalador, dos perfis e da validação |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Quem mantém o harness: invariantes, método de alteração, gate obrigatório |
+
 ## O que tem aqui
 
 ```
@@ -26,6 +43,9 @@ QAGente/
 ├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
 ├── .github/workflows/      # CI: valida, roda os evals e a suíte no Linux e no Windows
 ├── CONTRIBUTING.md         # Regras para quem mantém o harness (invariantes, validação, instalação real)
+├── PRIMEIROS-PASSOS-QAGENTE.md      # Manual do usuário: 15 passos, da instalação ao primeiro teste
+├── GUIA-DE-USO-QAGENTE.md           # Referência de uso no dia a dia
+├── DOCUMENTACAO-TECNICA-QAGENTE.md  # Como o harness funciona por dentro
 └── skills/
     ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)
@@ -57,7 +77,7 @@ este requisito em teste" — e continuam sujeitas às mesmas regras universais d
 
 ## Pastas de entrada e saída
 
-Os caminhos vêm do bloco `paths` do perfil (`.qagente/quality-profile.json`) — o instalador cria exatamente as pastas que o perfil declara, e o agente lê e grava nelas. Quando o perfil não traz `paths` utilizável, valem os defaults do QAGente: entrada em `entrada/` e saída em `saida/cenarios/`, `saida/casos-de-teste/`, `saida/robot/` e `saida/cypress/` (uma subpasta por fase).
+Os caminhos vêm do bloco `paths` do perfil (`.qagente/quality-profile.json`) — o instalador cria exatamente as pastas que o perfil declara, e o agente lê e grava nelas. Quando o perfil não traz `paths` utilizável, valem os defaults do QAGente: entrada em `entrada/` e saída em `saida/cenarios/`, `saida/casos-de-teste/`, `saida/testes-api/` e `saida/testes-ui/` (uma subpasta por fase).
 
 Uma fase desligada no perfil não ganha pasta: com `"api": {"enabled": false}` o `api_tests` é pulado, e o mesmo vale para `ui_tests` com `"ui": {"enabled": false}`.
 
@@ -138,26 +158,26 @@ A função principal do agente é entregar Cenários e Casos de Teste (as duas p
 
 ```bash
 # Instala no diretório atual
-python QAGente/install.py --target /caminho/do/projeto --tool claude --profile default
+python install.py --target /caminho/do/projeto --tool claude --profile default
 
 # Instala globalmente (~/.claude, disponível em todos os projetos — regras de AGENTS.md/CLAUDE.md
 # não se aplicam ao modo global, pois são específicas de cada projeto)
-python QAGente/install.py --global
+python install.py --global
 
 # Veja o que seria feito sem alterar nada
-python QAGente/install.py --target /caminho/do/projeto --dry-run
+python install.py --target /caminho/do/projeto --dry-run
 
 # Reinstalar sobrescrevendo as skills e o agente já copiados anteriormente
-python QAGente/install.py --target /caminho/do/projeto --force
+python install.py --target /caminho/do/projeto --force
 ```
 
 Para instalar em outras ferramentas:
 
 ```bash
-python QAGente/install.py --target /caminho/do/projeto --tool copilot --profile frontend-web
-python QAGente/install.py --target /caminho/do/projeto --tool cursor --profile frontend-web
-python QAGente/install.py --target /caminho/do/projeto --tool windsurf --profile backend-api
-python QAGente/install.py --target /caminho/do/projeto --tools claude,copilot,cursor,windsurf --profile default
+python install.py --target /caminho/do/projeto --tool copilot --profile frontend-web
+python install.py --target /caminho/do/projeto --tool cursor --profile frontend-web
+python install.py --target /caminho/do/projeto --tool windsurf --profile backend-api
+python install.py --target /caminho/do/projeto --tools claude,copilot,cursor,windsurf --profile default
 ```
 
 Instalações em projeto criam `.qagente/quality-profile.json`. As regras comuns ficam no núcleo do QAGente; o adaptador traduz o núcleo para o formato reconhecido pela ferramenta selecionada. Os perfis podem ser copiados e adaptados pelo time.
@@ -178,8 +198,8 @@ Use `--symlink` em vez de cópia se preferir manter os arquivos vinculados a est
 ### Validando um perfil
 
 ```bash
-python QAGente/install.py --validate-profile fullstack
-python QAGente/install.py --validate-profile ./meu-time.json
+python install.py --validate-profile fullstack
+python install.py --validate-profile ./meu-time.json
 ```
 
 Valida e sai, sem instalar nada. Reporta dois níveis:
@@ -195,8 +215,8 @@ Sai com código 1 se houver erros. A mesma validação roda a cada instalação.
 ### Validação das skills
 
 ```bash
-python QAGente/validate_skills.py
-python QAGente/validate_skills.py --strict
+python validate_skills.py
+python validate_skills.py --strict
 ```
 
 Enquanto `--validate-profile` valida a configuração do time, este valida o conteúdo que o
@@ -219,8 +239,8 @@ também reprova.
 ### Evals das skills
 
 ```bash
-python QAGente/run_evals.py
-python QAGente/run_evals.py --skill cypress-ui-automation --verbose
+python run_evals.py
+python run_evals.py --skill cypress-ui-automation --verbose
 ```
 
 Enquanto o validador cuida da forma da skill, os evals cuidam do conteúdo. Cada caso em

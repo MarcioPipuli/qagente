@@ -162,8 +162,8 @@ Salvo instrução explícita do usuário em contrário, use os caminhos definido
 - `entrada/` — onde ficam os documentos a analisar (PRDs, user stories, tickets, specs, ADRs).
 - `saida/cenarios/` — resultado da Fase 1 (lista de cenários priorizados), como arquivo `.md`.
 - `saida/casos-de-teste/` — resultado da Fase 2 (documentos Gherkin/BDD), como arquivo `.md`.
-- `saida/robot/` — resultado da Fase 3a (suíte Robot Framework: `.robot`/`.resource`).
-- `saida/cypress/` — resultado da Fase 3b (specs, page objects e comandos Cypress).
+- `saida/testes-api/` — resultado da Fase 3a (suíte Robot Framework: `.robot`/`.resource`).
+- `saida/testes-ui/` — resultado da Fase 3b (specs, page objects e comandos Cypress).
 
 As skills de apoio produzem artefatos que o instalador não cria, porque não correspondem a uma fase. Elas usam a chave de perfil correspondente quando ela existir e, na falta dela, criam a própria pasta:
 
@@ -177,7 +177,7 @@ Regras:
 - Antes de iniciar uma fase, procure os documentos de origem em `entrada/` (liste o conteúdo da pasta). Se ela não existir ou estiver vazia, pergunte ao usuário onde estão os documentos em vez de supor.
 - Crie as subpastas de saída necessárias caso ainda não existam, e grave os artefatos ali — nunca ao lado da documentação de entrada nem soltos na raiz do projeto.
 - Se uma pasta declarada no perfil não existir, ela pode ter sido pulada de propósito porque a fase está desligada (`api.enabled` ou `ui.enabled` em `false`). Nesse caso, confirme com o usuário antes de produzir artefatos daquela fase, em vez de criar a pasta por conta própria.
-- Preserve o nome-base do documento de origem no nome do arquivo gerado, para manter a rastreabilidade entre entrada e saída (ex.: `entrada/checkout-prd.md` → `saida/cenarios/checkout-prd.cenarios.md` → `saida/casos-de-teste/checkout-prd.casos.md` → `saida/robot/checkout-prd.robot`).
+- Preserve o nome-base do documento de origem no nome do arquivo gerado, para manter a rastreabilidade entre entrada e saída (ex.: `entrada/checkout-prd.md` → `saida/cenarios/checkout-prd.cenarios.md` → `saida/casos-de-teste/checkout-prd.casos.md` → `saida/testes-api/checkout-prd.robot`).
 - Um caminho de entrada ou saída indicado explicitamente pelo usuário no pedido sempre tem prioridade sobre o perfil e esta convenção padrão.
 
 ## Definition of Done por artefato

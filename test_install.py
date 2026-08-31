@@ -68,8 +68,8 @@ def make_profile(**overrides) -> dict:
             "input": "entrada",
             "scenarios": "saida/cenarios",
             "test_cases": "saida/casos-de-teste",
-            "api_tests": "saida/robot",
-            "ui_tests": "saida/cypress",
+            "api_tests": "saida/testes-api",
+            "ui_tests": "saida/testes-ui",
         },
     }
     profile.update(overrides)
@@ -394,13 +394,13 @@ class CaminhosDoPerfilTest(InstallerTestCase):
         self.install_ok("--tool", "claude", "--profile", "backend-api")
         for esperado in ("docs/requisitos", "qa/cenarios", "qa/casos-de-teste", "tests/api"):
             self.assertExists(esperado)
-        # os defaults históricos não devem mais aparecer
+        # as pastas neutras do default não devem aparecer
         self.assertMissing("entrada")
         self.assertMissing("saida")
 
-    def test_perfil_default_mantem_os_caminhos_historicos(self):
+    def test_perfil_default_cria_as_pastas_neutras(self):
         self.install_ok("--tool", "claude", "--profile", "default")
-        for esperado in ("entrada", "saida/cenarios", "saida/casos-de-teste", "saida/robot", "saida/cypress"):
+        for esperado in ("entrada", "saida/cenarios", "saida/casos-de-teste", "saida/testes-api", "saida/testes-ui"):
             self.assertExists(esperado)
 
     def test_fase_de_ui_desligada_nao_cria_a_pasta(self):
@@ -1322,6 +1322,64 @@ class PromessasDoHarnessTest(unittest.TestCase):
     def descricao(self) -> str:
         linhas = (HARNESS / "agent.md").read_text(encoding="utf-8").splitlines()
         return next(l for l in linhas if l.startswith("description:"))
+
+    def test_as_saidas_do_default_sao_nomeadas_por_conteudo_nao_por_ferramenta(self):
+        """As pastas neutras dizem o que guardam, não qual ferramenta as gerou.
+
+        `saida/cypress` vira mentira assim que o time troca `ui.framework` para playwright,
+        e `robot` não diz nada a quem ainda não conhece o framework — e o default é
+        justamente o perfil de quem está começando. Vale para as duas cópias do default:
+        o perfil embarcado e o fallback do instalador.
+        """
+        do_perfil = json.loads((HARNESS / "profiles" / "default.json").read_text(encoding="utf-8"))["paths"]
+        for origem, caminhos in (("profiles/default.json", do_perfil), ("DEFAULT_IO_PATHS", install.DEFAULT_IO_PATHS)):
+            for chave in ("api_tests", "ui_tests"):
+                valor = caminhos[chave].lower()
+                for ferramenta in ("robot", "cypress", "playwright"):
+                    self.assertNotIn(
+                        ferramenta,
+                        valor,
+                        f"{origem}: paths.{chave} cita a ferramenta '{ferramenta}' ({caminhos[chave]})",
+                    )
+
+    def test_o_default_e_o_fallback_do_instalador_declaram_os_mesmos_caminhos(self):
+        """Se as duas cópias divergirem, quem instala sem perfil vai parar noutras pastas."""
+        do_perfil = json.loads((HARNESS / "profiles" / "default.json").read_text(encoding="utf-8"))["paths"]
+        self.assertEqual(do_perfil, dict(install.DEFAULT_IO_PATHS))
+
+    def test_a_documentacao_do_usuario_mora_no_repositorio(self):
+        """Documentação fora do repositório não acompanha o `git pull` e envelhece calada.
+
+        Foi o que aconteceu na renomeação dos caminhos de saída do default: os guias
+        precisaram ser atualizados à mão, num passo separado que nada garantia.
+        """
+        for nome in ("PRIMEIROS-PASSOS-QAGENTE.md", "GUIA-DE-USO-QAGENTE.md", "DOCUMENTACAO-TECNICA-QAGENTE.md"):
+            self.assertTrue((HARNESS / nome).is_file(), f"{nome} não está no repositório")
+        readme = (HARNESS / "README.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "PRIMEIROS-PASSOS-QAGENTE.md",
+            readme,
+            "o README não aponta para o manual do usuário — quem clona não acha por onde começar",
+        )
+
+    def test_os_comandos_da_documentacao_rodam_da_raiz_do_repositorio(self):
+        """`python QAGente/install.py` só funciona de fora do repositório.
+
+        Como os documentos moram na raiz, quem copia o comando de lá está na raiz — e a forma
+        com prefixo falha com 'can't open file'. Erro silencioso: quebra para o usuário, não
+        para o teste, a menos que este exista.
+        """
+        prefixados = [
+            f"{nome}:{numero}: {linha.strip()}"
+            for nome in ("README.md", "PRIMEIROS-PASSOS-QAGENTE.md", "GUIA-DE-USO-QAGENTE.md", "DOCUMENTACAO-TECNICA-QAGENTE.md")
+            for numero, linha in enumerate((HARNESS / nome).read_text(encoding="utf-8").splitlines(), 1)
+            if any(f"python QAGente/{script}" in linha for script in ("install.py", "validate_skills.py", "run_evals.py"))
+        ]
+        self.assertEqual(
+            [],
+            prefixados,
+            "comandos com o prefixo 'QAGente/' só rodam de fora do repositório:\n  " + "\n  ".join(prefixados),
+        )
 
     def test_a_description_so_promete_artefato_com_skill_e_destino(self):
         """Gatilho sem skill nem `paths.*` faz o agente aceitar um pedido que não sabe entregar.

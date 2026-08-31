@@ -35,7 +35,7 @@ e diga ao usuário o que teria mudado se existisse.
 | Atributo de seletor | `ui.selector_attribute` | `data-cy` |
 | Linguagem dos specs | `ui.language` | `javascript` |
 | Variável da URL base | `ui.base_url_env` | `CYPRESS_BASE_URL` |
-| Onde salvar os specs | `paths.ui_tests` | `saida/cypress/` |
+| Onde salvar os specs | `paths.ui_tests` | `saida/testes-ui/` |
 | Idioma de comentários | `language` | idioma da conversa |
 
 Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
@@ -75,7 +75,7 @@ Esta skill é opcional e não é a função principal do agente (que é análise
 
 ## Estrutura de arquivos
 
-Os specs ficam sob o diretório de `paths.ui_tests` (`saida/cypress/` por default). A árvore
+Os specs ficam sob o diretório de `paths.ui_tests` (`saida/testes-ui/` por default). A árvore
 abaixo mostra a organização interna, relativa a esse diretório:
 
 ```

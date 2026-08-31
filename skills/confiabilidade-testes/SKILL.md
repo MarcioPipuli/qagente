@@ -33,7 +33,7 @@ a quarentena e espera; ele é corrigido primeiro.
 | Idioma do relatório | `language` | idioma da conversa |
 | Framework de UI e seus seletores | `ui.framework`, `ui.selector_attribute` | Cypress, `data-testid` |
 | Framework de API | `api.framework` | Robot Framework |
-| Onde estão os testes | `paths.ui_tests`, `paths.api_tests` | `saida/cypress/`, `saida/robot/` |
+| Onde estão os testes | `paths.ui_tests`, `paths.api_tests` | `saida/testes-ui/`, `saida/testes-api/` |
 | Onde salvar o relatório e o registro de quarentena | `paths.reviews`, senão `paths.test_cases` | `saida/confiabilidade/` |
 
 As regras universais de `AGENTS.md` valem sempre. Duas mandam aqui: **independência e

@@ -47,8 +47,8 @@ DEFAULT_IO_PATHS = {
     "input": "entrada",
     "scenarios": "saida/cenarios",
     "test_cases": "saida/casos-de-teste",
-    "api_tests": "saida/robot",
-    "ui_tests": "saida/cypress",
+    "api_tests": "saida/testes-api",
+    "ui_tests": "saida/testes-ui",
 }
 
 # Saídas das skills de apoio. Reconhecidas e validadas como caminho, mas fora de

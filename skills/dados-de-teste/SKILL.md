@@ -31,8 +31,8 @@ que precisa ser anonimizado — diga isso ao usuário.
 | Decisão desta skill | Campo do perfil | Default |
 |---|---|---|
 | Idioma dos identificadores e comentários | `language`, `ui.language` | pt-BR nos comentários, inglês nos nomes técnicos |
-| Onde vive a massa de UI | `paths.ui_tests` | `saida/cypress/` |
-| Onde vive a massa de API | `paths.api_tests` | `saida/robot/` |
+| Onde vive a massa de UI | `paths.ui_tests` | `saida/testes-ui/` |
+| Onde vive a massa de API | `paths.api_tests` | `saida/testes-api/` |
 | Framework de UI (formato da fábrica) | `ui.framework` | Cypress |
 | Framework de API (formato do recurso) | `api.framework` | Robot Framework |
 | Nomes das variáveis de credencial | `api.user_env`, `api.password_env`, `api.base_url_env` | `QA_API_USER`, `QA_API_PASSWORD`, `API_BASE_URL` |

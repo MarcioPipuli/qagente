@@ -35,7 +35,7 @@ e diga ao usuário o que teria mudado se existisse.
 | Variável da URL base | `api.base_url_env` | `API_BASE_URL` |
 | Variável de usuário | `api.user_env` | `QA_API_USER` |
 | Variável de senha | `api.password_env` | `QA_API_PASSWORD` |
-| Onde salvar a suíte | `paths.api_tests` | `saida/robot/` |
+| Onde salvar a suíte | `paths.api_tests` | `saida/testes-api/` |
 | Idioma de comentários | `language` | idioma da conversa |
 
 Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
@@ -83,7 +83,7 @@ pip install robotframework robotframework-requests
 
 ## Estrutura de arquivos
 
-A suíte fica sob o diretório de `paths.api_tests` (`saida/robot/` por default). A árvore abaixo
+A suíte fica sob o diretório de `paths.api_tests` (`saida/testes-api/` por default). A árvore abaixo
 mostra a organização interna, relativa a esse diretório:
 
 ```
