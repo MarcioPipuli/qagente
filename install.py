@@ -51,6 +51,12 @@ DEFAULT_IO_PATHS = {
     "ui_tests": "saida/cypress",
 }
 
+# Saídas das skills de apoio. Reconhecidas e validadas como caminho, mas fora de
+# DEFAULT_IO_PATHS de propósito: o instalador não cria pasta para artefato que não
+# corresponde a uma fase (ver AGENTS.md, "Entradas e saídas"). Quem declara a chave
+# ganha a pasta; quem não declara usa o fallback documentado em cada skill.
+OPTIONAL_IO_PATHS = ("risk_matrix", "reviews")
+
 REQUIRED_KEYS = ("profile_version", "profile_name", "language", "workflow", "paths")
 
 # Invariantes de AGENTS.md: o perfil não pode desligá-las. Declarar `false` aqui não
@@ -244,9 +250,16 @@ def validate_profile(dados: dict) -> list[tuple[str, str, str]]:
             problemas.append(("erro", "paths", "precisa ser um objeto"))
         else:
             for chave, valor in caminhos.items():
-                if chave not in DEFAULT_IO_PATHS:
+                if chave not in DEFAULT_IO_PATHS and chave not in OPTIONAL_IO_PATHS:
                     conhecidas = ", ".join(DEFAULT_IO_PATHS)
-                    problemas.append(("aviso", f"paths.{chave}", f"chave desconhecida (esperadas: {conhecidas})"))
+                    opcionais = ", ".join(OPTIONAL_IO_PATHS)
+                    problemas.append(
+                        (
+                            "aviso",
+                            f"paths.{chave}",
+                            f"chave desconhecida (esperadas: {conhecidas}; opcionais: {opcionais})",
+                        )
+                    )
                 if not _texto_nao_vazio(valor):
                     problemas.append(("aviso", f"paths.{chave}", f"valor inválido ({valor!r}) — será ignorado"))
                 else:

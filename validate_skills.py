@@ -50,8 +50,8 @@ SECOES_OBRIGATORIAS = (
 SECOES_DISPENSADAS = {"referencia": ("## Perguntas de descoberta",)}
 
 # Arquivos onde uma referência `skills/<nome>` é instrução para o agente e precisa resolver.
-# CONTINUIDADE-CLAUDE-CODE.md fica de fora de propósito: é registro histórico e cita caminhos
-# de outros repositórios.
+# Documentos de manutenção do harness (CONTRIBUTING.md) ficam de fora: falam com quem mantém
+# o projeto, não com o agente.
 ARQUIVOS_COM_REFERENCIAS = ("agent.md", "AGENTS.md", "README.md")
 
 # Exige crase ou parêntese de link: em português "skills/agente" também aparece como

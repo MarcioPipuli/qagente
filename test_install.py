@@ -17,6 +17,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -439,6 +440,23 @@ class CaminhosDoPerfilTest(InstallerTestCase):
         vizinhos = {p.name for p in self.parent.iterdir() if p.is_dir()}
         self.assertEqual(vizinhos, {"projeto"})
 
+    def test_chave_opcional_declarada_ganha_a_pasta(self):
+        """O instalador não cria saída de skill de apoio por padrão, mas respeita a declarada."""
+        path = self.write_profile(
+            "com-opcionais",
+            make_profile(paths=dict(install.DEFAULT_IO_PATHS, risk_matrix="qa/risco", reviews="qa/revisoes")),
+        )
+        stdout = self.install_ok("--tool", "claude", "--profile", str(path))
+        self.assertNotIn("chave desconhecida", stdout)
+        self.assertExists("qa/risco")
+        self.assertExists("qa/revisoes")
+
+    def test_perfil_sem_as_chaves_opcionais_nao_cria_as_pastas(self):
+        """A decisão de AGENTS.md: artefato que não é fase não ganha pasta automática."""
+        self.install_ok("--tool", "claude", "--profile", "default")
+        for ausente in ("saida/matriz-risco", "saida/revisoes"):
+            self.assertMissing(ausente)
+
     def test_pastas_criadas_ganham_gitkeep(self):
         self.install_ok("--tool", "claude", "--profile", "default")
         self.assertExists("entrada/.gitkeep")
@@ -660,6 +678,17 @@ class ValidateProfileTest(unittest.TestCase):
         self.assertIn("workflow.require_tudo", self.campos("aviso", workflow={"require_tudo": True}))
         self.assertIn("conventions.cor", self.campos("aviso", conventions={"cor": "azul"}))
         self.assertIn("paths.relatorios", self.campos("aviso", paths={"relatorios": "qa/rel"}))
+
+    def test_chaves_opcionais_de_saida_nao_sao_aviso(self):
+        """AGENTS.md manda o time declarar estas duas; chamá-las de desconhecidas ensina a
+        ignorar o validador."""
+        for chave in install.OPTIONAL_IO_PATHS:
+            with self.subTest(chave=chave):
+                self.assertNotIn(f"paths.{chave}", self.campos("aviso", paths={chave: "qa/saida"}))
+
+    def test_chave_opcional_com_caminho_hostil_continua_avisando(self):
+        """Reconhecer a chave não afrouxa a validação do valor."""
+        self.assertIn("paths.reviews", self.campos("aviso", paths={"reviews": "../fora"}))
 
     def test_problemas_de_valor_de_caminho_sao_aviso_nao_erro(self):
         """O instalador já sabe ignorar o caminho e seguir — travar aqui seria incoerente."""
@@ -1276,6 +1305,74 @@ class ContextoDoProjetoTest(unittest.TestCase):
         for secao in ("## Áreas de risco", "## Terminologia do domínio", "## Time e maturidade"):
             with self.subTest(secao=secao):
                 self.assertIn(secao, texto)
+
+
+# --------------------------------------------------------------------------------------
+# Coerência do que o harness promete
+# --------------------------------------------------------------------------------------
+
+
+class PromessasDoHarnessTest(unittest.TestCase):
+    """Três regras que só viviam no documento de continuidade, agora presas por teste.
+
+    Todas falham em silêncio na prática: a `description` promete artefato que não existe,
+    a escala de risco sai em dois idiomas, ou a regra de manutenção some numa reescrita.
+    """
+
+    def descricao(self) -> str:
+        linhas = (HARNESS / "agent.md").read_text(encoding="utf-8").splitlines()
+        return next(l for l in linhas if l.startswith("description:"))
+
+    def test_a_description_so_promete_artefato_com_skill_e_destino(self):
+        """Gatilho sem skill nem `paths.*` faz o agente aceitar um pedido que não sabe entregar.
+
+        `plano de testes` e `matriz de rastreabilidade` eram os dois casos: nenhum tem skill,
+        nenhum tem chave em DEFAULT_IO_PATHS. Se um deles virar skill, tire-o daqui.
+        """
+        for promessa in ("plano de testes", "matriz de rastreabilidade"):
+            with self.subTest(promessa=promessa):
+                self.assertNotIn(promessa, self.descricao().lower())
+
+    def test_a_description_roteia_as_skills_de_apoio(self):
+        """As 5 skills de apoio entraram depois da description — sem gatilho, ninguém as chama."""
+        for gatilho in ("risco", "bug", "massa de teste", "revisar testes", "intermitentes"):
+            with self.subTest(gatilho=gatilho):
+                self.assertIn(gatilho, self.descricao().lower())
+
+    def test_o_nucleo_define_o_idioma_da_escala_de_risco(self):
+        """O perfil declara `high`/`medium`/`low` e os artefatos saem em pt-BR: sem regra no
+        núcleo, a tradução é convenção repetida no texto de cada skill — e some numa reescrita."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        regra = next((l for l in texto.splitlines() if l.startswith("Os níveis de `risk_levels`")), None)
+        self.assertIsNotNone(regra, "AGENTS.md precisa declarar como `risk_levels` é escrito nos artefatos")
+        self.assertIn("`language`", regra)
+
+    def test_o_principio_de_risco_nao_fixa_a_escala(self):
+        """O default declara quatro níveis; um princípio que diz 'Alta/Média/Baixa' contradiz o perfil."""
+        linha = next(l for l in (HARNESS / "AGENTS.md").read_text(encoding="utf-8").splitlines() if "**Impacto de falha**" in l)
+        self.assertIn("risk_levels", linha)
+
+    def test_toda_chave_de_paths_citada_no_nucleo_e_conhecida_pelo_instalador(self):
+        """Foi assim que `risk_matrix` e `reviews` nasceram: a skill de apoio entrou citando
+        uma chave de saída nova, e o validador seguiu chamando-a de desconhecida.
+
+        Vale para a próxima skill que trouxer uma chave: ou ela entra em DEFAULT_IO_PATHS
+        (o instalador cria a pasta), ou em OPTIONAL_IO_PATHS (só cria se o time declarar).
+        """
+        fontes = [HARNESS / "AGENTS.md", HARNESS / "agent.md"] + sorted((HARNESS / "skills").glob("*/SKILL.md"))
+        conhecidas = set(install.DEFAULT_IO_PATHS) | set(install.OPTIONAL_IO_PATHS)
+        for path in fontes:
+            citadas = set(re.findall(r"paths\.([a-z][a-z_]*)", path.read_text(encoding="utf-8")))
+            for chave in sorted(citadas):
+                with self.subTest(arquivo=path.parent.name + "/" + path.name, chave=chave):
+                    self.assertIn(chave, conhecidas)
+
+    def test_as_regras_de_manutencao_do_harness_estao_versionadas(self):
+        """Eram a seção 11 do documento de continuidade: não derivam do código nem do git log."""
+        texto = (HARNESS / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        for regra in ("commit", "pasta temporária", "sem pedido explícito", "Adaptador é formato"):
+            with self.subTest(regra=regra):
+                self.assertIn(regra, texto)
 
 
 if __name__ == "__main__":
