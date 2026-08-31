@@ -303,7 +303,9 @@ validação completa —, veja [CONTRIBUTING.md](CONTRIBUTING.md).
 | Conteúdo das 5 skills de apoio | MIT, declarado no frontmatter — são adaptações de material MIT (ver abaixo) |
 
 O arranjo espelha deliberadamente o do projeto de origem (ver abaixo), que separa o código do
-conteúdo pelo mesmo critério. Se você redistribuir as skills, preserve a atribuição.
+conteúdo pelo mesmo critério. Se você redistribuir as skills, preserve a atribuição — os avisos de
+copyright e os textos de licença do material de terceiros estão em [NOTICE.md](NOTICE.md), que deve
+acompanhar a redistribuição.
 
 As skills de apoio ficam em MIT porque foram **adaptadas** de
 [qa-skills](https://github.com/petrkindlmann/qa-skills), de Petr Kindlmann, licenciado sob MIT —
