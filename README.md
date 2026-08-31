@@ -25,6 +25,7 @@ QAGente/
 ├── evals/                  # Uma spec por skill, 8+ casos cada
 ├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
 ├── .github/workflows/      # CI: valida, roda os evals e a suíte no Linux e no Windows
+├── CONTRIBUTING.md         # Regras para quem mantém o harness (invariantes, validação, instalação real)
 └── skills/
     ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)
@@ -90,6 +91,7 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 |---|---|
 | `language`, `artifact_format` | Idioma e formato dos artefatos gerados |
 | `paths.*` | Onde o agente lê a entrada e grava cada fase; quais pastas o instalador cria |
+| `paths.risk_matrix`, `paths.reviews` | Opcionais: saída das skills de apoio. Só criadas se declaradas — sem elas, a skill cai no fallback de [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas) |
 | `risk_levels`, `risk_method` | Escala e método de priorização dos cenários |
 | `conventions.gherkin_language` | Idioma das palavras-chave do Gherkin |
 | `conventions.scenario_title_prefix` | Prefixo dos títulos de cenário (`Validar que` por default) |
@@ -252,6 +254,9 @@ como subprocesso dentro de um diretório temporário — nenhum teste escreve no
 O CI roda a mesma suíte a cada push, em `ubuntu-latest` e `windows-latest`, nos Python 3.9 e
 3.13. O instalador manipula caminhos nos dois sistemas, então rodar nos dois evita que uma
 suposição de separador ou de quebra de linha passe despercebida.
+
+Para alterar o harness — invariantes de arquitetura, método de trabalho e a sequência de
+validação completa —, veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Opção B — Manual
 
