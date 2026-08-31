@@ -3,7 +3,7 @@
 > Como operar o agente de QA para ter a melhor experiência possível: o que pedir, como pedir,
 > o que esperar de volta, como revisar, e o que fazer quando o resultado não vem como deveria.
 >
-> **Nunca usou o QAGente?** Comece pelo [`PRIMEIROS-PASSOS-QAGENTE.md`](PRIMEIROS-PASSOS-QAGENTE.md) —
+> **Nunca usou o QAGente?** Comece pelo [`PRIMEIROS-PASSOS-QAGENTE.md`](../PRIMEIROS-PASSOS-QAGENTE.md) —
 > é o manual do usuário: 15 passos numerados, do "tenho Python instalado?" até o primeiro teste
 > pronto, em linguagem sem jargão. Volte aqui depois, quando quiser profundidade.
 >

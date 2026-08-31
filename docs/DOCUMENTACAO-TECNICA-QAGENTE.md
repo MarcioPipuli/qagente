@@ -5,7 +5,7 @@
 > estão as travas que impedem o agente de sair do trilho.
 >
 > Companheiros deste documento:
-> [`PRIMEIROS-PASSOS-QAGENTE.md`](PRIMEIROS-PASSOS-QAGENTE.md) (manual do usuário: 15 passos
+> [`PRIMEIROS-PASSOS-QAGENTE.md`](../PRIMEIROS-PASSOS-QAGENTE.md) (manual do usuário: 15 passos
 > numerados, da instalação ao primeiro teste, sem jargão) e
 > [`GUIA-DE-USO-QAGENTE.md`](GUIA-DE-USO-QAGENTE.md) (referência de operação no dia a dia).
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
@@ -94,13 +94,18 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
-| `GUIA-DE-USO-QAGENTE.md` | Referência de operação no dia a dia | Pessoa | Consulta |
-| `DOCUMENTACAO-TECNICA-QAGENTE.md` | Este documento | Pessoa | Consulta / manutenção |
+| `docs/GUIA-DE-USO-QAGENTE.md` | Referência de operação no dia a dia | Pessoa | Consulta |
+| `docs/DOCUMENTACAO-TECNICA-QAGENTE.md` | Este documento | Pessoa | Consulta / manutenção |
 
 Os três últimos vivem **dentro do repositório**, ao lado do harness que descrevem. É deliberado:
 documentação fora do repositório não acompanha o `git pull` e envelhece em silêncio — quando os
 caminhos de saída do perfil `default` foram renomeados, foi preciso atualizar os guias à mão,
 num passo separado que ninguém garante que aconteça da próxima vez.
+
+A divisão entre a raiz e `docs/` também é deliberada: o manual do usuário é o **ponto de
+entrada** e fica visível para quem descompacta o pacote sem saber por onde começar — para um QA
+que não é desenvolvedor, `PRIMEIROS-PASSOS` é um sinal mais forte que `README`. Os dois
+documentos de referência, que só se abrem depois, vão para `docs/`.
 
 ### 2.2 No projeto onde o QAGente foi instalado
 

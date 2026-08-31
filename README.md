@@ -16,8 +16,8 @@ Harness de um agente especialista em Qualidade de Software (QA/SDET), extraído 
 | Documento | Para quem |
 |---|---|
 | [PRIMEIROS-PASSOS-QAGENTE.md](PRIMEIROS-PASSOS-QAGENTE.md) | **Quem vai usar o agente.** Manual do usuário em 15 passos |
-| [GUIA-DE-USO-QAGENTE.md](GUIA-DE-USO-QAGENTE.md) | Quem já usa e quer referência: catálogo de pedidos, fluxos, checklists de revisão, solução de problemas |
-| [DOCUMENTACAO-TECNICA-QAGENTE.md](DOCUMENTACAO-TECNICA-QAGENTE.md) | Quem quer entender o funcionamento interno ou estender o harness |
+| [GUIA-DE-USO-QAGENTE.md](docs/GUIA-DE-USO-QAGENTE.md) | Quem já usa e quer referência: catálogo de pedidos, fluxos, checklists de revisão, solução de problemas |
+| [DOCUMENTACAO-TECNICA-QAGENTE.md](docs/DOCUMENTACAO-TECNICA-QAGENTE.md) | Quem quer entender o funcionamento interno ou estender o harness |
 | Este README | Referência do instalador, dos perfis e da validação |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Quem mantém o harness: invariantes, método de alteração, gate obrigatório |
 
@@ -44,8 +44,9 @@ QAGente/
 ├── .github/workflows/      # CI: valida, roda os evals e a suíte no Linux e no Windows
 ├── CONTRIBUTING.md         # Regras para quem mantém o harness (invariantes, validação, instalação real)
 ├── PRIMEIROS-PASSOS-QAGENTE.md      # Manual do usuário: 15 passos, da instalação ao primeiro teste
-├── GUIA-DE-USO-QAGENTE.md           # Referência de uso no dia a dia
-├── DOCUMENTACAO-TECNICA-QAGENTE.md  # Como o harness funciona por dentro
+├── docs/                            # Documentação de referência
+│   ├── GUIA-DE-USO-QAGENTE.md       #   Uso no dia a dia
+│   └── DOCUMENTACAO-TECNICA-QAGENTE.md  #   Funcionamento interno do harness
 └── skills/
     ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)

@@ -82,10 +82,9 @@ Você recebeu um arquivo `QAGente.zip`.
 
 ```
 PRIMEIROS-PASSOS-QAGENTE.md     ← este manual
-GUIA-DE-USO-QAGENTE.md
-DOCUMENTACAO-TECNICA-QAGENTE.md
 README.md
 install.py                       ← o instalador que você vai usar no Passo 6
+docs                             ← os outros dois documentos ficam aqui
 skills
 profiles
 ```
@@ -528,8 +527,8 @@ Nesse passo, é Dado ou Quando?
 
 | Documento | Para quê |
 |---|---|
-| [`GUIA-DE-USO-QAGENTE.md`](GUIA-DE-USO-QAGENTE.md) | Mais formas de usar: revisão de código de teste, estabilizar suíte instável, todos os ajustes de configuração |
-| [`DOCUMENTACAO-TECNICA-QAGENTE.md`](DOCUMENTACAO-TECNICA-QAGENTE.md) | Como o agente funciona por dentro. Só para quem for mexer no agente |
+| [`GUIA-DE-USO-QAGENTE.md`](docs/GUIA-DE-USO-QAGENTE.md) | Mais formas de usar: revisão de código de teste, estabilizar suíte instável, todos os ajustes de configuração |
+| [`DOCUMENTACAO-TECNICA-QAGENTE.md`](docs/DOCUMENTACAO-TECNICA-QAGENTE.md) | Como o agente funciona por dentro. Só para quem for mexer no agente |
 
 ---
 

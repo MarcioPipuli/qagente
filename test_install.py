@@ -28,6 +28,14 @@ from pathlib import Path
 HARNESS = Path(__file__).resolve().parent
 INSTALL = HARNESS / "install.py"
 
+# Documentação de uso, relativa à raiz do repositório. O manual fica na raiz por ser o ponto
+# de entrada de quem descompacta o pacote; a referência mora em docs/.
+DOCUMENTOS_DE_USO = (
+    "PRIMEIROS-PASSOS-QAGENTE.md",
+    "docs/GUIA-DE-USO-QAGENTE.md",
+    "docs/DOCUMENTACAO-TECNICA-QAGENTE.md",
+)
+
 sys.path.insert(0, str(HARNESS))
 import install  # noqa: E402
 import validate_skills  # noqa: E402
@@ -1353,14 +1361,26 @@ class PromessasDoHarnessTest(unittest.TestCase):
         Foi o que aconteceu na renomeação dos caminhos de saída do default: os guias
         precisaram ser atualizados à mão, num passo separado que nada garantia.
         """
-        for nome in ("PRIMEIROS-PASSOS-QAGENTE.md", "GUIA-DE-USO-QAGENTE.md", "DOCUMENTACAO-TECNICA-QAGENTE.md"):
-            self.assertTrue((HARNESS / nome).is_file(), f"{nome} não está no repositório")
+        for relativo in DOCUMENTOS_DE_USO:
+            self.assertTrue((HARNESS / relativo).is_file(), f"{relativo} não está no repositório")
         readme = (HARNESS / "README.md").read_text(encoding="utf-8")
         self.assertIn(
             "PRIMEIROS-PASSOS-QAGENTE.md",
             readme,
             "o README não aponta para o manual do usuário — quem clona não acha por onde começar",
         )
+
+    def test_o_manual_do_usuario_fica_na_raiz_e_a_referencia_em_docs(self):
+        """O ponto de entrada precisa estar visível para quem descompacta o pacote.
+
+        Quem vai usar o agente pode não ser desenvolvedor: `PRIMEIROS-PASSOS` na raiz é um
+        sinal mais forte que `README`, e mais forte ainda que um arquivo dentro de `docs/`.
+        A referência, que só se abre depois, não precisa competir por esse espaço.
+        """
+        self.assertTrue((HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").is_file(), "o manual saiu da raiz")
+        for nome in ("GUIA-DE-USO-QAGENTE.md", "DOCUMENTACAO-TECNICA-QAGENTE.md"):
+            self.assertTrue((HARNESS / "docs" / nome).is_file(), f"{nome} não está em docs/")
+            self.assertFalse((HARNESS / nome).is_file(), f"{nome} ficou duplicado na raiz")
 
     def test_os_comandos_da_documentacao_rodam_da_raiz_do_repositorio(self):
         """`python QAGente/install.py` só funciona de fora do repositório.
@@ -1371,7 +1391,7 @@ class PromessasDoHarnessTest(unittest.TestCase):
         """
         prefixados = [
             f"{nome}:{numero}: {linha.strip()}"
-            for nome in ("README.md", "PRIMEIROS-PASSOS-QAGENTE.md", "GUIA-DE-USO-QAGENTE.md", "DOCUMENTACAO-TECNICA-QAGENTE.md")
+            for nome in ("README.md", *DOCUMENTOS_DE_USO)
             for numero, linha in enumerate((HARNESS / nome).read_text(encoding="utf-8").splitlines(), 1)
             if any(f"python QAGente/{script}" in linha for script in ("install.py", "validate_skills.py", "run_evals.py"))
         ]
