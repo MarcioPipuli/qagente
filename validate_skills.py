@@ -32,7 +32,7 @@ SKILLS_DIR = HARNESS / "skills"
 MAX_LINHAS_ERRO = 650
 MAX_LINHAS_AVISO = 450
 
-CATEGORIAS = {"analise", "escrita", "automacao", "referencia"}
+CATEGORIAS = {"analise", "escrita", "automacao", "referencia", "configuracao"}
 
 # `Use quando` abre os gatilhos; o anti-gatilho evita que duas skills disputem o mesmo pedido.
 ANTI_GATILHOS = ("Não use",)

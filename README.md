@@ -68,11 +68,12 @@ QAGente/
     │   └── templates/
     ├── confiabilidade-testes/         # Apoio: teste que oscila → causa raiz, correção e quarentena
     │   └── templates/
-    └── dados-de-teste/                # Apoio: fábricas, isolamento, limpeza e anonimização da massa
-        └── templates/
+    ├── dados-de-teste/                # Apoio: fábricas, isolamento, limpeza e anonimização da massa
+    │   └── templates/
+    └── configuracao-do-projeto/       # Apoio: entrevista que preenche os dois arquivos de .qagente/
 ```
 
-As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As cinco últimas
+As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As seis últimas
 são **skills de apoio**: entram fora da sequência das fases, quando o pedido não é "transforme
 este requisito em teste" — e continuam sujeitas às mesmas regras universais de
 [AGENTS.md](AGENTS.md). Detalhe do roteamento em
@@ -104,6 +105,14 @@ Como o perfil, ele é preservado numa reinstalação: só `--force` substitui um
 preenchido.
 
 Uma seção que ainda esteja com `[colchetes]` conta como não respondida, não como resposta.
+
+**Você não precisa preencher os dois na mão.** Peça ao agente: *"configure o QAGente neste
+projeto"*. A skill `configuracao-do-projeto` lê o repositório antes de perguntar — framework,
+suíte existente, atributo de seletor, pastas —, confirma o que achou em vez de perguntar, e
+completa o resto em estágios de até 5 perguntas. "Não sei" é resposta válida: mantém o default e
+a seção fica marcada como **Não respondido**, que o agente trata como ausente e a skill reencontra
+quando você rodá-la de novo. Ela é re-executável a qualquer momento e nunca sobrescreve o que
+você já respondeu sem confirmar antes.
 
 Além dos dois, o instalador cria `.qagente/templates/` — vazio, com um README. É onde o time
 sobrescreve o **layout** dos artefatos: um arquivo com o mesmo nome do template de uma skill

@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **11 skills, 138 evals, 191 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **12 skills, 150 evals, 202 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -24,7 +24,7 @@
 5. [`agent.md` — o cartão de identidade e o roteador](#5-agentmd--o-cartão-de-identidade-e-o-roteador)
 6. [`AGENTS.md` — o núcleo de regras](#6-agentsmd--o-núcleo-de-regras)
 7. [Anatomia de uma SKILL.md](#7-anatomia-de-uma-skillmd)
-8. [Catálogo das 11 skills](#8-catálogo-das-11-skills)
+8. [Catálogo das 12 skills](#8-catálogo-das-12-skills)
 9. [Roteamento: como o agente escolhe a skill](#9-roteamento-como-o-agente-escolhe-a-skill)
 10. [`quality-profile.json` — referência de campos e validação](#10-quality-profilejson--referência-de-campos-e-validação)
 11. [`contexto-projeto.md` — o que é o produto](#11-contexto-projetomd--o-que-é-o-produto)
@@ -67,7 +67,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 - **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
-- **Por que 148 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
+- **Por que 202 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
   testa **promessas do núcleo** (que toda skill mande ler o perfil, que toda chave `paths.*`
   citada exista no instalador, que a `description` só prometa artefato que tem skill e destino).
 
@@ -90,7 +90,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `install.py` | Instalador + validador de perfil | Pessoa / CI | Instalação |
 | `validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 148 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `test_install.py` | 202 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -111,7 +111,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 
 | Caminho | Conteúdo | Preservado em reinstalação? |
 |---|---|---|
-| `.claude/skills/<nome>/` | As 11 skills | Sim (só `--force` sobrescreve) |
+| `.claude/skills/<nome>/` | As 12 skills | Sim (só `--force` sobrescreve) |
 | `.claude/agents/qa-especialista.md` | Cópia de `agent.md` | Sim (só `--force`) |
 | `AGENTS.md` | Bloco `<!-- QAGente:start -->…<!-- QAGente:end -->` mesclado | O bloco é **atualizado**; o resto do arquivo nunca é tocado |
 | `CLAUDE.md` | Ponteiro para `AGENTS.md`, ou nota anexada se já existia | Sim |
@@ -166,7 +166,7 @@ O princípio que sustenta o desenho está em `CONTRIBUTING.md` e vale citar lite
 
 ### 4.1 Precedência para decisões configuráveis
 
-Declarada em `AGENTS.md` e repetida na seção `## Configuração` de **todas** as 11 skills
+Declarada em `AGENTS.md` e repetida na seção `## Configuração` de **todas** as 12 skills
 (o validador reprova a skill que não a traz):
 
 ```
@@ -233,7 +233,7 @@ metadata:
 | Campo | Efeito real |
 |---|---|
 | `name` | Nome de invocação (`@qa-especialista`) |
-| `description` | **É o roteador.** É por este texto que a ferramenta decide delegar automaticamente. Traz os gatilhos das 11 skills e os anti-gatilhos (não use para: código de produção, features, carga/performance, segurança/pentest) |
+| `description` | **É o roteador.** É por este texto que a ferramenta decide delegar automaticamente. Traz os gatilhos das 12 skills e os anti-gatilhos (não use para: código de produção, features, carga/performance, segurança/pentest) |
 | `model: inherit` | Usa o mesmo modelo da sessão principal — não fixa um modelo |
 | `tools` | Superfície de ferramentas: leitura (`Read`, `Grep`, `Glob`), escrita (`Write`, `Edit`) e execução (`Bash`, necessária para rodar `robot`/`cypress`/`playwright`/`git bisect`). Note a ausência de ferramenta de rede — o agente não busca na web por conta própria |
 
@@ -403,7 +403,7 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 
 ---
 
-## 8. Catálogo das 11 skills
+## 8. Catálogo das 12 skills
 
 ### 8.1 Visão geral
 
@@ -420,6 +420,7 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 | `revisao-qualidade-testes` | analise | Apoio — **depois** da Fase 3 | MIT | `paths.reviews` |
 | `confiabilidade-testes` | automacao | Apoio — corrige o que a Fase 3 produziu | MIT | `paths.reviews` |
 | `dados-de-teste` | automacao | Apoio — camada sob as Fases 3a/3b | MIT | junto dos testes |
+| `configuracao-do-projeto` | configuracao | Apoio — **antes de tudo**: preenche `.qagente/` | CC-BY-4.0 | — (o artefato é a própria configuração) |
 
 ### 8.2 Detalhe por skill
 
@@ -638,6 +639,28 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
   valor limite da Fase 1.
 - Critério de aceitação forte: a suíte passa **com paralelismo ligado e com ordem embaralhada**,
   e a contagem de registros antes e depois da suíte é a mesma.
+
+#### `configuracao-do-projeto` (apoio, antes de qualquer fase)
+
+- **Impede**: o estado que o próprio `AGENTS.md` classifica como pior que a ausência — o perfil
+  com dois ajustes apressados ao lado de um `contexto-projeto.md` ainda com os `[colchetes]` do
+  template, lido como se fosse resposta.
+- **Única skill sem artefato em `paths.*`**: o que ela produz são os dois arquivos de `.qagente/`.
+  É também a única da categoria `configuracao`.
+- **Reconhece antes de perguntar.** A seção `## Perguntas de descoberta` dela é dirigida ao
+  *projeto*, não ao usuário: framework, suíte existente, atributo de seletor, pastas de requisito
+  e de CI saem do repositório, e viram confirmação em vez de pergunta. Só o que sobra é perguntado.
+- **Estágios com orçamento fechado**: até 5 perguntas para o perfil, até 5 para o contexto, e cada
+  estágio termina com os dois arquivos gravados e válidos. `conventions.*`, `risk_levels` e os
+  `*_env` ficam **fora** por desenho: só se revelam no uso, e perguntá-los na instalação é pedir
+  que o time invente.
+- **Marca de lacuna.** Seção não respondida nunca fica com placeholder nem é apagada em silêncio:
+  recebe a linha fixa `> **Não respondido**`, que `AGENTS.md` manda tratar como ausente e que a
+  própria skill reencontra na re-execução. O que ficou aberto é registrado em `## Observações`,
+  sob cabeçalho fixo reescrito a cada execução.
+- **Nunca monta o JSON do zero**: parte de um dos 5 perfis embarcados, o que elimina na origem a
+  chave inventada e o tipo errado. Valida com `--validate-profile` **no clone do harness** — o
+  instalador não se copia para o projeto — ou declara na entrega que não validou.
 
 ---
 
@@ -1077,7 +1100,7 @@ regex) · qualquer outra coisa é substring sem diferenciar maiúsculas.
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 148 testes
+### 14.3 `test_install.py` — 202 testes
 
 | Grupo de classes | O que prende |
 |---|---|

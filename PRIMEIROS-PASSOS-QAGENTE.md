@@ -188,6 +188,27 @@ Duas edições. Reserve uns 30 minutos.
 > e volte para ajustar. Resposta chutada é pior que resposta em branco, porque o agente trata
 > como fato.
 
+> ### 💬 O caminho curto: peça ao agente
+>
+> Os Passos 8, 9 e 10 podem ser feitos por conversa, sem abrir nenhum arquivo. Abra a ferramenta
+> de IA no seu projeto e diga:
+>
+> > **configure o QAGente neste projeto**
+>
+> Ele olha o seu repositório primeiro — descobre sozinho o framework de teste, a suíte que já
+> existe, o atributo dos elementos e onde ficam as pastas — e depois confirma o que achou em vez
+> de perguntar do zero. São dois blocos de até 5 perguntas: o primeiro deixa o
+> `quality-profile.json` pronto, o segundo conta a ele como é o seu produto. No fim, ele mesmo
+> valida o arquivo (o Passo 10) e lista o que ficou sem resposta.
+>
+> **"Não sei" é resposta válida** em qualquer pergunta: ele mantém o padrão, marca a seção como
+> *Não respondido* e segue. Você pode pedir a mesma coisa de novo daqui a um mês para preencher o
+> que faltou — ele pergunta só o que ainda está em branco e nunca troca o que você já respondeu
+> sem mostrar antes o que mudaria.
+>
+> Prefere fazer na mão, ou quer entender o que cada campo significa antes? Siga os Passos 8 a 10
+> normalmente — eles continuam valendo, e são a mesma configuração.
+
 ## Passo 8 — Dizer o que o seu time automatiza
 
 Abra o arquivo `.qagente/quality-profile.json`, dentro do seu projeto.

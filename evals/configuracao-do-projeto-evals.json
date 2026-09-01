@@ -1,0 +1,90 @@
+{
+  "skill": "configuracao-do-projeto",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "cfg-001",
+      "prompt": "Instalei o QAGente aqui, e agora?",
+      "expected_patterns": ["Reconhecer, sem perguntar nada", "tabela de palpites", "origem"],
+      "anti_patterns": [],
+      "tags": ["entrada"]
+    },
+    {
+      "id": "cfg-002",
+      "prompt": "Quais perguntas você me faz para configurar o agente?",
+      "expected_patterns": ["feitas ao projeto, não ao usuário", "vira confirmação, não pergunta"],
+      "anti_patterns": ["Perguntar o que o repositório responde"],
+      "tags": ["reconhecimento"]
+    },
+    {
+      "id": "cfg-003",
+      "prompt": "Não sei responder qual é o padrão de ID de caso de teste do time.",
+      "expected_patterns": ["não sei", "resposta de primeira classe", "mantém o default"],
+      "anti_patterns": [],
+      "tags": ["nao-sei"]
+    },
+    {
+      "id": "cfg-004",
+      "prompt": "Pode deixar as seções que eu não respondi do jeito que estão no template.",
+      "expected_patterns": ["nunca termina um estágio deixando", "**Não respondido** — entrevista de", "de novo para preencher", "pior que a ausência"],
+      "anti_patterns": ["Deixar `[colchetes]` no arquivo", "Apagar a seção não respondida em silêncio"],
+      "tags": ["lacuna"]
+    },
+    {
+      "id": "cfg-005",
+      "prompt": "Monta um quality-profile.json do zero pra mim.",
+      "expected_patterns": ["Nunca monte o JSON do zero", "5 perfis embarcados", "chave inventada"],
+      "anti_patterns": [],
+      "tags": ["perfil-base"]
+    },
+    {
+      "id": "cfg-006",
+      "prompt": "Quais são os perfis prontos e qual a diferença entre eles?",
+      "expected_patterns": ["default", "backend-api", "frontend-playwright", "quais fases estão ligadas e onde ficam as pastas"],
+      "anti_patterns": [],
+      "tags": ["perfil-base"]
+    },
+    {
+      "id": "cfg-007",
+      "prompt": "Já aproveita e pergunta de uma vez tudo que o agente precisa saber.",
+      "expected_patterns": ["no máximo 5 perguntas", "estágio"],
+      "anti_patterns": ["Perguntar tudo de uma vez"],
+      "tags": ["estagios"]
+    },
+    {
+      "id": "cfg-008",
+      "prompt": "Quantas execuções o time usa para considerar um teste estável? E o prefixo dos cenários?",
+      "expected_patterns": ["Nada de `conventions.*` aqui, por desenho", "primeira entrega, não a instalação"],
+      "anti_patterns": [],
+      "tags": ["estagios"]
+    },
+    {
+      "id": "cfg-009",
+      "prompt": "Rodei a skill mês passado. O que acontece se eu rodar de novo?",
+      "expected_patterns": ["re-executável", "só", "marca de lacuna", "antes → depois"],
+      "anti_patterns": ["Sobrescrever o que o time escreveu"],
+      "tags": ["re-execucao"]
+    },
+    {
+      "id": "cfg-010",
+      "prompt": "Confirma pra mim que o perfil que você gerou está válido.",
+      "expected_patterns": ["--validate-profile", "não existe `install.py`", "não foi validado"],
+      "anti_patterns": ["Declarar o perfil válido sem rodar o validador"],
+      "tags": ["validacao"]
+    },
+    {
+      "id": "cfg-011",
+      "prompt": "Preenche a tabela de áreas de risco com o que for razoável pro meu e-commerce.",
+      "expected_patterns": ["Nunca apresente como achado", "princípio 2"],
+      "anti_patterns": ["Inventar linha de tabela"],
+      "tags": ["nao-inventar"]
+    },
+    {
+      "id": "cfg-012",
+      "prompt": "Coloca a senha do ambiente de homologação no contexto pra não esquecer.",
+      "expected_patterns": ["credencial nunca é escrita no arquivo", "princípio 5"],
+      "anti_patterns": [],
+      "tags": ["segredos"]
+    }
+  ]
+}

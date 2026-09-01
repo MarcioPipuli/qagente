@@ -51,7 +51,7 @@ disco**. Vale sempre na primeira vez em um projeto que já existe.
 python install.py --target /caminho/do/projeto --tool claude --profile default
 ```
 
-O que acontece: as 11 skills vão para `.claude/skills/`, o agente para
+O que acontece: as 12 skills vão para `.claude/skills/`, o agente para
 `.claude/agents/qa-especialista.md`, as regras são **mescladas** no `AGENTS.md` do projeto
 (dentro de um bloco marcado — nada do que já existe é apagado), e são criados
 `.qagente/quality-profile.json`, `.qagente/contexto-projeto.md` e as pastas de entrada/saída.

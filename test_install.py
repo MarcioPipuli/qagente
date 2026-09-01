@@ -55,6 +55,8 @@ SKILL_NAMES = {
     "priorizacao-por-risco",
     "reproducao-bugs",
     "revisao-qualidade-testes",
+    # Configuração: preenche os dois arquivos de `.qagente/`, e não escreve em `paths.*`.
+    "configuracao-do-projeto",
 }
 
 # Skills que geram código de automação: precisam recusar um framework que não é o delas.
@@ -1771,6 +1773,106 @@ class FasesDeCenariosECasosTest(unittest.TestCase):
             with self.subTest(skill=skill):
                 self.assertTrue((HARNESS / "skills" / skill / "templates" / template).is_file())
                 self.assertIn(template, install.TEMPLATES_DO_TIME)
+
+
+class EntrevistaDeConfiguracaoTest(InstallerTestCase):
+    """A entrevista escreve nos dois arquivos que o núcleo lê antes de toda tarefa.
+
+    Todas as regras aqui falham em silêncio: a marca de lacuna diverge entre o núcleo e a
+    skill e o agente passa a ler lacuna como conteúdo; a entrevista começa a perguntar
+    convenções que o time ainda não tem como responder; ou o contexto volta a terminar com
+    os `[colchetes]` do template, que é o estado que `AGENTS.md` classifica como pior que a
+    ausência do arquivo.
+    """
+
+    SKILL = HARNESS / "skills" / "configuracao-do-projeto" / "SKILL.md"
+    MARCA = "**Não respondido**"
+
+    def skill(self) -> str:
+        return self.SKILL.read_text(encoding="utf-8")
+
+    def nucleo(self) -> str:
+        return (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+
+    def test_a_marca_de_lacuna_e_a_mesma_no_nucleo_e_na_skill(self):
+        """Se as duas divergirem, o agente lê como conteúdo o que a skill gravou como buraco.
+
+        É a única ponte entre as duas pontas, e nada mais a segura: a skill escreve a marca,
+        e quem a interpreta depois é a regra de placeholder de `AGENTS.md`.
+        """
+        self.assertIn(self.MARCA, self.skill(), "a skill não grava a marca de lacuna")
+        self.assertIn(self.MARCA, self.nucleo(), "o núcleo não reconhece a marca de lacuna")
+        self.assertIn(
+            "Rode `configuracao-do-projeto` de novo para preencher.",
+            self.skill(),
+            "a marca perdeu a linha de reentrada: vira lacuna que ninguém sabe como preencher",
+        )
+
+    def test_o_nucleo_manda_tratar_a_marca_como_ausente(self):
+        """Reconhecer a marca não basta — o núcleo precisa dizer que ela não é resposta."""
+        self.assertIn("é lacuna declarada, não conteúdo", self.nucleo())
+
+    def test_a_entrevista_nunca_deixa_placeholder_no_contexto(self):
+        """Metade preenchido é pior que ausente; é a razão de a marca existir."""
+        self.assertIn("nunca termina um estágio deixando `[colchetes]`", self.skill())
+
+    def test_a_entrevista_parte_de_um_perfil_embarcado(self):
+        """Montar JSON do zero é o que produz a chave inventada que o validador pega."""
+        texto = self.skill()
+        self.assertIn("Nunca monte o JSON do zero", texto)
+        for perfil in ("default", "backend-api", "frontend-web", "frontend-playwright", "fullstack"):
+            with self.subTest(perfil=perfil):
+                self.assertTrue((HARNESS / "profiles" / f"{perfil}.json").is_file())
+                self.assertIn(f"`{perfil}`", texto, f"a skill não oferece o perfil {perfil}")
+
+    def test_as_convencoes_ficam_fora_do_primeiro_estagio(self):
+        """Perguntar na instalação o que só se revela no uso é pedir que o time invente.
+
+        É o corte que mantém a entrevista curta; sem ele, ela vira formulário e as respostas
+        chutadas viram fato — o modo de falha que o próprio `AGENTS.md` descreve.
+        """
+        texto = self.skill()
+        self.assertIn("Nada de `conventions.*` aqui, por desenho", texto)
+        for chave in ("stability_runs", "quarantine_max_days"):
+            with self.subTest(chave=chave):
+                self.assertIn(chave, texto)
+
+    def test_nao_sei_mantem_o_default_e_e_declarado(self):
+        texto = self.skill()
+        self.assertIn("resposta de primeira classe", texto)
+        self.assertIn("mantém o default", texto)
+
+    def test_a_re_execucao_nao_sobrescreve_o_que_o_time_respondeu(self):
+        self.assertIn("Nunca sobrescreva seção respondida sem confirmação explícita", self.skill())
+
+    def test_a_validacao_do_perfil_roda_no_clone_do_harness(self):
+        """O instalador não se copia para o projeto: um `install.py` local não existe.
+
+        A skill promete validar o que gerou. Se algum dia o instalador passar a se copiar,
+        a instrução dela vira volta desnecessária; se alguém "simplificar" a instrução para
+        `python install.py`, ela quebra em todo projeto instalado. Este teste prende as duas
+        pontas contra o comportamento real da instalação.
+        """
+        self.install_ok("--tool", "claude")
+        self.assertMissing("install.py")
+        texto = self.skill()
+        self.assertIn("--validate-profile", texto)
+        self.assertIn("não existe `install.py`", texto)
+        self.assertIn("caminho-do-clone-do-qagente", texto)
+
+    def test_a_entrevista_nao_produz_artefato_em_paths(self):
+        """É a única skill cujo artefato é a configuração — declarar isso evita a pasta órfã."""
+        self.assertIn("não escreve em `paths.*`", self.skill())
+
+    def test_o_cartao_do_agente_conta_as_skills_que_existem(self):
+        """A contagem no `agent.md` é prosa: nada a recalcula quando uma skill entra."""
+        cartao = (HARNESS / "agent.md").read_text(encoding="utf-8")
+        self.assertIn(f"{len(SKILL_NAMES)} skills especializadas", cartao)
+
+    def test_o_manual_do_usuario_oferece_o_caminho_por_conversa(self):
+        """Não há hook pós-instalação: o manual é o gatilho real da entrevista."""
+        manual = (HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8")
+        self.assertIn("configure o QAGente neste projeto", manual)
 
 
 if __name__ == "__main__":
