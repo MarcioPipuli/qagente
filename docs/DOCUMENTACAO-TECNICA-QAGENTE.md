@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **12 skills, 150 evals, 202 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **12 skills, 150 evals, 217 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -67,7 +67,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 - **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
-- **Por que 202 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
+- **Por que 217 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
   testa **promessas do núcleo** (que toda skill mande ler o perfil, que toda chave `paths.*`
   citada exista no instalador, que a `description` só prometa artefato que tem skill e destino).
 
@@ -90,7 +90,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `install.py` | Instalador + validador de perfil | Pessoa / CI | Instalação |
 | `validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 202 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `test_install.py` | 217 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -186,15 +186,35 @@ skill mostram três".
 
 ### 4.2 Contexto × perfil: autoridade dividida
 
-Os dois arquivos de `.qagente/` respondem perguntas diferentes e **nenhum substitui o outro**:
+Os três arquivos de `.qagente/` respondem perguntas diferentes e **nenhum substitui o outro**.
+A ordem de leitura é a ordem da tabela, e é também a hierarquia de confiança:
 
 | Arquivo | Responde | Vence quando... |
 |---|---|---|
 | `quality-profile.json` | **Como** trabalhar: idioma, caminhos, frameworks, escala de risco, convenções | ...a decisão é configurável (onde salvar, qual framework, qual escala) |
 | `contexto-projeto.md` | **O que é o produto**: fluxos críticos, áreas de risco, terminologia, ambientes, maturidade | ...a questão é descrição do produto (o que é crítico, como o domínio chama as coisas) |
+| `memoria-projeto.md` | **O que o agente aprendeu no uso**, uma linha por fato | ...nunca contra os outros dois: é a camada mais fraca, e contradizer o contexto significa fato envelhecido |
 
 O contexto é **fato sobre o sistema, não configuração**: informa o julgamento, não muda uma
 decisão que o perfil já tomou.
+
+**A memória é o único arquivo que o agente escreve**, e a razão de ela existir separada do contexto
+é de segurança, não de organização. O princípio 7 trata documento de entrada como dado, nunca
+instrução — mas é uma defesa **por sessão**. Se o agente gravasse num arquivo o que leu num PRD, uma
+injeção viraria **persistente**: entraria na memória e seria relida como fato do produto para
+sempre, já lavada da origem suspeita. Daí a porta única: a coluna `Origem` é vocabulário fechado
+(`usuário-afirmou`, `usuário-confirmou`, `usuário-corrigiu`), e os três valores têm a mesma
+propriedade — a origem é sempre um turno humano da conversa. Observação do repositório não é
+exceção: entra como proposta e só vira linha depois de confirmada.
+
+O crescimento é contido por **promoção**: fato estável sai da memória e vira linha do
+`contexto-projeto.md`, na seção que a própria memória declara. É a válvula do teto (aviso em 60
+linhas de fato, teto em 100) e é o que faz o contexto — o arquivo que ninguém preenche — ser
+preenchido pelo uso. Duas regras de colisão, ambas presas por teste: correções de rota promovem
+para `## Observações` sob `### Aprendido no uso`, que nunca colide com o
+`### Entrevista de configuração` que `configuracao-do-projeto` reescreve a cada execução; e
+promover para uma seção marcada `> **Não respondido**` remove a marca, na proposta mostrada ao
+usuário.
 
 ### 4.3 As cinco invariantes
 
@@ -1100,7 +1120,7 @@ regex) · qualquer outra coisa é substring sem diferenciar maiúsculas.
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 202 testes
+### 14.3 `test_install.py` — 217 testes
 
 | Grupo de classes | O que prende |
 |---|---|

@@ -29,6 +29,7 @@ QAGente/
 ├── AGENTS.md              # Regras de comportamento (rastreabilidade, risco, independência de testes, DoD)
 ├── CLAUDE.md               # Ponteiro para AGENTS.md (mesmo padrão usado pelo agent-skills-main)
 ├── contexto/               # Template de contexto do projeto (fatos do produto)
+├── memoria/                # Template da memória do projeto (o que o agente aprende no uso)
 ├── templates-do-time/      # README do diretório onde o time sobrescreve o layout dos artefatos
 ├── profiles/               # Perfis configuráveis por tipo de time/projeto
 │   ├── default.json
@@ -87,14 +88,15 @@ Uma fase desligada no perfil não ganha pasta: com `"api": {"enabled": false}` o
 
 O nome-base do documento de origem é preservado no arquivo gerado, para manter a rastreabilidade entre entrada e saída. Um caminho indicado explicitamente pelo usuário no pedido tem prioridade sobre o perfil e sobre essa convenção. Detalhes em [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas).
 
-## Os dois arquivos de configuração
+## Os três arquivos de `.qagente/`
 
-O instalador cria dois arquivos em `.qagente/`, e eles respondem perguntas diferentes:
+O instalador cria três arquivos, e eles respondem perguntas diferentes:
 
-| Arquivo | Responde | Formato |
+| Arquivo | Responde | Quem escreve |
 |---|---|---|
-| `quality-profile.json` | **Como** trabalhar: idioma, caminhos, frameworks, escala de risco, convenções | JSON, também lido pelo instalador |
-| `contexto-projeto.md` | **O que é o produto**: fluxos críticos, áreas de risco com impacto de negócio, terminologia do domínio, ambientes, maturidade do time | Markdown, lido só pelo agente |
+| `quality-profile.json` | **Como** trabalhar: idioma, caminhos, frameworks, escala de risco, convenções | Você (JSON, também lido pelo instalador) |
+| `contexto-projeto.md` | **O que é o produto**: fluxos críticos, áreas de risco com impacto de negócio, terminologia do domínio, ambientes, maturidade do time | Você (Markdown, lido só pelo agente) |
+| `memoria-projeto.md` | **O que o agente aprendeu no uso**: um fato por linha, com origem e data | O agente, **sempre com a sua aprovação** |
 
 O contexto vem como template com placeholders e precisa ser preenchido — é dele que sai o
 **impacto** na priorização da Fase 1. Sem ele, o agente prioriza por palpite e diz que está

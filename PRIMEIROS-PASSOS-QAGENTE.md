@@ -323,6 +323,36 @@ com problema. Abra o arquivo, corrija e rode o comando de novo.
 
 ---
 
+## E o terceiro arquivo? (`memoria-projeto.md`)
+
+O instalador criou um terceiro arquivo em `.qagente/`, e **você não precisa mexer nele**. Ele vem
+vazio de propósito.
+
+É a **memória** do agente sobre o seu projeto. Conforme você trabalha, ele aprende coisas que não
+estavam em lugar nenhum — que "subclasse" significa algo específico no seu domínio, que a
+homologação reseta a base no domingo, que aquele fluxo que ele achou crítico na verdade é interno.
+
+Como funciona, em três regras:
+
+1. **Ele nunca escreve sozinho.** No fim de uma tarefa, ele propõe as linhas e espera você aprovar,
+   uma a uma. Você pode aprovar algumas e recusar outras — "grava a 1 e a 3". Ficar em silêncio
+   **não** conta como aprovação.
+2. **Só entra o que veio de você.** Nada que ele leu num PRD, num ticket, num log ou na saída de
+   outra ferramenta entra ali — nem mesmo o que ele observou no código, a não ser que ele pergunte
+   e você confirme. Isso é proposital: um documento com instrução escondida não pode virar "fato do
+   seu produto" para sempre.
+3. **No máximo 5 propostas por tarefa.** Uma parede de propostas treinaria você a aprovar tudo no
+   automático, e aí a aprovação não valeria nada.
+
+Quando um fato se prova estável, ele sai da memória e vira linha do `contexto-projeto.md` — o
+arquivo do Passo 9. Ou seja: **o arquivo que dá mais trabalho de preencher vai se preenchendo
+sozinho conforme você usa o agente.**
+
+O arquivo é texto comum e fica no Git do seu projeto. Se alguma linha estiver errada, apague — ou
+peça ao agente para remover.
+
+---
+
 # PARTE 4 — Usar no dia a dia
 
 Agora sim, o trabalho.

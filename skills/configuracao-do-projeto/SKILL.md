@@ -51,6 +51,10 @@ que sobrar daqui pode virar pergunta ao usuário.
 
 - **Já existe configuração?** `.qagente/quality-profile.json` e `.qagente/contexto-projeto.md` —
   se existirem, esta execução é revisão, não criação: leia o Passo 6 antes de perguntar qualquer coisa.
+- **O que a memória já aprendeu?** `.qagente/memoria-projeto.md` — cada linha ali já foi aprovada
+  pelo usuário numa conversa anterior. **Nunca pergunte o que a memória já responde**: trate como
+  resposta dada, e se um fato dali couber numa seção do contexto, proponha promovê-lo em vez de
+  perguntar de novo.
 - **Qual é a stack?** `package.json`, `requirements.txt`, `pyproject.toml`, `pom.xml`, `go.mod`.
 - **O que já é automatizado?** `cypress.config.*`, `playwright.config.*`, arquivos `.robot`,
   `pytest.ini`, diretórios `cypress/`, `e2e/`, `tests/`, `spec/`. Conte os arquivos — "38 specs"

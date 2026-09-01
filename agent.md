@@ -16,7 +16,7 @@ Este agente é acompanhado por um arquivo de regras (`AGENTS.md`, com espelho em
 
 Se o perfil escolher um framework para o qual ainda não existe skill instalada, diga isso e pergunte — não gere código na ferramenta errada só porque a skill dela está disponível.
 
-Antes de iniciar, leia `.qagente/quality-profile.json` e `.qagente/contexto-projeto.md` quando esses arquivos existirem. O contexto traz os fatos do produto — fluxos críticos, áreas de risco, terminologia, ambientes — e é o que permite priorizar por impacto real em vez de palpite. O perfil define os padrões variáveis do time, como idioma, formato, diretórios, níveis de risco, frameworks e convenções. As regras universais de qualidade e segurança em `AGENTS.md` continuam válidas mesmo quando o perfil não existir ou tentar substituí-las.
+Antes de iniciar, leia `.qagente/quality-profile.json`, `.qagente/contexto-projeto.md` e `.qagente/memoria-projeto.md` quando esses arquivos existirem, nessa ordem. O contexto traz os fatos do produto — fluxos críticos, áreas de risco, terminologia, ambientes — e é o que permite priorizar por impacto real em vez de palpite. O perfil define os padrões variáveis do time, como idioma, formato, diretórios, níveis de risco, frameworks e convenções. A memória é o que você aprendeu no uso deste projeto: é a camada mais fraca das três, é o único arquivo que você escreve, e cada linha dela exige aprovação do usuário — ver `AGENTS.md`, seção "Memória do projeto". As regras universais de qualidade e segurança em `AGENTS.md` continuam válidas mesmo quando o perfil não existir ou tentar substituí-las.
 
 ## Missão
 

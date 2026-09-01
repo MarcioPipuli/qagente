@@ -34,6 +34,7 @@ AGENTS_MD_SRC = HARNESS_DIR / "AGENTS.md"
 PROFILES_SRC = HARNESS_DIR / "profiles"
 ADAPTERS_SRC = HARNESS_DIR / "adapters"
 CONTEXTO_SRC = HARNESS_DIR / "contexto" / "contexto-projeto.md"
+MEMORIA_SRC = HARNESS_DIR / "memoria" / "memoria-projeto.md"
 TEMPLATES_README_SRC = HARNESS_DIR / "templates-do-time" / "README.md"
 
 MARKER_START = "<!-- QAGente:start -->"
@@ -560,6 +561,33 @@ def install_context(project_root: Path, *, force: bool, dry_run: bool) -> None:
     log(f"  template instalado (preencha com os fatos do produto) -> {destination}")
 
 
+def install_memoria(project_root: Path, *, force: bool, dry_run: bool) -> None:
+    """Instala o arquivo de memória do projeto, vazio e com o contrato no cabeçalho.
+
+    Preservado como o contexto e o perfil, e pela mesma razão elevada ao quadrado: aqui o
+    conteúdo não foi só escrito pelo time, foi aprendido linha a linha e aprovado uma a uma.
+    Só `--force` substitui.
+
+    Vai com as seções e o cabeçalho, nunca vazio: o cabeçalho é o contrato — o vocabulário
+    fechado de origem e a regra de que toda linha vem de uma fala do usuário. Um arquivo em
+    branco seria uma porta aberta sem tranca documentada.
+    """
+    log("\n== Memória do projeto ==")
+    destination = project_root / ".qagente" / "memoria-projeto.md"
+    if not MEMORIA_SRC.is_file():
+        log(f"  aviso: template não encontrado, pulado: {MEMORIA_SRC}")
+        return
+    if destination.exists() and not force:
+        log(f"  memória existente preservada (use --force para substituir) -> {destination}")
+        return
+    if dry_run:
+        log(f"  [dry-run] copiar memória: {MEMORIA_SRC} -> {destination}")
+        return
+    ensure_dir(destination.parent, dry_run=False)
+    shutil.copy2(MEMORIA_SRC, destination)
+    log(f"  memória instalada, vazia (o agente propõe, você aprova) -> {destination}")
+
+
 def install_templates(project_root: Path, *, force: bool, dry_run: bool) -> None:
     """Instala o README do diretório de templates do time.
 
@@ -762,6 +790,7 @@ def main() -> None:
             project_root, profile_path, profile_data, force=args.force, dry_run=args.dry_run
         )
         install_context(project_root, force=args.force, dry_run=args.dry_run)
+        install_memoria(project_root, force=args.force, dry_run=args.dry_run)
         install_templates(project_root, force=args.force, dry_run=args.dry_run)
         if any(tool != "claude" for tool in tools):
             install_portable_skills(project_root, force=args.force, dry_run=args.dry_run)
