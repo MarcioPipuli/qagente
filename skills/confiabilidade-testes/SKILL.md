@@ -35,6 +35,13 @@ a quarentena e espera; ele é corrigido primeiro.
 | Framework de API | `api.framework` | Robot Framework |
 | Onde estão os testes | `paths.ui_tests`, `paths.api_tests` | `saida/testes-ui/`, `saida/testes-api/` |
 | Onde salvar o relatório e o registro de quarentena | `paths.reviews`, senão `paths.test_cases` | `saida/confiabilidade/` |
+| Execuções para dar uma correção como verificada | `conventions.stability_runs` | `50` |
+| Prazo máximo de quarentena | `conventions.quarantine_max_days` | `14` dias |
+
+Os dois números acima são política do time, não constante: escreva no relatório e no registro
+de quarentena o valor **efetivo** do perfil, nunca o default citado nos exemplos desta skill.
+E `stability_runs` é prova de correção — não é a contagem da reprodução de defeito nem a
+amostragem da revisão de suíte; ver `AGENTS.md`, "Perfil de qualidade do time".
 
 As regras universais de `AGENTS.md` valem sempre. Duas mandam aqui: **independência e
 determinismo dos testes** — que é literalmente o assunto desta skill — e **evidência real de
@@ -146,12 +153,12 @@ Quarentena isola o teste instável: ele continua rodando, mas não bloqueia a in
 3. **Isolar** — projeto/execução separada, que não bloqueia o pipeline.
 4. **Diagnosticar** — classificar pela árvore do Passo 1.
 5. **Corrigir** — aplicar a correção da categoria.
-6. **Verificar** — 50 execuções repetidas, zero falhas.
+6. **Verificar** — `conventions.stability_runs` execuções repetidas (50 execuções por default), zero falhas.
 7. **Liberar** — remover a etiqueta e registrar no histórico qual era a causa e qual foi a correção.
 
 **Regras de higiene:**
 
-- **Prazo máximo de 14 dias.** Depois disso, corrija ou apague. ❌ Quarentena permanente é apodrecimento com nome bonito.
+- **Prazo máximo de `conventions.quarantine_max_days`** — 14 dias por default. Depois disso, corrija ou apague. ❌ Quarentena permanente é apodrecimento com nome bonito.
 - **Toda entrada tem ticket.** Nunca existe quarentena anônima.
 - **Revisão semanal.** Entrada que envelhece é escalada.
 - **Acompanhe o tamanho.** Mais de 5% da suíte em quarentena não é problema de teste, é problema de processo.
@@ -181,15 +188,15 @@ Uma correção que muda **o que** o teste verifica, e não apenas **como** ele e
 - ❌ **Tratar toda oscilação igual.** Adicionar espera fixa num problema de dependência de dado deixa a suíte mais lenta e igualmente instável.
 - ❌ **Construir automação de cura antes de ter teste estável.** Comece por seletor resiliente e espera correta. Infraestrutura de cura automática só depois que os dados mostrarem onde a quebra acontece.
 - ❌ **Contar falha de ambiente como oscilação do teste.** Isso polui a métrica e faz o time perseguir o problema errado.
-- ❌ **Declarar corrigido sem repetir a execução.** Sem as 50 execuções verdes, você tem esperança, não evidência.
+- ❌ **Declarar corrigido sem repetir a execução.** Sem as 50 execuções verdes do perfil (`conventions.stability_runs`), você tem esperança, não evidência.
 
 ## Pronto quando
 
 - Todo teste instável do escopo está classificado por causa raiz, com o sinal que levou à classificação registrado.
 - Cada um foi corrigido ou colocado em quarentena — nenhum ficou sendo repetido em silêncio sem plano e sem ticket.
-- A correção foi verificada com execuções repetidas (50 execuções, zero falhas) e a saída real foi mostrada ao usuário.
+- A correção foi verificada com o número de execuções repetidas de `conventions.stability_runs` (50 execuções, zero falhas, por default) e a saída real foi mostrada ao usuário.
 - O relatório lista uma nota de estabilidade por seletor e a média da suíte, com a meta de 3,5 explicitada e o resultado comparado a ela.
-- Toda entrada de quarentena tem ticket e data de expiração de no máximo 14 dias.
+- Toda entrada de quarentena tem ticket e data de expiração dentro de `conventions.quarantine_max_days` (14 dias por default).
 - Nenhuma troca de seletor foi aplicada sem registro de candidatos e sem checagem de intenção.
 - A taxa de oscilação da suíte foi medida antes e depois, ou o relatório diz por que não foi possível medir.
 

@@ -126,6 +126,8 @@ Detalhes que costumam passar batido:
 - ❌ Nunca use `cy.wait(3000)`, `waitForTimeout` ou o keyword `Sleep` do Robot Framework para "estabilizar" a reprodução. Espere pela condição — resposta, elemento, estado.
 
 Prove o determinismo antes de seguir: rode a reprodução 10 vezes seguidas e confirme que ela falha **nas 10**.
+Este 10 é próprio desta skill — prova **determinismo da reprodução**, não ausência de oscilação, e não sai de
+`conventions.stability_runs`; ver `AGENTS.md`, "Perfil de qualidade do time".
 
 ## Passo 5 — Escrever o teste de regressão vermelho, antes da correção
 

@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **11 skills, 120 evals, 148 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **11 skills, 138 evals, 191 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -709,6 +709,9 @@ e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da exec
 | `conventions.gherkin_language` | `pt`, `en`, … | Idioma das palavras-chave do Gherkin | Fase 2 |
 | `conventions.scenario_title_prefix` | texto | Prefixo dos títulos ("Validar que") | Fase 2 |
 | `conventions.test_id_pattern` | texto | Padrão de ID (`TC-{DOMAIN}-{NUMBER}`) | Fases 1 e 2 |
+| `conventions.scenario_outline_threshold` | inteiro ≥ 2 | Limiar de itens iguais para `Esquema do Cenário` (`3`) | Fase 2 |
+| `conventions.stability_runs` | inteiro ≥ 1 | Execuções verdes que verificam uma correção (`50`) | `confiabilidade-testes` |
+| `conventions.quarantine_max_days` | inteiro ≥ 1 | Prazo máximo de quarentena, em dias (`14`) | `confiabilidade-testes` |
 | `api.enabled` | bool | Se a automação de API existe | Fase 3a + instalador |
 | `api.framework` | texto | Qual skill de API responde | Fase 3a |
 | `api.base_url_env` / `api.user_env` / `api.password_env` | texto | **Nomes** das variáveis de ambiente (nunca os valores) | Fase 3a |
@@ -744,6 +747,9 @@ Dois níveis: **erro** impede a instalação; **aviso** é reportado e a instala
 | `conventions.scenario_title_prefix` que não é texto | erro (use `""` para nenhum prefixo) |
 | `conventions.test_id_pattern` vazio | erro |
 | `conventions.test_id_pattern` sem `{NUMBER}` | aviso ("os IDs podem colidir") |
+| Convenção numérica que não é inteiro (texto, booleano, decimal) | erro |
+| Convenção numérica abaixo do mínimo (`scenario_outline_threshold` < 2, as outras < 1) | erro |
+| Convenção numérica fora da faixa usual (2-10, 10-500, 1-30) | aviso — a política é do time |
 | `api.enabled` / `ui.enabled` não booleano | erro |
 | `api.framework` / `ui.framework` vazio | erro |
 | `framework` ausente com a fase **habilitada** | erro |
@@ -1258,7 +1264,8 @@ pensada) → documentar na tabela `## Configuração` das skills afetadas → de
 no núcleo, se houver → escrever o teste que prende as duas pontas → rodar o gate.
 
 Risco explícito a evitar: **super-parametrização**. Cada chave nova é um ramo no validador, um
-teste e uma linha nas tabelas de configuração de 11 skills. Gramática do Gherkin (aspas duplas,
+teste e uma linha na tabela de configuração das skills afetadas — 1 ou 2, não 11: cada
+skill lista só os campos que usa. Gramática do Gherkin (aspas duplas,
 indentação, Dado/Quando/Então) **não** é candidata: parametrizar isso é permitir configurar o
 agente para gerar Gherkin inválido.
 

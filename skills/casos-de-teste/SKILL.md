@@ -41,6 +41,7 @@ e diga ao usuário o que teria mudado se existisse.
 | Prefixo do título dos cenários | `conventions.scenario_title_prefix` | `Validar que` |
 | Formato do artefato | `artifact_format` | `markdown-gherkin` |
 | Padrão de ID | `conventions.test_id_pattern` | herdado dos cenários de origem |
+| Limiar do Esquema do Cenário | `conventions.scenario_outline_threshold` | `3` itens |
 | Onde salvar a saída | `paths.test_cases` | `saida/casos-de-teste/` |
 
 Sem perfil, ou com o perfil ausente de um campo, use o default da coluna da direita. As regras
@@ -163,7 +164,7 @@ Marque `@nao-automatizavel` só com motivo declarado no resumo (depende de ambie
     E <complemento, se necessário>
 ```
 
-**Esquema do Cenário (Scenario Outline)** — quando a MESMA regra se repete para uma lista de campos/valores/status/etapas (3 ou mais itens):
+**Esquema do Cenário (Scenario Outline)** — quando a MESMA regra se repete para uma lista de campos/valores/status/etapas, a partir do limiar de `conventions.scenario_outline_threshold` (3 ou mais itens, por default):
 
 ```gherkin
   @CT-03 @interface @pendente-de-automacao
@@ -179,9 +180,9 @@ Marque `@nao-automatizavel` só com motivo declarado no resumo (depende de ambie
       | Valor 3     |
 ```
 
-Regra de decisão: se a mesma verificação se aplica a 3+ itens de uma lista (campos, status, telas, fluxos, requisitos), use Esquema do Cenário — nunca repita o mesmo Cenário simples várias vezes trocando só o valor. Nomeie a coluna da tabela de Exemplos com o nome do parâmetro (`campo`, `etapa`, `fluxo`, `status`, `requisito` etc.) e alinhe as colunas com espaços para legibilidade.
+Regra de decisão: se a mesma verificação se aplica ao limiar de `conventions.scenario_outline_threshold` itens ou mais de uma lista (3+ por default: campos, status, telas, fluxos, requisitos), use Esquema do Cenário — nunca repita o mesmo Cenário simples várias vezes trocando só o valor. Nomeie a coluna da tabela de Exemplos com o nome do parâmetro (`campo`, `etapa`, `fluxo`, `status`, `requisito` etc.) e alinhe as colunas com espaços para legibilidade.
 
-**Como isso conversa com o contrato**: um caso sugerido = um `Cenário`. Quando 3+ casos sugeridos do mesmo cenário têm exatamente os mesmos passos e diferem só no valor, eles viram **linhas de `Exemplos`** dentro de um único `Esquema do Cenário`. A contagem do resumo conta linhas de `Exemplos`, não blocos, e diz como ficou: "11 casos: 6 `Cenário` + 1 `Esquema do Cenário` com 5 `Exemplos`".
+**Como isso conversa com o contrato**: um caso sugerido = um `Cenário`. Quando o número de casos sugeridos do mesmo cenário atinge o limiar (3+ por default) e todos têm exatamente os mesmos passos, diferindo só no valor, eles viram **linhas de `Exemplos`** dentro de um único `Esquema do Cenário`. A contagem do resumo conta linhas de `Exemplos`, não blocos, e diz como ficou: "11 casos: 6 `Cenário` + 1 `Esquema do Cenário` com 5 `Exemplos`".
 
 ### 7. Nomenclatura dos títulos
 
@@ -264,7 +265,7 @@ Cada observação deve: (a) explicar o que foi assumido/deduzido e por quê, (b)
 - [ ] Todo caso tem tag de rastreio ao cenário (ou ao requisito), tag de camada e tag de tipo de execução.
 - [ ] Todo título de Cenário/Esquema do Cenário usa o prefixo do perfil ("Validar que..." por default) e é específico.
 - [ ] Nenhum caso tem mais de um `Quando`, e nenhum passo tem "se", "ou" ou "caso".
-- [ ] Esquema do Cenário foi usado (não Cenários repetidos) sempre que 3+ itens compartilham a mesma regra.
+- [ ] Esquema do Cenário foi usado (não Cenários repetidos) sempre que o limiar de `conventions.scenario_outline_threshold` itens (3+ por default) compartilha a mesma regra.
 - [ ] Valores literais estão entre aspas duplas, e nenhum valor concreto aparece onde um dado descritivo bastaria.
 - [ ] Terminologia bate exatamente com o requisito original (nomes de campo, tela, botão).
 - [ ] Pares positivo/negativo relevantes estão cobertos dentro de cada tópico.
@@ -283,7 +284,7 @@ Ver `templates/casos-de-teste.md` para um exemplo completo (cabeçalho + `Funcio
 - Todo caso carrega tag de rastreio, tag de camada (`@api`/`@interface`) e tag de execução (`@pendente-de-automacao`/`@nao-automatizavel`).
 - Todo título de cenário começa com o prefixo de `conventions.scenario_title_prefix` e descreve o comportamento esperado, não a ação.
 - Cada caso tem um único `Quando`, e nenhum passo carrega condicional.
-- Toda regra que se repete para três ou mais itens está em `Esquema do Cenário` com `Exemplos` — nenhum cenário simples duplicado trocando só o valor.
+- Toda regra que se repete a partir do limiar de `conventions.scenario_outline_threshold` (três ou mais itens, por default) está em `Esquema do Cenário` com `Exemplos` — nenhum cenário simples duplicado trocando só o valor.
 - Todo valor ou label literal está entre aspas duplas.
 - Cada passo respeita a gramática de `gherkin-palavras-chave`: nenhum `Dado` com ação, nenhum `Então` com implementação interna, nenhum `E` herdando categoria errada.
 - O resumo final existe, com totais que batem com o corpo e com a aderência ao contrato declarada.

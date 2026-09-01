@@ -141,7 +141,7 @@ Os dois caminhos entregam o mesmo artefato, no formato de `templates/relatorio-r
 ## Verificação (rodar antes de comentar)
 
 1. **Rode a suíte uma vez** e confirme o verde. Nunca revise vermelho ou pulado como se passasse.
-2. **Rode de novo, 3 vezes**, para expor oscilação. Um teste que passa uma vez e falha na seguinte é o mau cheiro de confiabilidade, não azar.
+2. **Rode de novo, 3 vezes**, para expor oscilação. Um teste que passa uma vez e falha na seguinte é o mau cheiro de confiabilidade, não azar. Este 3 é **amostragem**, não prova: a verificação completa de uma correção usa `conventions.stability_runs` em `skills/confiabilidade-testes`, e os dois números não se substituem (ver `AGENTS.md`, "Perfil de qualidade do time").
    - Cypress: repetir a execução do spec; Playwright: `--repeat-each=3`; Robot Framework: repetir a suíte alvo.
 3. **Capture o tempo por teste.** Uma suíte de 20 minutos tem problema de desempenho, mesmo verde.
 4. **Quando existir ferramenta de teste de mutação no projeto** (Stryker em JavaScript/TypeScript, `mutmut` em Python), rode e leia a nota. É a única medida objetiva contra asserção fraca e ciclo fechado de IA: suíte gerada por agente abaixo de ~60% de mutação não está restringindo a implementação. Se a ferramenta não existir, diga isso no relatório em vez de afirmar qualidade que você não mediu.

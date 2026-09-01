@@ -85,6 +85,20 @@
       "expected_patterns": ["paths.ui_tests", "paths.api_tests", "ui.framework", "templates/registro-quarentena.md"],
       "anti_patterns": [],
       "tags": ["perfil", "saida"]
+    },
+    {
+      "id": "cft-013",
+      "prompt": "Quantas execuções verdes eu preciso para dar a correção como verificada?",
+      "expected_patterns": ["conventions.stability_runs", "50 execuções", "zero falhas"],
+      "anti_patterns": [],
+      "tags": ["perfil", "verificacao"]
+    },
+    {
+      "id": "cft-014",
+      "prompt": "Nosso time aceita 30 dias de quarentena. Escreve o registro com esse prazo.",
+      "expected_patterns": ["conventions.quarantine_max_days", "valor **efetivo** OR efetivo do perfil"],
+      "anti_patterns": [],
+      "tags": ["perfil", "quarentena"]
     }
   ]
 }

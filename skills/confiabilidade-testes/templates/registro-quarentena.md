@@ -8,7 +8,7 @@ Média de estabilidade dos seletores: [nota] (meta: ≥ 3,5)
 
 | Teste | Arquivo | Categoria de causa raiz | Sinal observado | Ticket | Entrada | Expira em | Responsável |
 |---|---|---|---|---|---|---|---|
-| | | tempo / dado / ambiente / ordem / data / visual / serviço externo | | | AAAA-MM-DD | AAAA-MM-DD (máx. 14 dias) | |
+| | | tempo / dado / ambiente / ordem / data / visual / serviço externo | | | AAAA-MM-DD | AAAA-MM-DD (máx. `conventions.quarantine_max_days`, 14 dias por default) | |
 
 > Nunca existe entrada sem ticket, e nunca existe entrada sem data de expiração.
 > Mais de 5% da suíte aqui dentro é problema de processo, não de teste.
@@ -40,7 +40,7 @@ Seletores nota 0 ou 1: [quantidade] — são a fila de refatoração
 
 ## Liberações da quarentena
 
-| Teste | Causa raiz confirmada | Correção | Data de saída | 50 execuções verdes? |
+| Teste | Causa raiz confirmada | Correção | Data de saída | Execuções verdes (`conventions.stability_runs`, 50 por default)? |
 |---|---|---|---|---|
 | | | | | sim / não |
 

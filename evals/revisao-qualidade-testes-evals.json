@@ -85,6 +85,13 @@
       "expected_patterns": ["paths.api_tests", "paths.ui_tests", "paths.reviews", "templates/relatorio-revisao.md"],
       "anti_patterns": [],
       "tags": ["perfil", "saida"]
+    },
+    {
+      "id": "rqt-013",
+      "prompt": "Por que só 3 execuções aqui, se a skill de confiabilidade pede 50?",
+      "expected_patterns": ["amostragem", "conventions.stability_runs", "3 vezes"],
+      "anti_patterns": [],
+      "tags": ["perfil", "fronteira"]
     }
   ]
 }

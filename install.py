@@ -68,7 +68,23 @@ WORKFLOW_KEYS = (
     "require_execution_evidence",
 )
 
-CONVENTION_KEYS = ("gherkin_language", "scenario_title_prefix", "test_id_pattern")
+CONVENTION_KEYS = (
+    "gherkin_language",
+    "scenario_title_prefix",
+    "test_id_pattern",
+    "scenario_outline_threshold",
+    "stability_runs",
+    "quarantine_max_days",
+)
+
+# Convenções numéricas: (chave, mínimo aceitável, faixa esperada, razão do aviso fora dela).
+# O mínimo é erro — abaixo dele o número não significa mais o que a skill diz. A faixa é só
+# aviso: é decisão do time, e o instalador não sabe do contexto dele.
+CONVENTION_NUMBERS = (
+    ("scenario_outline_threshold", 2, (2, 10), "acima disso o Esquema do Cenário quase nunca é usado"),
+    ("stability_runs", 1, (10, 500), "poucas execuções não distinguem correção de sorte"),
+    ("quarantine_max_days", 1, (1, 30), "quarentena longa vira permanente, que é o que a regra evita"),
+)
 
 # Templates que o time pode sobrescrever em `.qagente/templates/`, por nome-base. Só layout
 # puro entra aqui: a ordem e a existência das seções do artefato. Os templates de automação
@@ -167,6 +183,11 @@ def selected_tools(args: argparse.Namespace) -> list[str]:
 
 def _texto_nao_vazio(valor: object) -> bool:
     return isinstance(valor, str) and bool(valor.strip())
+
+
+def _inteiro(valor: object) -> bool:
+    """`True` só para inteiro de verdade. `bool` é subclasse de `int` e não conta aqui."""
+    return isinstance(valor, int) and not isinstance(valor, bool)
 
 
 def _validar_caminho(valor: str) -> str | None:
@@ -302,6 +323,17 @@ def validate_profile(dados: dict) -> list[tuple[str, str, str]]:
                     problemas.append(("erro", "conventions.test_id_pattern", "precisa ser um texto não vazio"))
                 elif "{NUMBER}" not in padrao:
                     problemas.append(("aviso", "conventions.test_id_pattern", f"'{padrao}' não contém {{NUMBER}} — os IDs podem colidir"))
+
+            for chave, minimo, (piso, teto), razao in CONVENTION_NUMBERS:
+                valor = convencoes.get(chave)
+                if valor is None:
+                    continue
+                if not _inteiro(valor):
+                    problemas.append(("erro", f"conventions.{chave}", f"precisa ser um número inteiro (recebido: {valor!r})"))
+                elif valor < minimo:
+                    problemas.append(("erro", f"conventions.{chave}", f"precisa ser {minimo} ou mais (recebido: {valor})"))
+                elif not (piso <= valor <= teto):
+                    problemas.append(("aviso", f"conventions.{chave}", f"{valor} está fora da faixa usual ({piso}-{teto}) — {razao}"))
 
     for secao in ("api", "ui"):
         _validar_secao_automacao(dados, secao, problemas)

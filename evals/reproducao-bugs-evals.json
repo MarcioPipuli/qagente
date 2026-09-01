@@ -85,6 +85,13 @@
       "expected_patterns": ["templates/relato-reproducao.md"],
       "anti_patterns": [],
       "tags": ["template"]
+    },
+    {
+      "id": "rb-013",
+      "prompt": "O perfil diz stability_runs 50. Rodo a reprodução 50 vezes então?",
+      "expected_patterns": ["conventions.stability_runs", "determinismo", "10 vezes"],
+      "anti_patterns": [],
+      "tags": ["perfil", "fronteira"]
     }
   ]
 }

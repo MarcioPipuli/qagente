@@ -120,6 +120,13 @@
       "expected_patterns": ["herdada", "risk_levels", "cenarios-de-teste"],
       "anti_patterns": [],
       "tags": ["contrato", "fronteira"]
+    },
+    {
+      "id": "cas-018",
+      "prompt": "Aqui o time só quer Esquema do Cenário a partir de cinco itens. Como fica o limiar?",
+      "expected_patterns": ["conventions.scenario_outline_threshold", "por default"],
+      "anti_patterns": [],
+      "tags": ["perfil", "esquema"]
     }
   ]
 }

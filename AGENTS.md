@@ -19,6 +19,10 @@ O perfil não pode remover rastreabilidade, proteção de segredos, independênc
 
 Os níveis de `risk_levels` são identificadores canônicos em inglês (`critical`, `high`, `medium`, `low`): é assim que o perfil os declara e que as skills os citam. Nos artefatos entregues ao usuário, escreva-os no idioma de `language` — em pt-BR, `Crítica` / `Alta` / `Média` / `Baixa` —, preservando a ordem e a quantidade de níveis do perfil. Nunca use um nível que o perfil não declara: se a escala tiver menos níveis do que o exemplo de uma skill, colapse de baixo para cima e diga qual junção foi feita.
 
+As convenções numéricas do perfil valem cada uma na sua skill, e nenhuma delas é um número universal: `conventions.scenario_outline_threshold` (padrão 3) decide quando variações viram `Esquema do Cenário` em `skills/casos-de-teste`; `conventions.stability_runs` (padrão 50) e `conventions.quarantine_max_days` (padrão 14) governam a verificação e a quarentena em `skills/confiabilidade-testes`. Ausente do perfil, vale o padrão, e o número escrito no artefato é sempre o efetivo — nunca o exemplo da skill.
+
+**Repetição de execução não é um número só, são três decisões diferentes.** `stability_runs` é **prova de correção**: quantas execuções verdes seguidas fazem uma correção de teste instável contar como verificada. A reprodução de um defeito usa a própria contagem (10 execuções, em `skills/reproducao-bugs`), porque ali se prova **determinismo da reprodução**, não ausência de oscilação. E a revisão de suíte roda 3 vezes (`skills/revisao-qualidade-testes`) para **amostrar** oscilação, não para provar nada. Mudar `stability_runs` não muda as outras duas; alinhá-las é decisão explícita do time, não consequência automática.
+
 O arquivo `profiles/` do QAGente contém perfis iniciais que podem ser copiados e adaptados pelo time. A configuração efetiva deve ser resumida no início da entrega quando alterar o resultado, por exemplo: `Perfil aplicado: frontend-web`.
 
 ## Identidade

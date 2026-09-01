@@ -127,6 +127,9 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 | `conventions.gherkin_language` | Idioma das palavras-chave do Gherkin |
 | `conventions.scenario_title_prefix` | Prefixo dos títulos de cenário (`Validar que` por default) |
 | `conventions.test_id_pattern` | Padrão de ID para rastreabilidade |
+| `conventions.scenario_outline_threshold` | A partir de quantos itens iguais os casos viram `Esquema do Cenário` (`3`) |
+| `conventions.stability_runs` | Execuções verdes seguidas para dar uma correção de teste instável como verificada (`50`) |
+| `conventions.quarantine_max_days` | Prazo máximo de quarentena de um teste instável (`14`) |
 | `api.enabled`, `api.framework` | Se a automação de API existe e em qual ferramenta |
 | `api.base_url_env`, `api.user_env`, `api.password_env` | Nomes das variáveis de ambiente |
 | `ui.enabled`, `ui.framework` | Se a automação de UI existe e em qual ferramenta (`cypress` ou `playwright`) |

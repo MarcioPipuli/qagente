@@ -716,6 +716,34 @@ class ValidateProfileTest(unittest.TestCase):
     def test_gherkin_language_fora_do_formato_e_aviso(self):
         self.assertIn("conventions.gherkin_language", self.campos("aviso", conventions={"gherkin_language": "portugues"}))
 
+    # ---- convenções numéricas ----
+
+    def test_convencao_numerica_com_tipo_errado_e_erro(self):
+        """Texto e booleano passariam por comparação e produziriam um limiar sem sentido."""
+        for chave, _, _, _ in install.CONVENTION_NUMBERS:
+            for valor in ("3", True, 3.5, []):
+                with self.subTest(chave=chave, valor=valor):
+                    self.assertIn(f"conventions.{chave}", self.campos("erro", conventions={chave: valor}))
+
+    def test_convencao_numerica_abaixo_do_minimo_e_erro(self):
+        """Abaixo do mínimo o número deixa de significar o que a skill diz — limiar 1 não agrupa
+        nada, zero execução não verifica nada, zero dia de quarentena não é quarentena."""
+        for chave, minimo, _, _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                self.assertIn(f"conventions.{chave}", self.campos("erro", conventions={chave: minimo - 1}))
+
+    def test_convencao_numerica_fora_da_faixa_usual_e_so_aviso(self):
+        """A faixa é julgamento do instalador sobre o que é comum; a política é do time."""
+        for chave, _, (_, teto), _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                problemas = self.problemas(conventions={chave: teto + 1})
+                self.assertEqual([p for p in problemas if p[0] == "erro"], [])
+                self.assertIn(f"conventions.{chave}", {campo for _, campo, _ in problemas})
+
+    def test_convencao_numerica_no_default_passa_limpa(self):
+        defaults = {"scenario_outline_threshold": 3, "stability_runs": 50, "quarantine_max_days": 14}
+        self.assertEqual(self.problemas(conventions=defaults), [])
+
 
 class ValidateProfileCliTest(InstallerTestCase):
     """`--validate-profile` valida e sai, sem tocar no disco."""
@@ -862,8 +890,13 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
     def test_convencoes_prescritivas_estao_atreladas_ao_perfil(self):
         """Cada default rígido precisa citar o campo que pode substituí-lo."""
         casos = {
-            "casos-de-teste": ["conventions.scenario_title_prefix", "conventions.gherkin_language"],
+            "casos-de-teste": [
+                "conventions.scenario_title_prefix",
+                "conventions.gherkin_language",
+                "conventions.scenario_outline_threshold",
+            ],
             "cenarios-de-teste": ["risk_levels", "risk_method"],
+            "confiabilidade-testes": ["conventions.stability_runs", "conventions.quarantine_max_days"],
             "cypress-ui-automation": ["ui.selector_attribute"],
             "robot-framework-api": ["api.base_url_env", "api.user_env", "api.password_env"],
         }
@@ -1597,6 +1630,36 @@ class PromessasDoHarnessTest(unittest.TestCase):
             for chave in sorted(citadas):
                 with self.subTest(arquivo=path.parent.name + "/" + path.name, chave=chave):
                     self.assertIn(chave, conhecidas)
+
+    def test_o_nucleo_declara_onde_cada_convencao_numerica_manda(self):
+        """Mesma trava do `risk_levels`: o campo existe no instalador e a regra vive no núcleo.
+        Sem a citação, o número vira constante repetida no texto e some numa reescrita."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        for chave, _, _, _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                self.assertIn(f"conventions.{chave}", texto)
+
+    def test_o_nucleo_separa_os_tres_numeros_de_repeticao(self):
+        """50, 10 e 3 servem a propósitos diferentes. Sem a distinção declarada, a próxima
+        revisão 'corrige' os três para o mesmo valor achando que é inconsistência."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        for marca in ("prova de correção", "determinismo da reprodução", "amostrar"):
+            with self.subTest(marca=marca):
+                self.assertIn(marca, texto)
+
+    def test_as_skills_vizinhas_apontam_para_a_distincao(self):
+        """Quem lê só a skill precisa descobrir que aquele número não é o do perfil."""
+        for skill in ("reproducao-bugs", "revisao-qualidade-testes"):
+            with self.subTest(skill=skill):
+                texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("conventions.stability_runs", texto)
+
+    def test_toda_convencao_numerica_e_lida_por_alguma_skill(self):
+        """Campo de perfil que nenhuma skill lê não configura nada — é promessa vazia."""
+        corpus = "".join(p.read_text(encoding="utf-8") for p in (HARNESS / "skills").glob("*/SKILL.md"))
+        for chave, _, _, _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                self.assertIn(f"conventions.{chave}", corpus)
 
     def test_as_regras_de_manutencao_do_harness_estao_versionadas(self):
         """Eram a seção 11 do documento de continuidade: não derivam do código nem do git log."""

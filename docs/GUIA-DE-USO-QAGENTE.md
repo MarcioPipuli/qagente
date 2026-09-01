@@ -168,6 +168,8 @@ Os campos que mais compensam ajustar no começo:
 | ...os specs usem o atributo de seletor da nossa aplicação | `ui.selector_attribute` |
 | ...os IDs sigam o padrão do nosso gerenciador de testes | `conventions.test_id_pattern` |
 | ...os títulos de cenário sigam nossa convenção | `conventions.scenario_title_prefix` |
+| ...o `Esquema do Cenário` só entre a partir de N itens | `conventions.scenario_outline_threshold` |
+| ..."corrigido" exija N execuções verdes, e a quarentena tenha nosso prazo | `conventions.stability_runs`, `conventions.quarantine_max_days` |
 | ...as skills de apoio tenham pasta própria | `paths.risk_matrix`, `paths.reviews` |
 | ...uma camada de automação simplesmente não exista | `api.enabled` / `ui.enabled` = `false` |
 

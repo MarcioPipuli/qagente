@@ -25,7 +25,10 @@
   "conventions": {
     "gherkin_language": "pt",
     "scenario_title_prefix": "Validar que",
-    "test_id_pattern": "TC-{DOMAIN}-{NUMBER}"
+    "test_id_pattern": "TC-{DOMAIN}-{NUMBER}",
+    "scenario_outline_threshold": 3,
+    "stability_runs": 50,
+    "quarantine_max_days": 14
   },
   "api": {
     "enabled": true,
