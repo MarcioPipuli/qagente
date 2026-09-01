@@ -1,6 +1,6 @@
 ---
 name: priorizacao-por-risco
-description: Constrói uma matriz de risco pontuada (impacto × probabilidade), classifica cada item em uma zona, faz análise de modo de falha nos itens mais críticos e mapeia densidade de teste por zona. Use quando o usuário pedir uma matriz ou mapa de calor de risco, perguntar onde concentrar o esforço de teste, quiser justificar a prioridade dos cenários com número em vez de palpite, ou precisar reavaliar o risco depois de um incidente em produção. Não use para extrair cenários de um documento de requisitos (use analise-documentacao-testes, que consome a prioridade daqui) nem para escrever casos de teste (use escrita-casos-teste).
+description: Constrói uma matriz de risco pontuada (impacto × probabilidade), classifica cada item em uma zona, faz análise de modo de falha nos itens mais críticos e mapeia densidade de teste por zona. Use quando o usuário pedir uma matriz ou mapa de calor de risco, perguntar onde concentrar o esforço de teste, quiser justificar a prioridade dos cenários com número em vez de palpite, ou precisar reavaliar o risco depois de um incidente em produção. Não use para extrair cenários de um documento de requisitos (use cenarios-de-teste, que consome a prioridade daqui) nem para escrever casos de teste (use casos-de-teste).
 license: MIT
 metadata:
   author: QAGente
@@ -15,7 +15,7 @@ metadata:
 Impede o modo de falha mais caro da priorização: distribuir esforço de teste por igual entre as funcionalidades, gastando cobertura numa tela de configurações enquanto o checkout fica sub-testado. Também impede o oposto — a prioridade "Alta" atribuída por intuição, sem número atrás, que ninguém consegue contestar nem defender numa reunião. Entrega uma matriz em que cada item tem impacto e probabilidade pontuados separadamente, uma zona derivada do produto dos dois, e uma prescrição de cobertura ligada à zona.
 </objetivo>
 
-Esta é uma skill de apoio, não uma fase do fluxo. Ela roda **antes** de `skills/analise-documentacao-testes` quando o projeto ainda não tem modelo de risco, e **depois** de um incidente, para recalibrar o que já existe. A saída alimenta a coluna "Prioridade" da Fase 1.
+Esta é uma skill de apoio, não uma fase do fluxo. Ela roda **antes** de `skills/cenarios-de-teste` quando o projeto ainda não tem modelo de risco, e **depois** de um incidente, para recalibrar o que já existe. A saída alimenta a coluna "Prioridade" da Fase 1.
 
 ## Configuração
 
@@ -109,7 +109,7 @@ A probabilidade é sua avaliação técnica: complexidade da regra, número de c
 | Média | 5–9 | `medium` | Automatizar caminho feliz + principais casos de erro |
 | Baixa | 1–4 | `low` | Teste manual no release, ou nada |
 
-Essa tabela é a ponte entre esta skill e a Fase 1: a coluna "Prioridade" dos cenários de `skills/analise-documentacao-testes` passa a sair daqui, com número atrás, em vez de sair de julgamento solto.
+Essa tabela é a ponte entre esta skill e a Fase 1: a coluna "Prioridade" dos cenários de `skills/cenarios-de-teste` passa a sair daqui, com número atrás, em vez de sair de julgamento solto.
 
 Reserve a zona crítica para o que para o produto inteiro se quebrar. Usá-la como sinônimo de "importante" faz a escala perder poder de discriminação e a matriz volta a ser de três níveis na prática.
 
@@ -185,7 +185,7 @@ Salve a matriz como Markdown em `paths.risk_matrix` (ou, na falta dele, em `path
 
 ## Skills relacionadas
 
-- **`analise-documentacao-testes`** — a Fase 1 consome esta matriz. Rode esta skill antes quando o projeto não tem modelo de risco; sem ela, a coluna "Prioridade" da Fase 1 sai de julgamento, e a própria Fase 1 avisa isso.
-- **`escrita-casos-teste`** — não se aplica aqui. Esta skill não produz passos Dado/Quando/Então, produz notas e zonas.
+- **`cenarios-de-teste`** — a Fase 1 consome esta matriz. Rode esta skill antes quando o projeto não tem modelo de risco; sem ela, a coluna "Prioridade" da Fase 1 sai de julgamento, e a própria Fase 1 avisa isso.
+- **`casos-de-teste`** — não se aplica aqui. Esta skill não produz passos Dado/Quando/Então, produz notas e zonas.
 - **`reproducao-bugs`** — o caminho inverso: um incidente reproduzido aqui vira gatilho de reavaliação no Passo 6.
 - **`revisao-qualidade-testes`** — usa as zonas desta matriz para decidir onde a lacuna de cobertura dói mais.

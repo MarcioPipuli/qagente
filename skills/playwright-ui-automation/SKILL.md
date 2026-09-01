@@ -1,6 +1,6 @@
 ---
 name: playwright-ui-automation
-description: Escreve e organiza testes automatizados de interface web (E2E) em Playwright, usando locators semânticos, asserções web-first com auto-retry, interceptação de rede via page.route, fixtures do @playwright/test e storageState para autenticação, com trace como evidência de execução. Use quando o usuário pedir para automatizar testes de tela/UI em Playwright, escrever uma spec .spec.ts/.spec.js, testar um fluxo de formulário/navegação/checkout com Playwright, migrar testes de Cypress para Playwright, ou revisar/corrigir testes Playwright existentes (flaky, locator quebrado, teste dependente de ordem). Não use quando o perfil do projeto define outro framework de UI (use `cypress-ui-automation` para Cypress), para automação de API pura sem interface (use `robot-framework-api`), para testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use `escrita-casos-teste`).
+description: Escreve e organiza testes automatizados de interface web (E2E) em Playwright, usando locators semânticos, asserções web-first com auto-retry, interceptação de rede via page.route, fixtures do @playwright/test e storageState para autenticação, com trace como evidência de execução. Use quando o usuário pedir para automatizar testes de tela/UI em Playwright, escrever uma spec .spec.ts/.spec.js, testar um fluxo de formulário/navegação/checkout com Playwright, migrar testes de Cypress para Playwright, ou revisar/corrigir testes Playwright existentes (flaky, locator quebrado, teste dependente de ordem). Não use quando o perfil do projeto define outro framework de UI (use `cypress-ui-automation` para Cypress), para automação de API pura sem interface (use `robot-framework-api`), para testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use `casos-de-teste`).
 license: CC-BY-4.0
 metadata:
   author: QAGente
@@ -14,7 +14,7 @@ metadata:
 Impede os erros que fazem uma suíte Playwright parecer saudável e falhar em paralelo: `expect(await locator.isVisible())`, que captura o estado uma vez e perde o auto-retry; `waitForTimeout` no lugar de asserção web-first; `getByTestId` para tudo, jogando fora a validação de acessibilidade que vem de graça; e `describe.serial` mascarando dependência entre testes. Entrega specs com locators semânticos, autenticação reaproveitada e trace como evidência.
 </objetivo>
 
-Escreve specs Playwright executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
+Escreve specs Playwright executáveis a partir de casos de teste já definidos (skill `casos-de-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
 ## Configuração
 
@@ -72,7 +72,7 @@ Leia `.qagente/quality-profile.json` primeiro — ele define `ui.framework`, `ui
 - Usuário reporta um teste Playwright intermitente e pede correção.
 - Usuário quer migrar uma suíte de Cypress para Playwright.
 
-Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`escrita-casos-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
+Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`casos-de-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
 
 ## Estrutura de arquivos
 
@@ -262,4 +262,4 @@ Para depurar interativamente: `npx playwright test --ui`.
 
 - **`cypress-ui-automation`** — a alternativa para o mesmo ramo. Quem responde é a skill de `ui.framework`; se o perfil disser `cypress`, é ela, e esta recusa apontando para lá.
 - **`robot-framework-api`** — o ramo de API da mesma fase. Fluxo sem interface é lá; e vale usá-la para preparar estado por requisição antes de um teste de tela.
-- **`escrita-casos-teste`** — a origem. Sem casos de teste aprovados, a automação não começa.
+- **`casos-de-teste`** — a origem. Sem casos de teste aprovados, a automação não começa.

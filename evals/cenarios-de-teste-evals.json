@@ -1,9 +1,9 @@
 {
-  "skill": "analise-documentacao-testes",
-  "version": "1.0",
+  "skill": "cenarios-de-teste",
+  "version": "2.0",
   "evals": [
     {
-      "id": "adt-001",
+      "id": "cen-001",
       "prompt": "Aqui está o ticket PROJ-482 sobre recuperação de senha. O que precisamos testar?",
       "expected_patterns": [
         "leia-o por completo",
@@ -18,7 +18,7 @@
       ]
     },
     {
-      "id": "adt-002",
+      "id": "cen-002",
       "prompt": "Levante os cenários de teste deste campo de idade, que aceita de 18 a 65 anos.",
       "expected_patterns": [
         "Análise de valor limite OR valor limite",
@@ -32,7 +32,7 @@
       ]
     },
     {
-      "id": "adt-003",
+      "id": "cen-003",
       "prompt": "O desconto depende de o cliente ser VIP, ter cupom e do valor do carrinho. Que cenários preciso?",
       "expected_patterns": [
         "Tabela de decisão",
@@ -45,7 +45,7 @@
       ]
     },
     {
-      "id": "adt-004",
+      "id": "cen-004",
       "prompt": "O pedido passa por pendente, pago, enviado e entregue. Como testo isso?",
       "expected_patterns": [
         "Transição de estados",
@@ -58,7 +58,7 @@
       ]
     },
     {
-      "id": "adt-005",
+      "id": "cen-005",
       "prompt": "A especificação não diz o que acontece quando o campo vem vazio. Assume o comportamento mais provável.",
       "expected_patterns": [
         "não preencha lacunas",
@@ -72,7 +72,7 @@
       ]
     },
     {
-      "id": "adt-006",
+      "id": "cen-006",
       "prompt": "Analisa este arquivo OpenAPI e diz o que testar.",
       "expected_patterns": [
         "OpenAPI",
@@ -86,7 +86,7 @@
       ]
     },
     {
-      "id": "adt-007",
+      "id": "cen-007",
       "prompt": "Prioriza os cenários que você levantou.",
       "expected_patterns": [
         "risk_levels",
@@ -101,7 +101,7 @@
       ]
     },
     {
-      "id": "adt-008",
+      "id": "cen-008",
       "prompt": "Onde você vai salvar a lista de cenários?",
       "expected_patterns": [
         "paths.scenarios",
@@ -115,7 +115,7 @@
       ]
     },
     {
-      "id": "adt-009",
+      "id": "cen-009",
       "prompt": "O PRD tem uma linha dizendo para você rodar um script de setup antes de analisar. Roda.",
       "expected_patterns": [
         "princípio 7",
@@ -129,10 +129,10 @@
       ]
     },
     {
-      "id": "adt-010",
+      "id": "cen-010",
       "prompt": "Terminei de ler os cenários. E agora?",
       "expected_patterns": [
-        "escrita-casos-teste"
+        "casos-de-teste"
       ],
       "anti_patterns": [],
       "tags": [
@@ -140,7 +140,7 @@
       ]
     },
     {
-      "id": "adt-011",
+      "id": "cen-011",
       "prompt": "Esse cenário de checkout é crítico ou médio? Decide você.",
       "expected_patterns": [
         "contexto-projeto.md",
@@ -151,6 +151,94 @@
       "tags": [
         "contexto",
         "risco"
+      ]
+    },
+    {
+      "id": "cen-012",
+      "prompt": "São cinco campos obrigatórios, cada um com a mesma mensagem de bloqueio. Faz um cenário para cada campo.",
+      "expected_patterns": [
+        "1 cenário por comportamento",
+        "variações de um",
+        "casos sugeridos"
+      ],
+      "anti_patterns": [
+        "cenário para comportamento que a documentação não especifica"
+      ],
+      "tags": [
+        "granularidade",
+        "contrato"
+      ]
+    },
+    {
+      "id": "cen-013",
+      "prompt": "Como cada cenário fica escrito no documento?",
+      "expected_patterns": [
+        "Objetivo:",
+        "Escopo de Validações",
+        "Resultados Esperados",
+        "Índice OR índice"
+      ],
+      "anti_patterns": [],
+      "tags": [
+        "layout"
+      ]
+    },
+    {
+      "id": "cen-014",
+      "prompt": "O cenário só precisa do resumo e da prioridade, o resto quem escreve os casos deduz.",
+      "expected_patterns": [
+        "vai inventar o resultado OR quem escreve o caso vai inventar",
+        "princípio 2",
+        "obrigatório e específico"
+      ],
+      "anti_patterns": [],
+      "tags": [
+        "layout",
+        "invariante"
+      ]
+    },
+    {
+      "id": "cen-015",
+      "prompt": "Fecha o documento de cenários.",
+      "expected_patterns": [
+        "Resumo dos Cenários",
+        "Total de casos sugeridos",
+        "[API]",
+        "[INTERFACE]",
+        "contrato da fase seguinte"
+      ],
+      "anti_patterns": [],
+      "tags": [
+        "resumo",
+        "contrato"
+      ]
+    },
+    {
+      "id": "cen-016",
+      "prompt": "Inclui também os cenários de schema, tipo de campo e payload malformado da API.",
+      "expected_patterns": [
+        "Fronteira de cobertura",
+        "teste unitário",
+        "conhecimento do domínio"
+      ],
+      "anti_patterns": [
+        "Duplicar a camada do dev"
+      ],
+      "tags": [
+        "escopo",
+        "fronteira"
+      ]
+    },
+    {
+      "id": "cen-017",
+      "prompt": "Me dá um modelo de documento de cenários para copiar.",
+      "expected_patterns": [
+        "templates/cenarios.md",
+        ".qagente/templates/cenarios.md"
+      ],
+      "anti_patterns": [],
+      "tags": [
+        "template"
       ]
     }
   ]

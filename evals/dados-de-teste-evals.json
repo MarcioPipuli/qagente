@@ -75,7 +75,7 @@
     {
       "id": "dt-011",
       "prompt": "Preciso de massa pros casos de borda que levantamos na análise.",
-      "expected_patterns": ["ano bissexto", "valor limite", "analise-documentacao-testes"],
+      "expected_patterns": ["ano bissexto", "valor limite", "cenarios-de-teste"],
       "anti_patterns": [],
       "tags": ["borda", "fronteira"]
     },

@@ -29,6 +29,7 @@ QAGente/
 ├── AGENTS.md              # Regras de comportamento (rastreabilidade, risco, independência de testes, DoD)
 ├── CLAUDE.md               # Ponteiro para AGENTS.md (mesmo padrão usado pelo agent-skills-main)
 ├── contexto/               # Template de contexto do projeto (fatos do produto)
+├── templates-do-time/      # README do diretório onde o time sobrescreve o layout dos artefatos
 ├── profiles/               # Perfis configuráveis por tipo de time/projeto
 │   ├── default.json
 │   ├── backend-api.json
@@ -48,9 +49,10 @@ QAGente/
 │   ├── GUIA-DE-USO-QAGENTE.md       #   Uso no dia a dia
 │   └── DOCUMENTACAO-TECNICA-QAGENTE.md  #   Funcionamento interno do harness
 └── skills/
-    ├── analise-documentacao-testes/   # Fase 1: PRD/ticket → cenários de teste priorizados por risco
+    ├── cenarios-de-teste/             # Fase 1: PRD/ticket → cenários priorizados por risco (o quê testar)
+    │   └── templates/
     ├── gherkin-palavras-chave/        # Referência: gramática de Dado/Quando/Então/E/Mas (usada pela Fase 2)
-    ├── escrita-casos-teste/           # Fase 2: cenários → documento BDD em Gherkin (pt) + rastreabilidade
+    ├── casos-de-teste/                # Fase 2: cenários → casos executáveis em Gherkin (como testar)
     │   └── templates/
     ├── robot-framework-api/           # Fase 3a: casos de teste → automação de API em Robot Framework
     │   └── templates/
@@ -103,6 +105,14 @@ preenchido.
 
 Uma seção que ainda esteja com `[colchetes]` conta como não respondida, não como resposta.
 
+Além dos dois, o instalador cria `.qagente/templates/` — vazio, com um README. É onde o time
+sobrescreve o **layout** dos artefatos: um arquivo com o mesmo nome do template de uma skill
+vence o dela. Só os seis de layout puro são sobrescrevíveis (`cenarios.md`,
+`casos-de-teste.md`, `matriz-risco.md`, `relatorio-revisao.md`, `relato-reproducao.md`,
+`registro-quarentena.md`); os de automação
+carregam técnica junto e ficam de fora. O instalador **nunca** apaga um arquivo que o time
+colocou ali, nem com `--force`.
+
 ## O que o perfil controla
 
 O perfil (`.qagente/quality-profile.json`) é o contrato entre o núcleo do QAGente e as decisões
@@ -151,7 +161,7 @@ não confiável, registro de lacunas e evidência real de execução).
 Documentação → Cenários → Casos de Teste → [aprovação do usuário] → Automação (Robot Framework | Cypress)
 ```
 
-A função principal do agente é entregar Cenários e Casos de Teste (as duas primeiras setas). A Automação é opcional e só começa depois que o usuário aprovar explicitamente os Casos de Teste — o agente nunca avança sozinho para automação, mesmo quando o pedido original já a menciona. Cada seta é uma skill. O detalhamento completo de princípios (rastreabilidade, cobertura por risco, independência/determinismo de testes, gestão de dados/segredos, Definition of Done) está em [AGENTS.md](AGENTS.md).
+Cenário e caso não são a mesma coisa: o cenário diz **o quê** testar, em alto nível e priorizado por risco; o caso diz **como**, em passos executáveis. São duas skills que se completam sem depender uma da outra — dá para parar nos cenários (validação de cobertura com o negócio) ou entrar direto nos casos, trazendo os cenários prontos. A função principal do agente é entregar as duas (as duas primeiras setas). A Automação é opcional e só começa depois que o usuário aprovar explicitamente os Casos de Teste — o agente nunca avança sozinho para automação, mesmo quando o pedido original já a menciona. Cada seta é uma skill. O detalhamento completo de princípios (rastreabilidade, cobertura por risco, independência/determinismo de testes, gestão de dados/segredos, Definition of Done) está em [AGENTS.md](AGENTS.md).
 
 ## Como instalar em um projeto com Claude Code
 
@@ -190,6 +200,7 @@ Não usa dependências externas (só a biblioteca padrão do Python 3). O instal
 - **mescla** (não sobrescreve) o conteúdo de `AGENTS.md` no `AGENTS.md` do projeto alvo, dentro de um bloco marcado (`<!-- QAGente:start/end -->`) que é atualizado, não duplicado, em reinstalações;
 - cria `CLAUDE.md` (ponteiro para `AGENTS.md`) se não existir, ou apenas adiciona uma nota referenciando `AGENTS.md` se o projeto já tiver seu próprio `CLAUDE.md`;
 - copia o perfil escolhido para `<projeto>/.qagente/quality-profile.json` (um perfil já existente é preservado, salvo com `--force`);
+- cria `<projeto>/.qagente/templates/` com um README (diretório do time: `--force` atualiza só o README e nunca apaga um template que o time colocou lá);
 - cria as pastas de entrada/saída declaradas em `paths` **pelo perfil efetivo do projeto** — ou seja, se um perfil anterior foi preservado, são as pastas dele que são criadas, não as do perfil passado em `--profile`.
 
 Caminhos absolutos ou que escapem da raiz do projeto (`../`) são recusados com aviso, e `--dry-run` mostra os caminhos efetivos antes de qualquer alteração.
@@ -287,8 +298,9 @@ validação completa —, veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Como usar
 
-- "Analisa esse PRD e me diz o que precisamos testar" → aciona `analise-documentacao-testes`.
-- "Escreve os casos de teste em Gherkin para esses cenários" → aciona `escrita-casos-teste`.
+- "Analisa esse PRD e me diz o que precisamos testar" → aciona `cenarios-de-teste`.
+- "Levanta os cenários de teste dessa user story" → aciona `cenarios-de-teste`.
+- "Escreve os casos de teste em Gherkin para esses cenários" → aciona `casos-de-teste`.
 - "Automatiza esses testes de API em Robot Framework" → aciona `robot-framework-api`.
 - "Automatiza esse fluxo de checkout em Cypress" → aciona `cypress-ui-automation`.
 - "Automatiza esse fluxo em Playwright" → aciona `playwright-ui-automation`. A skill de UI que responde é a de `ui.framework`; a outra recusa e aponta para ela.

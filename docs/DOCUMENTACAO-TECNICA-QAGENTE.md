@@ -286,8 +286,14 @@ DOCUMENTAÇÃO → CENÁRIOS → CASOS DE TESTE → [aprovação do usuário] �
 
 | Fase | Skill | Entrada | Saída | Destino |
 |---|---|---|---|---|
-| 1 | `analise-documentacao-testes` | PRD, user story, ticket, spec, ADR, descrição informal | Tabela de cenários priorizados + técnica aplicada + lacunas | `paths.scenarios` |
-| 2 | `escrita-casos-teste` (+ `gherkin-palavras-chave`) | Cenários da Fase 1 ou do usuário | Documento Gherkin/BDD em Markdown + Observações | `paths.test_cases` |
+| 1 | `cenarios-de-teste` | PRD, user story, ticket, spec, ADR, descrição informal | Índice priorizado + um bloco por cenário (objetivo, escopo, resultados esperados) + resumo com casos sugeridos + lacunas | `paths.scenarios` |
+| 2 | `casos-de-teste` (+ `gherkin-palavras-chave`) | Cenários da Fase 1 ou do usuário | Casos executáveis em Gherkin/BDD, com tags de rastreio/camada/execução + resumo com aderência ao contrato | `paths.test_cases` |
+
+As duas primeiras fases são skills distintas de propósito: o cenário responde **o quê** testar,
+o caso responde **como**. Elas se completam, mas nenhuma depende da outra para existir — parar
+nos cenários (validação de cobertura com o negócio) e entrar direto nos casos (trazendo os
+cenários prontos) são dois usos previstos. O que liga uma à outra é o **contrato**: a lista de
+casos sugeridos por cenário, no resumo da Fase 1, é o que a Fase 2 cumpre e confere.
 | 3a | Skill de `api.framework` (default `robot-framework-api`) | Casos que envolvem API | Suíte executável + evidência de execução | `paths.api_tests` |
 | 3b | Skill de `ui.framework` (`cypress-ui-automation` ou `playwright-ui-automation`) | Casos que envolvem tela | Specs executáveis + evidência | `paths.ui_tests` |
 
@@ -403,8 +409,8 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 
 | Skill | Categoria | Papel | Licença | Saída |
 |---|---|---|---|---|
-| `analise-documentacao-testes` | analise | **Fase 1** | CC-BY-4.0 | `paths.scenarios` |
-| `escrita-casos-teste` | escrita | **Fase 2** | CC-BY-4.0 | `paths.test_cases` |
+| `cenarios-de-teste` | analise | **Fase 1** | CC-BY-4.0 | `paths.scenarios` |
+| `casos-de-teste` | escrita | **Fase 2** | CC-BY-4.0 | `paths.test_cases` |
 | `gherkin-palavras-chave` | referencia | Gramática usada **dentro** da Fase 2 | CC-BY-4.0 | — (não produz artefato) |
 | `robot-framework-api` | automacao | **Fase 3a** | CC-BY-4.0 | `paths.api_tests` |
 | `cypress-ui-automation` | automacao | **Fase 3b** (default) | CC-BY-4.0 | `paths.ui_tests` |
@@ -417,13 +423,20 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 
 ### 8.2 Detalhe por skill
 
-#### `analise-documentacao-testes` (Fase 1)
+#### `cenarios-de-teste` (Fase 1)
 
 - **Impede**: lista de cenários que espelha a estrutura do documento em vez do risco do sistema
   — um item por seção, tudo caminho feliz, limites e transições sem cobertura.
 - **Procedimento**: localizar e ler a fonte inteira (nunca só o título) → extrair elementos
   testáveis (entradas, regras, estados/transições, atores/permissões, integrações externas,
-  mensagens) → aplicar técnica de design → produzir a tabela → priorizar.
+  mensagens) → aplicar técnica de design → decidir a granularidade → priorizar → escrever o
+  documento → fechar com resumo e lacunas.
+- **Granularidade (decidida aqui, e uma vez só)**: **1 cenário por comportamento, N casos por
+  variação**. Candidatos que diferem apenas na condição de entrada ou no texto da mensagem são
+  variações do mesmo cenário — agrupados, com um caso sugerido cada.
+- **Fronteira de cobertura**: o que o dev já cobre em teste unitário e de contrato (schema,
+  tipo, campo obrigatório, status code, payload malformado) não vira cenário; vira o que exige
+  conhecimento do domínio, autenticação/autorização, fluxo encadeado e comportamento de tela.
 - **Técnicas e quando cada uma se aplica**:
 
   | Técnica | Aplica a | Produz |
@@ -434,8 +447,16 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
   | Transição de estados | Entidade com ciclo de vida | Um teste por transição válida + um por inválida |
   | Análise de risco | Priorização final | Uma prioridade por cenário |
 
-- **Formato da saída**: tabela `ID | Cenário | Tipo | Técnica | Prioridade | Observação` +
-  seção `### Lacunas identificadas na documentação`.
+- **Formato da saída** (`templates/cenarios.md`, sobrescrevível em `.qagente/templates/`):
+  índice `ID | Cenário | Tipo | Técnica | Prioridade` → um bloco `## CT-xx — …` por cenário, com
+  **Objetivo**, **Escopo de Validações** (citando RN/CA/seção de origem) e **Resultados
+  Esperados** → `## Resumo dos Cenários` (totais por prioridade e por técnica + **casos
+  sugeridos por cenário**, cada um com prefixo `[API]`/`[INTERFACE]`) → `## Lacunas
+  identificadas na documentação`. Nada se repete entre índice e bloco.
+- **Por que "Resultados Esperados" é obrigatório**: é ele que vira o `Então` na Fase 2. Sem ele,
+  quem escreve o caso inventa o resultado — a suposição silenciosa que o princípio 2 proíbe.
+- **Contrato para a fase seguinte**: a lista de casos sugeridos é o que a Fase 2 tem que
+  entregar; divergência é declarada lá, não resolvida em silêncio.
 - **De onde vem a prioridade**: o **impacto** sai da tabela de áreas de risco do
   `contexto-projeto.md` — não do julgamento do agente — e a linha cita a área
   ("Área de risco: Pagamento"). A **probabilidade** é avaliação técnica (complexidade,
@@ -444,14 +465,28 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 - **Regra de escala**: o nível mais alto (`critical`) é reservado para o que para o produto
   inteiro; usá-lo como sinônimo de "importante" faz a escala de 4 níveis virar 3 na prática.
 
-#### `escrita-casos-teste` (Fase 2)
+#### `casos-de-teste` (Fase 2)
 
 - **Impede**: Gherkin que parece certo e não serve — título genérico, passos narrando cliques
   ou verificando tabela de banco, o mesmo `Cenário` repetido cinco vezes trocando um valor,
   suposição do autor apresentada como se estivesse no requisito.
-- **Estrutura fixa do documento**: cabeçalho `# Cenários de Teste BDD – <requisito>` → bloco de
-  código `gherkin` com `# language: pt` → uma `Funcionalidade` (Como/Quero/Para) → tópicos
-  (`# Tópico N - …`) → cenários → fora do bloco, `## Observações`.
+- **Estrutura fixa do documento** (`templates/casos-de-teste.md`, sobrescrevível em
+  `.qagente/templates/`): cabeçalho `# Casos de Teste BDD – <requisito>` → bloco de código
+  `gherkin` com `# language: pt` → uma `Funcionalidade` (Como/Quero/Para) → tópicos
+  (`# Tópico N - …`, um por cenário de origem) → casos com linha de tags → fora do bloco,
+  `## Resumo dos Casos de Teste` e, quando não há documento de cenários, `## Observações`.
+- **Tags obrigatórias por caso**: ID do cenário de origem (`@CT-02`, padrão de
+  `conventions.test_id_pattern`), camada (`@api`/`@interface`, herdada do prefixo do caso
+  sugerido — é ela que roteia para `api.framework` ou `ui.framework`) e execução
+  (`@pendente-de-automacao`/`@nao-automatizavel`, com motivo declarado no resumo).
+- **Contrato**: um caso sugerido = um `Cenário`; 3+ casos sugeridos com os mesmos passos viram
+  linhas de `Exemplos` em um `Esquema do Cenário`. O resumo conta linhas de `Exemplos`, não
+  blocos, e declara a **aderência ao contrato** (quantos foram sugeridos, quantos escritos, e o
+  motivo de cada divergência).
+- **Uma ação por caso**: um único `Quando`, sem condicional ("se", "ou", "caso") em nenhum passo.
+- **Dado descritivo, não valor mágico**: o valor concreto só entra quando ele é o objeto do
+  teste (formato, limite, status) ou dentro de `Exemplos`; a massa vem de `dados-de-teste`.
+- **Prioridade é herdada** do cenário de origem — a Fase 2 não redecide risco nem granularidade.
 - **Regra de decisão Cenário × Esquema do Cenário**: se a **mesma** verificação vale para **3+
   itens**, é `Esquema do Cenário` com `Exemplos` — nunca cenário simples repetido trocando o
   valor.
@@ -460,9 +495,10 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 - **Convenções de escrita**: literais entre aspas duplas; terminologia do domínio copiada
   **exatamente** do requisito (parafrasear gera divergência com a tela real e retrabalho na
   automação); pares positivo/negativo dentro do mesmo tópico; indentação de 2 espaços.
-- **`## Observações` é obrigatória** sempre que um cenário foi deduzido por complementaridade
-  lógica, montado com informação de outro requisito, ou escrito a partir de trecho ambíguo. Cada
-  observação diz **o que foi assumido e por quê** + **que precisa ser confirmado**.
+- **Onde mora a lacuna**: no documento de **cenários**, que é onde a análise acontece. Quando a
+  Fase 2 é a porta de entrada e não existe documento de cenários, `## Observações` volta para cá
+  — a lacuna nunca some. Cada observação diz **o que foi assumido e por quê** + **que precisa
+  ser confirmado**.
 - **Dependência**: a gramática de cada passo é delegada a `gherkin-palavras-chave`, e não é
   duplicada aqui. Se `conventions.gherkin_language` não for `pt`, a skill de gramática deixa de
   se aplicar e vale a gramática oficial do idioma escolhido.
@@ -620,8 +656,9 @@ disputar o mesmo pedido"). Como o CI roda `--strict`, na prática ambos são obr
 
 | Situação do pedido | Skill |
 |---|---|
-| Recebeu PRD/user story/ticket/spec e precisa saber "o que testar" | `analise-documentacao-testes` |
-| Já tem cenários, precisa formalizar em casos rastreáveis | `escrita-casos-teste` |
+| Recebeu PRD/user story/ticket/spec e precisa saber "o que testar" | `cenarios-de-teste` |
+| Pediu "cenários de teste" sem qualificar como Gherkin/executáveis | `cenarios-de-teste` |
+| Já tem cenários, precisa formalizar em casos rastreáveis | `casos-de-teste` |
 | Automatizar chamadas de API (REST/GraphQL) | skill de `api.framework` — **após aprovação** |
 | Automatizar fluxo de tela | skill de `ui.framework` — **após aprovação** |
 | Decidir **onde concentrar esforço**, ou recalibrar após incidente | `priorizacao-por-risco` |
@@ -1122,7 +1159,7 @@ testar."* Projeto instalado com `--profile fullstack`.
 ```
 1. ROTEAMENTO
    A description do agente casa ("analisar uma especificação/PRD … e levantar cenários").
-   A lista de decisão do agent.md aponta → skills/analise-documentacao-testes
+   A lista de decisão do agent.md aponta → skills/cenarios-de-teste
 
 2. LEITURA DE CONFIGURAÇÃO (sempre nesta ordem)
    .qagente/quality-profile.json  → language=pt-BR · risk_levels=[critical,high,medium,low]
@@ -1165,7 +1202,7 @@ testar."* Projeto instalado com `--profile fullstack`.
    IDs no padrão do perfil · linha Origem: presente · toda suposição marcada em Observação
 
 10. ENCADEAMENTO
-    Pergunta se o usuário quer seguir para escrita-casos-teste ou revisar a lista primeiro.
+    Pergunta se o usuário quer seguir para casos-de-teste ou revisar a lista primeiro.
     NÃO avança sozinho. E se o pedido original já pedisse "e automatiza",
     ainda assim pararia na Fase 2 para pedir aprovação explícita.
 ```

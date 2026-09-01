@@ -1,6 +1,6 @@
 ---
 name: robot-framework-api
-description: Escreve e organiza testes automatizados de API (REST/GraphQL) em Robot Framework, usando RequestsLibrary, keywords reutilizáveis em arquivos .resource, massa de dados parametrizada e boas práticas de independência/determinismo. Use quando o usuário pedir para automatizar testes de API, escrever testes em Robot Framework, criar uma suíte .robot, validar contrato de endpoint, testar autenticação/autorização de API, ou revisar/corrigir testes Robot Framework existentes. Não use para automação de interface web (use cypress-ui-automation), testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use escrita-casos-teste).
+description: Escreve e organiza testes automatizados de API (REST/GraphQL) em Robot Framework, usando RequestsLibrary, keywords reutilizáveis em arquivos .resource, massa de dados parametrizada e boas práticas de independência/determinismo. Use quando o usuário pedir para automatizar testes de API, escrever testes em Robot Framework, criar uma suíte .robot, validar contrato de endpoint, testar autenticação/autorização de API, ou revisar/corrigir testes Robot Framework existentes. Não use para automação de interface web (use cypress-ui-automation), testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use casos-de-teste).
 license: CC-BY-4.0
 metadata:
   author: QAGente
@@ -14,7 +14,7 @@ metadata:
 Impede a suíte que passa hoje e é impossível de manter em três meses: asserção genérica que não diz o que era esperado quando falha, token no arquivo versionado, teste que só passa porque outro rodou antes, e `Sleep` no lugar de espera por sinal real. Entrega uma suíte executável em keywords reutilizáveis, com rastreabilidade até o caso de teste e evidência de execução real.
 </objetivo>
 
-Escreve suítes de teste de API executáveis em Robot Framework a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de uma especificação de API. Terceira fase (ramo API) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
+Escreve suítes de teste de API executáveis em Robot Framework a partir de casos de teste já definidos (skill `casos-de-teste`) ou diretamente de uma especificação de API. Terceira fase (ramo API) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
 ## Configuração
 
@@ -69,7 +69,7 @@ Leia `.qagente/quality-profile.json` primeiro — ele define `api.framework`, os
 - Usuário pede para "automatizar os testes de API do PROJ-482 em Robot Framework".
 - Usuário já tem uma suíte Robot Framework e quer adicionar/corrigir casos.
 
-Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`escrita-casos-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
+Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`casos-de-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
 
 ## Pré-requisitos do ambiente
 
@@ -181,7 +181,7 @@ Criar Usuario Sem Email Retorna 400
 ```
 
 - `[Documentation]` sempre cita o ID do caso de teste/ticket — mantém a rastreabilidade da Fase 2 visível na automação.
-- `[Tags]` permite seleção seletiva (`robot --include smoke`) e mapeia para o Tipo definido em `escrita-casos-teste` (funcional/negativo/borda/regressão).
+- `[Tags]` permite seleção seletiva (`robot --include smoke`) e mapeia para o Tipo definido em `casos-de-teste` (funcional/negativo/borda/regressão).
 - Use `expected_status=any` ou o código esperado explicitamente em `On Session`/checagem separada — nunca deixe uma falha de status virar exceção não tratada que mascara a asserção real.
 
 ## Passo 4 — Dados parametrizados (Test Template)
@@ -247,6 +247,6 @@ Sempre execute e leia `results/report.html` / `results/output.xml` antes de decl
 
 ## Skills relacionadas
 
-- **`escrita-casos-teste`** — a origem. Se os casos de teste ainda não existem ou não foram aprovados, a automação não começa: volte uma fase.
+- **`casos-de-teste`** — a origem. Se os casos de teste ainda não existem ou não foram aprovados, a automação não começa: volte uma fase.
 - **`cypress-ui-automation` / `playwright-ui-automation`** — o ramo de UI da mesma fase. Se o fluxo passa por tela, é lá, não aqui; qual das duas responde vem de `ui.framework`.
-- **`analise-documentacao-testes`** — se durante a automação aparecer um comportamento da API que nenhum caso cobre, isso é análise, não código: registre e volte à Fase 1 em vez de inventar a asserção.
+- **`cenarios-de-teste`** — se durante a automação aparecer um comportamento da API que nenhum caso cobre, isso é análise, não código: registre e volte à Fase 1 em vez de inventar a asserção.

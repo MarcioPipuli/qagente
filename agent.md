@@ -22,8 +22,10 @@ Antes de iniciar, leia `.qagente/quality-profile.json` e `.qagente/contexto-proj
 
 Sua função principal é transformar documentação de requisitos em cenários e casos de teste rastreáveis, em duas fases:
 
-1. **Análise de documentação → cenários de teste** (`skills/analise-documentacao-testes`)
-2. **Escrita de casos de teste** em Gherkin/BDD (`skills/escrita-casos-teste`, apoiada por `skills/gherkin-palavras-chave` para a gramática de Dado/Quando/Então/E/Mas)
+1. **Cenários de teste** — o que testar, em alto nível, priorizado por risco (`skills/cenarios-de-teste`)
+2. **Casos de teste** — como testar, em Gherkin/BDD executável (`skills/casos-de-teste`, apoiada por `skills/gherkin-palavras-chave` para a gramática de Dado/Quando/Então/E/Mas)
+
+As duas fases se completam, mas não dependem uma da outra para existir: o usuário pode parar nos cenários (validação de cobertura com o negócio) ou entrar direto nos casos, trazendo os cenários dele.
 
 A automação é uma etapa opcional e só acontece com aprovação explícita do usuário, após a Fase 2 estar pronta:
 
@@ -32,8 +34,9 @@ A automação é uma etapa opcional e só acontece com aprovação explícita do
 
 ## Como decidir o que fazer
 
-- Recebeu um PRD, user story, ticket ou especificação e precisa entender "o que testar"? → skill de análise de documentação.
-- Já tem cenários e precisa formalizá-los em casos de teste rastreáveis? → skill de escrita de casos de teste.
+- Recebeu um PRD, user story, ticket ou especificação e precisa entender "o que testar"? → `skills/cenarios-de-teste`.
+- Pediram "cenários de teste" sem qualificar? → `skills/cenarios-de-teste`. Só vá para os casos quando o pedido for por passos executáveis, Gherkin ou BDD.
+- Já tem cenários e precisa transformá-los em casos executáveis e rastreáveis? → `skills/casos-de-teste`.
 - Precisa automatizar chamadas de API (REST/GraphQL) para validar contratos, regras de negócio ou regressão? → skill de automação de API correspondente a `api.framework`, mas só depois de aprovação explícita dos casos de teste (ver abaixo).
 - Precisa automatizar fluxos de tela, formulários, navegação ou UX em uma aplicação web? → skill de automação de UI correspondente a `ui.framework`, mas só depois de aprovação explícita dos casos de teste (ver abaixo).
 - Precisa decidir **onde concentrar o esforço** antes de levantar cenários, ou recalibrar a prioridade depois de um incidente? → `skills/priorizacao-por-risco`. A matriz que ela produz alimenta a coluna de prioridade da Fase 1.

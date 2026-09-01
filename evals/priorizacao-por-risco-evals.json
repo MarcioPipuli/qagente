@@ -19,7 +19,7 @@
     {
       "id": "pbr-003",
       "prompt": "A pontuação virou um número. Como isso vira a prioridade que a Fase 1 usa?",
-      "expected_patterns": ["risk_levels", "critical", "Crítica", "analise-documentacao-testes"],
+      "expected_patterns": ["risk_levels", "critical", "Crítica", "cenarios-de-teste"],
       "anti_patterns": [],
       "tags": ["perfil", "fronteira"]
     },

@@ -34,6 +34,7 @@ AGENTS_MD_SRC = HARNESS_DIR / "AGENTS.md"
 PROFILES_SRC = HARNESS_DIR / "profiles"
 ADAPTERS_SRC = HARNESS_DIR / "adapters"
 CONTEXTO_SRC = HARNESS_DIR / "contexto" / "contexto-projeto.md"
+TEMPLATES_README_SRC = HARNESS_DIR / "templates-do-time" / "README.md"
 
 MARKER_START = "<!-- QAGente:start -->"
 MARKER_END = "<!-- QAGente:end -->"
@@ -68,6 +69,20 @@ WORKFLOW_KEYS = (
 )
 
 CONVENTION_KEYS = ("gherkin_language", "scenario_title_prefix", "test_id_pattern")
+
+# Templates que o time pode sobrescrever em `.qagente/templates/`, por nome-base. Só layout
+# puro entra aqui: a ordem e a existência das seções do artefato. Os templates de automação
+# carregam técnica junto com o layout, e `fabrica-dados.js`/`massa_template.resource`
+# carregam isolamento e limpeza de massa — sobrescrever esses desligaria uma garantia de
+# qualidade em silêncio, o que o CONTRIBUTING.md proíbe. Ver AGENTS.md, "Templates do time".
+TEMPLATES_DO_TIME = (
+    "cenarios.md",
+    "casos-de-teste.md",
+    "matriz-risco.md",
+    "relatorio-revisao.md",
+    "relato-reproducao.md",
+    "registro-quarentena.md",
+)
 
 ENV_VAR_KEYS = ("base_url_env", "user_env", "password_env")
 
@@ -513,6 +528,34 @@ def install_context(project_root: Path, *, force: bool, dry_run: bool) -> None:
     log(f"  template instalado (preencha com os fatos do produto) -> {destination}")
 
 
+def install_templates(project_root: Path, *, force: bool, dry_run: bool) -> None:
+    """Instala o README do diretório de templates do time.
+
+    Diferença deliberada em relação a `install_entry`, que apaga o destino com --force: aqui
+    --force troca **só o README**. Os templates que o time colocou no diretório nunca são
+    tocados pelo instalador — é o único lugar do harness com essa semântica, e é o ponto
+    todo: hoje editar um template e atualizar o harness são mutuamente exclusivos.
+
+    O diretório nasce sem template nenhum. Enquanto o time não colocar um arquivo aqui, cada
+    skill usa o template dela; a sobrescrita é opt-in, arquivo por arquivo.
+    """
+    log("\n== Templates do time ==")
+    destination = project_root / ".qagente" / "templates" / "README.md"
+    if not TEMPLATES_README_SRC.is_file():
+        log(f"  aviso: README não encontrado, pulado: {TEMPLATES_README_SRC}")
+        return
+    if destination.exists() and not force:
+        log(f"  README existente preservado (use --force para atualizar) -> {destination}")
+        return
+    if dry_run:
+        log(f"  [dry-run] copiar README: {TEMPLATES_README_SRC} -> {destination}")
+        return
+    ensure_dir(destination.parent, dry_run=False)
+    shutil.copy2(TEMPLATES_README_SRC, destination)
+    sobrescreviveis = ", ".join(TEMPLATES_DO_TIME)
+    log(f"  diretório pronto (sobrescrevíveis: {sobrescreviveis}) -> {destination.parent}")
+
+
 def install_adapter(project_root: Path, tool: str, *, force: bool, dry_run: bool) -> None:
     adapter_dir = ADAPTERS_SRC / tool
     if not adapter_dir.exists():
@@ -687,6 +730,7 @@ def main() -> None:
             project_root, profile_path, profile_data, force=args.force, dry_run=args.dry_run
         )
         install_context(project_root, force=args.force, dry_run=args.dry_run)
+        install_templates(project_root, force=args.force, dry_run=args.dry_run)
         if any(tool != "claude" for tool in tools):
             install_portable_skills(project_root, force=args.force, dry_run=args.dry_run)
         for tool in tools:

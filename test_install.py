@@ -43,9 +43,9 @@ import run_evals  # noqa: E402
 
 SKILL_NAMES = {
     # Fluxo: as fases mais a skill de referência gramatical.
-    "analise-documentacao-testes",
+    "cenarios-de-teste",
     "cypress-ui-automation",
-    "escrita-casos-teste",
+    "casos-de-teste",
     "gherkin-palavras-chave",
     "playwright-ui-automation",
     "robot-framework-api",
@@ -862,8 +862,8 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
     def test_convencoes_prescritivas_estao_atreladas_ao_perfil(self):
         """Cada default rígido precisa citar o campo que pode substituí-lo."""
         casos = {
-            "escrita-casos-teste": ["conventions.scenario_title_prefix", "conventions.gherkin_language"],
-            "analise-documentacao-testes": ["risk_levels", "risk_method"],
+            "casos-de-teste": ["conventions.scenario_title_prefix", "conventions.gherkin_language"],
+            "cenarios-de-teste": ["risk_levels", "risk_method"],
             "cypress-ui-automation": ["ui.selector_attribute"],
             "robot-framework-api": ["api.base_url_env", "api.user_env", "api.password_env"],
         }
@@ -943,7 +943,7 @@ class EntradaNaoConfiavelTest(unittest.TestCase):
 
     def test_a_skill_que_le_documentos_manda_registrar_em_vez_de_executar(self):
         """A Fase 1 é o ponto de entrada do conteúdo externo — é lá que a regra opera."""
-        texto = (HARNESS / "skills" / "analise-documentacao-testes" / "SKILL.md").read_text(encoding="utf-8")
+        texto = (HARNESS / "skills" / "cenarios-de-teste" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("princípio 7", texto)
         self.assertIn("não a execute", texto)
         self.assertIn("registre-a nas lacunas", texto)
@@ -1302,7 +1302,7 @@ class ContextoDoProjetoTest(unittest.TestCase):
 
     def test_a_fase_1_tira_o_impacto_do_contexto(self):
         """Sem isto, a priorização volta a ser palpite com aparência de método."""
-        texto = (HARNESS / "skills" / "analise-documentacao-testes" / "SKILL.md").read_text(encoding="utf-8")
+        texto = (HARNESS / "skills" / "cenarios-de-teste" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("áreas de risco", texto)
         self.assertIn("impacto declarado pelo time", texto)
 
@@ -1313,6 +1313,159 @@ class ContextoDoProjetoTest(unittest.TestCase):
         for secao in ("## Áreas de risco", "## Terminologia do domínio", "## Time e maturidade"):
             with self.subTest(secao=secao):
                 self.assertIn(secao, texto)
+
+
+class TemplatesDoTimeTest(unittest.TestCase):
+    """`.qagente/templates/` é o único lugar preservado onde o time declara o **layout**.
+
+    O perfil carrega escalares (qual framework, qual prefixo, onde salvar) e não consegue
+    carregar a ordem e a existência das seções de um artefato. Sem este diretório, editar um
+    template e atualizar o harness são mutuamente exclusivos: `install_entry` pula a skill
+    que já existe e, com --force, apaga o diretório dela inteiro.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.project = Path(self.tmp.name) / "projeto"
+        self.project.mkdir()
+
+    @property
+    def pasta(self) -> Path:
+        return self.project / ".qagente" / "templates"
+
+    @property
+    def readme(self) -> Path:
+        return self.pasta / "README.md"
+
+    def semear(self, nome: str = "casos-de-teste.md", conteudo: str = "# Layout do time\n") -> Path:
+        """Coloca um template do time no diretório, como o time faria."""
+        self.pasta.mkdir(parents=True, exist_ok=True)
+        alvo = self.pasta / nome
+        alvo.write_text(conteudo, encoding="utf-8")
+        return alvo
+
+    def test_o_readme_existe_no_harness(self):
+        self.assertTrue(install.TEMPLATES_README_SRC.is_file(), install.TEMPLATES_README_SRC)
+
+    def test_a_instalacao_cria_o_diretorio_com_o_readme(self):
+        install.install_templates(self.project, force=False, dry_run=False)
+        self.assertTrue(self.readme.is_file())
+        self.assertIn("Templates do Time", self.readme.read_text(encoding="utf-8"))
+
+    def test_o_diretorio_nasce_sem_template_nenhum(self):
+        """A sobrescrita é opt-in. Semear layout aqui tiraria do harness a chance de atualizá-lo."""
+        install.install_templates(self.project, force=False, dry_run=False)
+        arquivos = {p.name for p in self.pasta.iterdir() if p.is_file()}
+        self.assertEqual(arquivos, {"README.md"})
+
+    def test_dry_run_nao_escreve(self):
+        install.install_templates(self.project, force=False, dry_run=True)
+        self.assertFalse(self.pasta.exists())
+
+    def test_o_readme_e_preservado_sem_force(self):
+        self.semear("README.md", "anotação do time\n")
+        install.install_templates(self.project, force=False, dry_run=False)
+        self.assertIn("anotação do time", self.readme.read_text(encoding="utf-8"))
+
+    def test_force_atualiza_o_readme(self):
+        self.semear("README.md", "antigo\n")
+        install.install_templates(self.project, force=True, dry_run=False)
+        self.assertIn("Templates do Time", self.readme.read_text(encoding="utf-8"))
+
+    def test_force_nao_apaga_template_do_time(self):
+        """O teste que justifica a função existir.
+
+        `install_entry` faz `shutil.rmtree` no destino quando --force: se os templates do time
+        morassem dentro da skill, atualizar o harness apagaria o trabalho deles. Aqui --force
+        troca só o README.
+        """
+        do_time = self.semear("casos-de-teste.md", "# Layout do time\n")
+        install.install_templates(self.project, force=True, dry_run=False)
+        self.assertTrue(do_time.is_file(), "--force apagou o template do time")
+        self.assertEqual(do_time.read_text(encoding="utf-8"), "# Layout do time\n")
+
+    def test_reinstalar_nao_apaga_template_do_time(self):
+        do_time = self.semear()
+        for _ in range(3):
+            install.install_templates(self.project, force=False, dry_run=False)
+        self.assertEqual(do_time.read_text(encoding="utf-8"), "# Layout do time\n")
+
+    def test_todo_sobrescrivel_existe_em_alguma_skill(self):
+        """Nome que não corresponde a template de skill nenhuma nunca seria consultado."""
+        em_disco = {p.name for p in (HARNESS / "skills").glob("*/templates/*") if p.is_file()}
+        for nome in install.TEMPLATES_DO_TIME:
+            with self.subTest(template=nome):
+                self.assertIn(nome, em_disco)
+
+    def test_nomes_de_template_sao_unicos_entre_skills(self):
+        """A resolução é por nome-base, sem subdiretório: nome repetido em duas skills torna
+        a sobrescrita ambígua — o time editaria um arquivo e mudaria dois artefatos."""
+        nomes = [p.name for p in (HARNESS / "skills").glob("*/templates/*") if p.is_file()]
+        repetidos = sorted({n for n in nomes if nomes.count(n) > 1})
+        self.assertEqual(repetidos, [], f"nome-base repetido entre skills: {repetidos}")
+
+    def test_o_que_carrega_invariante_nao_e_sobrescrivel(self):
+        """`fabrica-dados.js` e `massa_template.resource` trazem isolamento e limpeza de massa.
+        Sobrescrevê-los desligaria garantia de qualidade em silêncio — o que o CONTRIBUTING
+        proíbe. Se um deles entrar em TEMPLATES_DO_TIME, foi engano."""
+        for nome in ("fabrica-dados.js", "massa_template.resource"):
+            with self.subTest(template=nome):
+                self.assertNotIn(nome, install.TEMPLATES_DO_TIME)
+
+    def test_o_nucleo_declara_a_regra_de_precedencia(self):
+        """Sem regra no núcleo, o diretório existe e o agente nunca olha para ele."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("## Templates do time", texto)
+        self.assertIn(".qagente/templates/", texto)
+
+    def test_o_nucleo_lista_exatamente_os_sobrescriveis(self):
+        """Mesma trava do `risk_levels`: a lista vive em dois lugares e precisa bater."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        secao = texto.split("## Templates do time", 1)[1].split("\n## ", 1)[0]
+        citados = set(re.findall(r"`([a-z-]+\.md)`", secao))
+        self.assertEqual(citados, set(install.TEMPLATES_DO_TIME))
+
+    def test_o_nucleo_manda_avisar_qual_layout_foi_usado(self):
+        """Sobrescrita silenciosa é o risco central: o template do time pode contradizer uma
+        dúzia de frases da skill e nada no gate estático percebe."""
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        secao = texto.split("## Templates do time", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("Layout:", secao)
+
+    def test_o_nucleo_diz_que_o_template_nao_desliga_invariante(self):
+        texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
+        secao = texto.split("## Templates do time", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("princípio 7", secao)
+        self.assertIn("inclua a seção assim mesmo", secao.lower())
+
+    def test_o_readme_lista_os_mesmos_sobrescriveis(self):
+        """O README é o que o time lê; divergir dele é pior que não ter lista."""
+        texto = install.TEMPLATES_README_SRC.read_text(encoding="utf-8")
+        for nome in install.TEMPLATES_DO_TIME:
+            with self.subTest(template=nome):
+                self.assertIn(nome, texto)
+
+    def _rodar(self, *args: str) -> str:
+        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        r = subprocess.run(
+            [sys.executable, str(INSTALL), *args],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", env=env,
+        )
+        self.assertEqual(r.returncode, 0, f"instalador falhou:\n{r.stdout}\n{r.stderr}")
+        return r.stdout
+
+    def test_a_instalacao_real_cria_o_diretorio(self):
+        self._rodar("--target", str(self.project), "--tool", "claude")
+        self.assertTrue(self.readme.is_file(), "instalação real não criou .qagente/templates/")
+
+    def test_pulado_no_global(self):
+        """--dry-run para não escrever em ~/.claude, que nenhum teste pode tocar.
+
+        O modo global não tem projeto: `.qagente/` é por projeto, como o perfil e o contexto.
+        """
+        saida = self._rodar("--global", "--dry-run")
+        self.assertNotIn("Templates do time", saida)
 
 
 # --------------------------------------------------------------------------------------
@@ -1451,6 +1604,110 @@ class PromessasDoHarnessTest(unittest.TestCase):
         for regra in ("commit", "pasta temporária", "sem pedido explícito", "Adaptador é formato"):
             with self.subTest(regra=regra):
                 self.assertIn(regra, texto)
+
+
+class FasesDeCenariosECasosTest(unittest.TestCase):
+    """Cenário e caso são duas fases, não uma.
+
+    A fusão das duas em uma skill só é visível quando alguém pede "cenários de teste" e
+    recebe Gherkin executável — ou quando a Fase 2 inventa o resultado esperado porque o
+    cenário não trouxe nenhum. Nenhum dos dois quebra teste; por isso a fronteira está
+    presa aqui.
+    """
+
+    CENARIOS = HARNESS / "skills" / "cenarios-de-teste" / "SKILL.md"
+    CASOS = HARNESS / "skills" / "casos-de-teste" / "SKILL.md"
+    TPL_CENARIOS = HARNESS / "skills" / "cenarios-de-teste" / "templates" / "cenarios.md"
+    TPL_CASOS = HARNESS / "skills" / "casos-de-teste" / "templates" / "casos-de-teste.md"
+
+    def texto(self, path: Path) -> str:
+        return path.read_text(encoding="utf-8")
+
+    def test_as_duas_fases_sao_skills_distintas(self):
+        for path in (self.CENARIOS, self.CASOS):
+            with self.subTest(skill=path.parent.name):
+                self.assertTrue(path.is_file(), path)
+
+    def test_cada_fase_declara_de_que_lado_da_fronteira_esta(self):
+        """Sem isso, as duas descrições disputam o pedido 'cenários de teste'."""
+        self.assertIn("o QUE testar", self.texto(self.CENARIOS))
+        self.assertIn("o COMO testar", self.texto(self.CASOS))
+
+    def test_a_granularidade_e_decidida_na_fase_1_e_uma_vez_so(self):
+        regra = "1 cenário por comportamento"
+        self.assertIn(regra, self.texto(self.CENARIOS))
+        self.assertIn(regra, (HARNESS / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertIn("não refeita", self.texto(self.CASOS))
+
+    def test_o_cenario_carrega_o_resultado_esperado(self):
+        """É daqui que sai o `Então`. Sem isto, quem escreve o caso inventa o resultado.
+
+        A regra vale nos dois arquivos: o SKILL.md ensina, o template é o que vira artefato.
+        """
+        for path in (self.CENARIOS, self.TPL_CENARIOS):
+            texto = self.texto(path)
+            for marca in ("Objetivo:", "Escopo de Validações", "Resultados Esperados"):
+                with self.subTest(arquivo=path.name, campo=marca):
+                    self.assertIn(marca, texto)
+
+    def test_a_fase_1_entrega_o_contrato_da_fase_2(self):
+        for path in (self.CENARIOS, self.TPL_CENARIOS):
+            texto = self.texto(path)
+            with self.subTest(arquivo=path.name):
+                self.assertIn("Casos sugeridos por cenário", texto)
+                self.assertIn("contrato", texto)
+                for prefixo in ("[API]", "[INTERFACE]"):
+                    with self.subTest(prefixo=prefixo):
+                        self.assertIn(prefixo, texto)
+
+    def test_a_fase_2_cumpre_o_contrato_e_declara_divergencia(self):
+        for path in (self.CASOS, self.TPL_CASOS):
+            with self.subTest(arquivo=path.name):
+                self.assertIn("Aderência ao contrato", self.texto(path))
+        self.assertIn("divergência", self.texto(self.CASOS))
+
+    def test_cada_caso_aponta_para_o_cenario_de_origem(self):
+        self.assertIn("conventions.test_id_pattern", self.texto(self.CASOS))
+        for path in (self.CASOS, self.TPL_CASOS):
+            texto = self.texto(path)
+            for tag in ("@api", "@interface", "@pendente-de-automacao", "@nao-automatizavel"):
+                with self.subTest(arquivo=path.name, tag=tag):
+                    self.assertIn(tag, texto)
+
+    def test_a_tag_de_camada_roteia_a_automacao(self):
+        texto = self.texto(self.CASOS)
+        self.assertIn("api.framework", texto)
+        self.assertIn("ui.framework", texto)
+
+    def test_as_duas_fases_fecham_com_resumo(self):
+        for path in (self.CENARIOS, self.TPL_CENARIOS):
+            with self.subTest(arquivo=path.name):
+                self.assertIn("## Resumo dos Cenários", self.texto(path))
+        for path in (self.CASOS, self.TPL_CASOS):
+            with self.subTest(arquivo=path.name):
+                self.assertIn("## Resumo dos Casos de Teste", self.texto(path))
+
+    def test_o_resumo_e_escrito_por_ultimo(self):
+        """Resumo recontado à mão depois de editar o corpo é como ele desatualiza."""
+        for path in (self.CENARIOS, self.CASOS):
+            with self.subTest(skill=path.parent.name):
+                self.assertIn("por último", self.texto(path))
+
+    def test_a_lacuna_nao_some_quando_nao_ha_documento_de_cenarios(self):
+        """A Fase 2 pode ser a porta de entrada: sem cenários, a lacuna fica no doc de casos."""
+        texto = self.texto(self.CASOS)
+        self.assertIn("## Observações", texto)
+        self.assertIn("Sem documento de cenários", texto)
+
+    def test_cada_fase_tem_template_e_ele_e_sobrescrivel(self):
+        esperados = {
+            "cenarios-de-teste": "cenarios.md",
+            "casos-de-teste": "casos-de-teste.md",
+        }
+        for skill, template in esperados.items():
+            with self.subTest(skill=skill):
+                self.assertTrue((HARNESS / "skills" / skill / "templates" / template).is_file())
+                self.assertIn(template, install.TEMPLATES_DO_TIME)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 ---
 name: cypress-ui-automation
-description: Escreve e organiza testes automatizados de interface web (E2E) em Cypress, usando seletores estáveis, comandos customizados, fixtures de dados e interceptação de rede, evitando esperas fixas e testes frágeis. Use quando o usuário pedir para automatizar testes de tela/UI, escrever testes em Cypress, criar uma spec .cy.js/.cy.ts, testar um fluxo de formulário/navegação/checkout, validar comportamento visual/UX via automação, ou revisar/corrigir testes Cypress existentes (flaky, seletor quebrado). Não use quando o perfil do projeto define outro framework de UI (use `playwright-ui-automation` para Playwright), para automação de API pura sem interface (use `robot-framework-api`), testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use escrita-casos-teste).
+description: Escreve e organiza testes automatizados de interface web (E2E) em Cypress, usando seletores estáveis, comandos customizados, fixtures de dados e interceptação de rede, evitando esperas fixas e testes frágeis. Use quando o usuário pedir para automatizar testes de tela/UI, escrever testes em Cypress, criar uma spec .cy.js/.cy.ts, testar um fluxo de formulário/navegação/checkout, validar comportamento visual/UX via automação, ou revisar/corrigir testes Cypress existentes (flaky, seletor quebrado). Não use quando o perfil do projeto define outro framework de UI (use `playwright-ui-automation` para Playwright), para automação de API pura sem interface (use `robot-framework-api`), testes de carga/performance, ou para escrever os casos de teste em si antes de automatizar (use casos-de-teste).
 license: CC-BY-4.0
 metadata:
   author: QAGente
@@ -14,7 +14,7 @@ metadata:
 Impede a spec que passa na máquina de quem escreveu e falha de forma intermitente no CI: `cy.wait(ms)` como sincronização, seletor preso a classe de estilo ou posição no DOM, asserção genérica que passaria mesmo com a funcionalidade quebrada. Entrega specs com seletores estáveis, espera por sinal real, abstração proporcional à duplicação e evidência de execução.
 </objetivo>
 
-Escreve specs Cypress executáveis a partir de casos de teste já definidos (skill `escrita-casos-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
+Escreve specs Cypress executáveis a partir de casos de teste já definidos (skill `casos-de-teste`) ou diretamente de um fluxo de tela descrito pelo usuário. Terceira fase (ramo UI) do fluxo QA — ver `AGENTS.md`, na raiz do projeto.
 
 ## Configuração
 
@@ -71,7 +71,7 @@ Leia `.qagente/quality-profile.json` primeiro — ele define `ui.framework`, `ui
 - Usuário pede para "automatizar o fluxo de checkout em Cypress".
 - Usuário reporta um teste Cypress "flaky" (intermitente) e pede correção.
 
-Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`escrita-casos-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
+Esta skill é opcional e não é a função principal do agente (que é análise + escrita de cenários/casos de teste). Se os casos de teste ainda não existem, escreva-os primeiro (`casos-de-teste`) e só inicie a automação depois que o usuário aprovar explicitamente esse documento — mesmo que o pedido original já peça a automação diretamente, confirme antes de começar.
 
 ## Estrutura de arquivos
 
@@ -242,4 +242,4 @@ Sempre execute e leia o resultado real (pass/fail, vídeo/screenshot em `cypress
 
 - **`playwright-ui-automation`** — a alternativa para o mesmo ramo. Quem responde é a skill de `ui.framework`; se o perfil disser `playwright`, é ela, e esta recusa apontando para lá.
 - **`robot-framework-api`** — o ramo de API da mesma fase. Fluxo sem interface é lá; e vale usá-la para preparar estado por requisição antes de um teste de tela.
-- **`escrita-casos-teste`** — a origem. Sem casos de teste aprovados, a automação não começa.
+- **`casos-de-teste`** — a origem. Sem casos de teste aprovados, a automação não começa.

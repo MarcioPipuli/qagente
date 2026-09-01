@@ -1,0 +1,125 @@
+{
+  "skill": "casos-de-teste",
+  "version": "2.0",
+  "evals": [
+    {
+      "id": "cas-001",
+      "prompt": "Transforma estes cenários em casos de teste BDD.",
+      "expected_patterns": ["Funcionalidade", "language: pt", "Cenário:"],
+      "anti_patterns": [],
+      "tags": ["estrutura"]
+    },
+    {
+      "id": "cas-002",
+      "prompt": "A mesma validação vale para cinco campos diferentes. Escreve os casos.",
+      "expected_patterns": ["Esquema do Cenário", "Exemplos:", "3 ou mais OR 3+"],
+      "anti_patterns": ["repita o mesmo Cenário simples"],
+      "tags": ["esquema", "decisao"]
+    },
+    {
+      "id": "cas-003",
+      "prompt": "Dá um título para o caso de campo obrigatório.",
+      "expected_patterns": ["conventions.scenario_title_prefix", "Validar que"],
+      "anti_patterns": ["Teste 1"],
+      "tags": ["nomenclatura", "perfil"]
+    },
+    {
+      "id": "cas-004",
+      "prompt": "O requisito só descreve o caso positivo, e não existe documento de cenários. Escreve assim mesmo.",
+      "expected_patterns": ["Observações", "confirmado com o time", "princípio 2"],
+      "anti_patterns": ["omita uma suposição"],
+      "tags": ["lacuna", "invariante"]
+    },
+    {
+      "id": "cas-005",
+      "prompt": "Como cito o ticket de origem no documento?",
+      "expected_patterns": ["rastreabilidade", "princípio 1", "ticket"],
+      "anti_patterns": [],
+      "tags": ["rastreabilidade"]
+    },
+    {
+      "id": "cas-006",
+      "prompt": "Como escrevo os nomes de campo e os valores dentro dos passos?",
+      "expected_patterns": ["aspas duplas", "não parafraseie OR copiada exatamente"],
+      "anti_patterns": [],
+      "tags": ["convencao"]
+    },
+    {
+      "id": "cas-007",
+      "prompt": "Qual palavra-chave uso em cada passo?",
+      "expected_patterns": ["gherkin-palavras-chave"],
+      "anti_patterns": [],
+      "tags": ["fronteira"]
+    },
+    {
+      "id": "cas-008",
+      "prompt": "Onde salvo o documento e em que idioma escrevo?",
+      "expected_patterns": ["paths.test_cases", "conventions.gherkin_language", "language"],
+      "anti_patterns": [],
+      "tags": ["perfil"]
+    },
+    {
+      "id": "cas-009",
+      "prompt": "Já tenho os casos de teste. Automatiza tudo agora.",
+      "expected_patterns": ["aprova", "api.framework OR ui.framework"],
+      "anti_patterns": [],
+      "tags": ["gate"]
+    },
+    {
+      "id": "cas-010",
+      "prompt": "Me dá um modelo de documento de casos para copiar.",
+      "expected_patterns": ["templates/casos-de-teste.md", ".qagente/templates/casos-de-teste.md"],
+      "anti_patterns": [],
+      "tags": ["template"]
+    },
+    {
+      "id": "cas-011",
+      "prompt": "Como este caso aponta para o cenário que o originou?",
+      "expected_patterns": ["@CT-02 OR ID do cenário", "conventions.test_id_pattern", "Obrigatória OR obrigatória"],
+      "anti_patterns": [],
+      "tags": ["rastreabilidade", "tags"]
+    },
+    {
+      "id": "cas-012",
+      "prompt": "Esse caso é de API ou de tela? E ele vai ser automatizado?",
+      "expected_patterns": ["@api", "@interface", "@pendente-de-automacao", "@nao-automatizavel"],
+      "anti_patterns": [],
+      "tags": ["tags", "roteamento"]
+    },
+    {
+      "id": "cas-013",
+      "prompt": "Junta o preenchimento e o envio no mesmo caso, fica mais curto.",
+      "expected_patterns": ["Uma ação por caso", "um único `Quando` OR único Quando"],
+      "anti_patterns": ["dois `Quando` no mesmo caso"],
+      "tags": ["escrita", "granularidade"]
+    },
+    {
+      "id": "cas-014",
+      "prompt": "Escreve o passo com 'se o cliente for VIP, então o desconto é aplicado'.",
+      "expected_patterns": ["Sem lógica condicional", "caso separado"],
+      "anti_patterns": [],
+      "tags": ["escrita"]
+    },
+    {
+      "id": "cas-015",
+      "prompt": "Coloca um CNPJ de verdade no Dado para o teste ficar pronto para rodar.",
+      "expected_patterns": ["dados-de-teste", "CNPJ válido de instituição cadastrada"],
+      "anti_patterns": ["12.345.678/0001-90"],
+      "tags": ["dados", "fronteira"]
+    },
+    {
+      "id": "cas-016",
+      "prompt": "Os cenários sugeriam 11 casos e eu escrevi 9. Fecha o documento.",
+      "expected_patterns": ["Resumo dos Casos de Teste", "Aderência ao contrato", "divergência"],
+      "anti_patterns": [],
+      "tags": ["resumo", "contrato"]
+    },
+    {
+      "id": "cas-017",
+      "prompt": "Reavalia a prioridade dos casos enquanto escreve.",
+      "expected_patterns": ["herdada", "risk_levels", "cenarios-de-teste"],
+      "anti_patterns": [],
+      "tags": ["contrato", "fronteira"]
+    }
+  ]
+}

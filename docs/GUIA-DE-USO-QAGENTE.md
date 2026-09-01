@@ -243,16 +243,22 @@ importante".
 
 Para cada intenção: o pedido, a skill acionada, o que volta e onde cai.
 
-### 5.1 Análise e escrita (o dia a dia)
+### 5.1 Cenários e casos (o dia a dia)
+
+Cenário e caso são duas entregas distintas: o cenário diz **o quê** testar, em alto nível e
+priorizado por risco; o caso diz **como**, em Gherkin executável. Pedir "cenários de teste"
+aciona a primeira; pedir "em Gherkin", "em BDD" ou "casos de teste" aciona a segunda. Uma não
+exige a outra — dá para parar nos cenários, ou entrar direto nos casos com os cenários prontos.
 
 | Você quer | Peça assim | Skill | Volta como |
 |---|---|---|---|
-| Saber o que testar num requisito | "Analisa o PRD em `entrada/x.md` e me diz o que precisamos testar" | `analise-documentacao-testes` | Tabela de cenários priorizados + lacunas → `paths.scenarios` |
-| Analisar um ticket colado | "Aqui está o ticket PROJ-482 sobre recuperação de senha; me diz o que precisamos testar" + o texto | `analise-documentacao-testes` | Idem, com Origem citando o ticket |
-| Analisar uma spec de API | "Analisa esse OpenAPI e levanta os cenários de contrato e de erro" | `analise-documentacao-testes` | Cenários por endpoint, códigos de resposta, auth |
-| Formalizar cenários em BDD | "Escreve os casos de teste em Gherkin para esses cenários" | `escrita-casos-teste` | Documento Gherkin pt + `## Observações` → `paths.test_cases` |
+| Saber o que testar num requisito | "Analisa o PRD em `entrada/x.md` e me diz o que precisamos testar" | `cenarios-de-teste` | Índice priorizado + bloco por cenário + resumo com casos sugeridos + lacunas → `paths.scenarios` |
+| Levantar cenários sem escrever casos | "Levanta os cenários de teste dessa user story para validar a cobertura com o negócio" | `cenarios-de-teste` | Mesmo documento; a fase para aí, sem Gherkin |
+| Analisar um ticket colado | "Aqui está o ticket PROJ-482 sobre recuperação de senha; me diz o que precisamos testar" + o texto | `cenarios-de-teste` | Idem, com Origem citando o ticket |
+| Analisar uma spec de API | "Analisa esse OpenAPI e levanta os cenários de contrato e de erro" | `cenarios-de-teste` | Cenários por endpoint, códigos de resposta, auth |
+| Formalizar cenários em BDD | "Escreve os casos de teste em Gherkin para esses cenários" | `casos-de-teste` | Casos em Gherkin pt, com tags de rastreio/camada/execução + resumo com aderência ao contrato → `paths.test_cases` |
 | Tirar dúvida de gramática | "Nesse passo, é Dado ou Quando?" | `gherkin-palavras-chave` | Resposta direta, sem gerar arquivo |
-| Padronizar um arquivo antigo | "Revisa esse arquivo de cenários e deixa no nosso padrão" | `escrita-casos-teste` | Documento reescrito no formato do perfil |
+| Padronizar um arquivo antigo | "Revisa esse arquivo de casos em Gherkin e deixa no nosso padrão" | `casos-de-teste` | Documento reescrito no formato do perfil |
 
 ### 5.2 Automação (sempre depois da aprovação)
 
@@ -550,7 +556,7 @@ execução, e essa exigência não é configurável.
 | `AGENTS.md` do projeto parece desatualizado | O bloco marcado guarda uma cópia das regras da época da instalação | Reinstale: o `merge_block` atualiza só o bloco, sem duplicar nem tocar no resto |
 | Instalação recusou um caminho do perfil | Caminho absoluto ou com `..` | Caminhos do perfil são relativos à raiz do projeto — corrija e valide |
 | `--validate-profile` deu erro | Perfil estruturalmente quebrado (tipo errado, nível duplicado, framework ausente com a fase ligada) | Corrija o que a saída aponta; erros bloqueiam, avisos não |
-| Fora do Claude Code, o agente ignora as skills | Copilot/Cursor/Windsurf não carregam skill sozinhos | Aponte o arquivo: "siga `.qagente/skills/escrita-casos-teste/SKILL.md`" |
+| Fora do Claude Code, o agente ignora as skills | Copilot/Cursor/Windsurf não carregam skill sozinhos | Aponte o arquivo: "siga `.qagente/skills/casos-de-teste/SKILL.md`" |
 
 ---
 
@@ -593,7 +599,7 @@ Nas três ferramentas que não são o Claude Code, as skills vão para `.qagente
 procedimento detalhado:
 
 ```
-Segue o procedimento de .qagente/skills/analise-documentacao-testes/SKILL.md para esse PRD.
+Segue o procedimento de .qagente/skills/cenarios-de-teste/SKILL.md para esse PRD.
 ```
 
 As **regras universais são idênticas** nas quatro ferramentas: adaptador é formato, não

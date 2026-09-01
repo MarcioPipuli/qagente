@@ -54,7 +54,7 @@
     {
       "id": "gpc-008",
       "prompt": "Escreve o documento inteiro de cenários BDD com Funcionalidade e Exemplos.",
-      "expected_patterns": ["escrita-casos-teste"],
+      "expected_patterns": ["casos-de-teste"],
       "anti_patterns": [],
       "tags": ["fronteira"]
     },

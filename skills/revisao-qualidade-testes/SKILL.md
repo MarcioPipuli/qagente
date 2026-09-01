@@ -1,6 +1,6 @@
 ---
 name: revisao-qualidade-testes
-description: Revisa código de teste que já existe e aponta maus cheiros em seis dimensões (legibilidade, confiabilidade, valor diagnóstico, projeto, origem em IA e cobertura), avalia a testabilidade do código de aplicação e entrega um relatório com severidade e correção por achado. Use quando o usuário pedir revisão da suíte de testes, auditoria de qualidade dos testes, análise de maus cheiros, revisão de um pull request que mexe em teste, ou quiser saber se os testes existentes realmente pegam bug. Não use para escrever testes novos a partir de requisito (use escrita-casos-teste e a skill do framework) nem para estabilizar um teste que oscila (use confiabilidade-testes).
+description: Revisa código de teste que já existe e aponta maus cheiros em seis dimensões (legibilidade, confiabilidade, valor diagnóstico, projeto, origem em IA e cobertura), avalia a testabilidade do código de aplicação e entrega um relatório com severidade e correção por achado. Use quando o usuário pedir revisão da suíte de testes, auditoria de qualidade dos testes, análise de maus cheiros, revisão de um pull request que mexe em teste, ou quiser saber se os testes existentes realmente pegam bug. Não use para escrever testes novos a partir de requisito (use casos-de-teste e a skill do framework) nem para estabilizar um teste que oscila (use confiabilidade-testes).
 license: MIT
 metadata:
   author: QAGente
@@ -171,4 +171,4 @@ A saída dos passos 1 a 3 é a evidência que sustenta todo achado de confiabili
 - **`confiabilidade-testes`** — os maus cheiros de confiabilidade (espera fixa, dependência de ordem) são a porta de entrada de lá. Aqui você identifica; lá você classifica a causa raiz e estabiliza.
 - **`dados-de-teste`** — a correção de setup obscuro, fixture gigante e massa genérica mora lá.
 - **`priorizacao-por-risco`** — decide onde a lacuna de cobertura encontrada aqui realmente dói.
-- **`escrita-casos-teste`** — quando a revisão revela comportamento sem caso de teste formal, o caso nasce lá, não aqui.
+- **`casos-de-teste`** — quando a revisão revela comportamento sem caso de teste formal, o caso nasce lá, não aqui.

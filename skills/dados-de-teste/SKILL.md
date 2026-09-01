@@ -1,6 +1,6 @@
 ---
 name: dados-de-teste
-description: Projeta a massa de teste da suíte com fábricas, fixtures, sementes idempotentes, isolamento por teste, limpeza garantida e anonimização de dado de produção. Use quando o usuário pedir para organizar a massa de teste, criar fábrica ou fixture de dados, resolver testes que se atrapalham por dado compartilhado, tornar a massa determinística, semear banco de teste, ou usar dado parecido com o de produção sem expor informação pessoal. Não use para estabilizar um teste que oscila por outra causa que não dado (use confiabilidade-testes) nem para escrever os casos de teste em si (use escrita-casos-teste).
+description: Projeta a massa de teste da suíte com fábricas, fixtures, sementes idempotentes, isolamento por teste, limpeza garantida e anonimização de dado de produção. Use quando o usuário pedir para organizar a massa de teste, criar fábrica ou fixture de dados, resolver testes que se atrapalham por dado compartilhado, tornar a massa determinística, semear banco de teste, ou usar dado parecido com o de produção sem expor informação pessoal. Não use para estabilizar um teste que oscila por outra causa que não dado (use confiabilidade-testes) nem para escrever os casos de teste em si (use casos-de-teste).
 license: MIT
 metadata:
   author: QAGente
@@ -153,7 +153,7 @@ A fábrica deve facilitar gerar caso de borda sem escrevê-lo à mão em cada te
 - **Datas**: início e fim de mês, ano bissexto, virada de ano, data futura, data muito antiga, fuso diferente.
 - **Números**: mínimo, mínimo−1, máximo, máximo+1, zero, negativo, com muitas casas decimais.
 
-São eles que alimentam a análise de valor limite da Fase 1 (`skills/analise-documentacao-testes`) quando ela vira teste automatizado.
+São eles que alimentam a análise de valor limite da Fase 1 (`skills/cenarios-de-teste`) quando ela vira teste automatizado.
 
 ## Erros comuns
 
@@ -180,5 +180,5 @@ São eles que alimentam a análise de valor limite da Fase 1 (`skills/analise-do
 - **`robot-framework-api`, `cypress-ui-automation`, `playwright-ui-automation`** — consomem esta camada. O formato concreto da fábrica segue as convenções da skill do framework escolhido no perfil.
 - **`confiabilidade-testes`** — dependência de dado e de ordem é uma das categorias de causa raiz de lá; a correção é o que esta skill descreve.
 - **`revisao-qualidade-testes`** — os maus cheiros de setup obscuro, fixture gigante e massa genérica apontam para cá.
-- **`analise-documentacao-testes`** — a análise de valor limite da Fase 1 define quais casos de borda a massa precisa cobrir.
+- **`cenarios-de-teste`** — a análise de valor limite da Fase 1 define quais casos de borda a massa precisa cobrir.
 - **`reproducao-bugs`** — a reprodução determinística depende de massa fixa; as fábricas daqui são o que a torna repetível.

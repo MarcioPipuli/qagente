@@ -1,6 +1,6 @@
 ---
 name: reproducao-bugs
-description: Transforma um relato de bug vago em uma reprodução mínima verificada e, depois de aprovada, em um teste de regressão que falha antes da correção e passa depois. Cobre extração das dimensões de reprodutibilidade de um relato magro, o ciclo reproduzir-minimizar-isolar-registrar, busca do commit que introduziu a falha com git bisect, determinismo (tempo congelado, dado fixo, rede interceptada) e devolução da evidência ao ticket. Use quando o usuário pedir para reproduzir um bug, montar passos mínimos de reprodução, descobrir qual commit quebrou algo, escrever teste de regressão para um defeito, ou disser que um bug não reproduz na máquina dele. Não use para extrair cenários de um requisito (use analise-documentacao-testes) nem para estabilizar um teste que oscila sem haver bug de produto (use confiabilidade-testes).
+description: Transforma um relato de bug vago em uma reprodução mínima verificada e, depois de aprovada, em um teste de regressão que falha antes da correção e passa depois. Cobre extração das dimensões de reprodutibilidade de um relato magro, o ciclo reproduzir-minimizar-isolar-registrar, busca do commit que introduziu a falha com git bisect, determinismo (tempo congelado, dado fixo, rede interceptada) e devolução da evidência ao ticket. Use quando o usuário pedir para reproduzir um bug, montar passos mínimos de reprodução, descobrir qual commit quebrou algo, escrever teste de regressão para um defeito, ou disser que um bug não reproduz na máquina dele. Não use para extrair cenários de um requisito (use cenarios-de-teste) nem para estabilizar um teste que oscila sem haver bug de produto (use confiabilidade-testes).
 license: MIT
 metadata:
   author: QAGente
@@ -189,8 +189,8 @@ Substitua o relato vago por um bloco estruturado, seguindo `templates/relato-rep
 
 ## Skills relacionadas
 
-- **`analise-documentacao-testes`** — a Fase 1 parte de um requisito; esta skill parte de um defeito. Se a reprodução revelar que o requisito era ambíguo, volte para lá e registre a lacuna.
-- **`escrita-casos-teste`** — quando o bug expõe uma regra de negócio que ninguém tinha escrito, o caso de teste formal nasce lá; aqui você entrega a reprodução e o teste de regressão.
+- **`cenarios-de-teste`** — a Fase 1 parte de um requisito; esta skill parte de um defeito. Se a reprodução revelar que o requisito era ambíguo, volte para lá e registre a lacuna.
+- **`casos-de-teste`** — quando o bug expõe uma regra de negócio que ninguém tinha escrito, o caso de teste formal nasce lá; aqui você entrega a reprodução e o teste de regressão.
 - **`robot-framework-api`, `cypress-ui-automation`, `playwright-ui-automation`** — os padrões de código do teste de regressão vêm da skill do framework de `api.framework`/`ui.framework`. Esta skill decide *o que* o teste afirma; a skill do framework decide *como* ele é escrito.
 - **`confiabilidade-testes`** — quando o Passo 7 diagnostica oscilação de verdade, vá para lá para estabilizar ou colocar em quarentena. Aqui você só diagnostica.
 - **`priorizacao-por-risco`** — todo bug que escapou para produção é gatilho de reavaliação da matriz.
