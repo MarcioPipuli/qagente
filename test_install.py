@@ -1460,7 +1460,7 @@ class ContextoDoProjetoTest(unittest.TestCase):
 
 
 class TemplatesDoTimeTest(unittest.TestCase):
-    """`.qagente/templates/` é o único lugar preservado onde o time declara o **layout**.
+    """`.qagente/templates-do-time/` é o único lugar preservado onde o time declara o **layout**.
 
     O perfil carrega escalares (qual framework, qual prefixo, onde salvar) e não consegue
     carregar a ordem e a existência das seções de um artefato. Sem este diretório, editar um
@@ -1476,7 +1476,7 @@ class TemplatesDoTimeTest(unittest.TestCase):
 
     @property
     def pasta(self) -> Path:
-        return self.project / ".qagente" / "templates"
+        return self.project / ".qagente" / install.TEMPLATES_DIRNAME
 
     @property
     def readme(self) -> Path:
@@ -1535,6 +1535,74 @@ class TemplatesDoTimeTest(unittest.TestCase):
             install.install_templates(self.project, force=False, dry_run=False)
         self.assertEqual(do_time.read_text(encoding="utf-8"), "# Layout do time\n")
 
+    # -- renomeação de `templates/` para `templates-do-time/` -----------------------------
+    #
+    # O nome antigo colidia de leitura com o `templates/` que cada skill tem para o template
+    # *dela*. Quem instalou antes da renomeação tem o layout do time no caminho velho, que
+    # nenhuma skill procura mais — e a sobrescrita para de valer sem erro nenhum.
+
+    @property
+    def pasta_antiga(self) -> Path:
+        return self.project / ".qagente" / "templates"
+
+    def semear_no_nome_antigo(self, nome: str, conteudo: str) -> Path:
+        self.pasta_antiga.mkdir(parents=True, exist_ok=True)
+        alvo = self.pasta_antiga / nome
+        alvo.write_text(conteudo, encoding="utf-8")
+        return alvo
+
+    def test_o_nome_do_diretorio_e_o_mesmo_dos_dois_lados(self):
+        """`templates-do-time/` no clone e `.qagente/templates-do-time/` no projeto.
+
+        Divergir de novo é reabrir a confusão que a renomeação fechou.
+        """
+        self.assertEqual(install.TEMPLATES_DIRNAME, "templates-do-time")
+        self.assertTrue((HARNESS / install.TEMPLATES_DIRNAME).is_dir())
+        self.assertEqual(install.TEMPLATES_README_SRC.parent.name, install.TEMPLATES_DIRNAME)
+
+    def test_a_instalacao_migra_o_diretorio_do_nome_antigo(self):
+        do_time = self.semear_no_nome_antigo("casos-de-teste.md", "# Layout do time\n")
+        install.install_templates(self.project, force=False, dry_run=False)
+        self.assertFalse(do_time.exists(), "o nome antigo sobreviveu à migração")
+        migrado = self.pasta / "casos-de-teste.md"
+        self.assertTrue(migrado.is_file(), "o template do time não chegou ao nome novo")
+        self.assertEqual(migrado.read_text(encoding="utf-8"), "# Layout do time\n")
+
+    def test_a_migracao_nao_junta_diretorios_por_conta_propria(self):
+        """Instalou de novo antes de migrar: os dois nomes existem. Fundir é decisão do time."""
+        antigo = self.semear_no_nome_antigo("casos-de-teste.md", "# Antigo\n")
+        novo = self.semear("cenarios.md", "# Novo\n")
+        self.assertFalse(install.migrar_templates_do_time(self.project, dry_run=False))
+        self.assertTrue(antigo.is_file())
+        self.assertTrue(novo.is_file())
+
+    def test_a_migracao_respeita_dry_run(self):
+        do_time = self.semear_no_nome_antigo("casos-de-teste.md", "# Layout do time\n")
+        install.install_templates(self.project, force=False, dry_run=True)
+        self.assertTrue(do_time.is_file(), "--dry-run moveu arquivo")
+        self.assertFalse(self.pasta.exists())
+
+    def test_a_migracao_e_silenciosa_em_projeto_novo(self):
+        self.assertFalse(install.migrar_templates_do_time(self.project, dry_run=False))
+
+    def test_nenhum_documento_cita_o_caminho_antigo(self):
+        """O caminho velho em um doc manda o time colocar o template onde ninguém lê.
+
+        A exceção é a linha que **explica** a renomeação: essa precisa nomear o caminho
+        antigo para ser útil a quem instalou antes dela.
+        """
+        historico = ("já se chamou", "se chamava")
+        for caminho in sorted(HARNESS.rglob("*.md")) + sorted(HARNESS.glob("skills/*/SKILL.md")):
+            if ".git" in caminho.parts:
+                continue
+            texto = caminho.read_text(encoding="utf-8")
+            for linha in texto.splitlines():
+                if ".qagente/templates" not in linha or ".qagente/templates-do-time" in linha:
+                    continue
+                if any(marca in linha for marca in historico):
+                    continue
+                self.fail(f"{caminho.relative_to(HARNESS)} ainda cita o caminho antigo: {linha.strip()}")
+
     def test_todo_sobrescrivel_existe_em_alguma_skill(self):
         """Nome que não corresponde a template de skill nenhuma nunca seria consultado."""
         em_disco = {p.name for p in (HARNESS / "skills").glob("*/templates/*") if p.is_file()}
@@ -1561,7 +1629,7 @@ class TemplatesDoTimeTest(unittest.TestCase):
         """Sem regra no núcleo, o diretório existe e o agente nunca olha para ele."""
         texto = (HARNESS / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("## Templates do time", texto)
-        self.assertIn(".qagente/templates/", texto)
+        self.assertIn(".qagente/templates-do-time/", texto)
 
     def test_o_nucleo_lista_exatamente_os_sobrescriveis(self):
         """Mesma trava do `risk_levels`: a lista vive em dois lugares e precisa bater."""
@@ -1601,7 +1669,7 @@ class TemplatesDoTimeTest(unittest.TestCase):
 
     def test_a_instalacao_real_cria_o_diretorio(self):
         self._rodar("--target", str(self.project), "--tool", "claude")
-        self.assertTrue(self.readme.is_file(), "instalação real não criou .qagente/templates/")
+        self.assertTrue(self.readme.is_file(), "instalação real não criou .qagente/templates-do-time/")
 
     def test_pulado_no_global(self):
         """--dry-run para não escrever em ~/.claude, que nenhum teste pode tocar.
@@ -1783,7 +1851,7 @@ class PromessasDoHarnessTest(unittest.TestCase):
         guia = (HARNESS / "docs" / "GUIA-DE-USO-QAGENTE.md").read_text(encoding="utf-8")
         for nome, texto in (("manual", manual), ("guia", guia)):
             with self.subTest(documento=nome):
-                self.assertIn(".qagente/templates", texto, "não menciona o diretório do time")
+                self.assertIn(".qagente/templates-do-time", texto, "não menciona o diretório do time")
                 for template in install.TEMPLATES_DO_TIME:
                     self.assertIn(template, texto, f"não lista {template} entre os sobrescrevíveis")
 
@@ -1812,6 +1880,7 @@ class PromessasDoHarnessTest(unittest.TestCase):
             "configuracao-do-projeto",
             "memoria-projeto.md",
             "validate_artefatos.py",
+            "markdown-palavras-chave",   # o segundo formato do documento de casos
         )
         for marca in esperado_no_guia:
             with self.subTest(documento="guia", marca=marca):
@@ -2271,6 +2340,71 @@ Funcionalidade: Recuperação de senha
 """
 
 
+# O mesmo documento de casos do CASOS_OK — mesmos três casos, mesmo contrato com CENARIOS_OK —
+# escrito no outro formato: campos rotulados, com as palavras-chave dentro dos passos. É o
+# padrão de quem gerencia caso de teste no Jira/Xray, e o que ficava de fora enquanto
+# `classificar()` reconhecia documento de casos só pelo bloco ```gherkin.
+CASOS_PALAVRAS_CHAVE_OK = """# Casos de Teste — Recuperação de senha
+Origem: PROJ-482 | Cenários de origem: x.cenarios.md
+
+## Validar que o e-mail cadastrado recebe o link
+
+Rastreio: CT-01
+
+Summary:
+[INTERFACE] Envia o link para o e-mail cadastrado
+
+Action:
+*DADO* que exista um usuário com o e-mail "maria@example.com"
+*QUANDO* ele pede a recuperação de senha
+
+Expected Result:
+*ENTÃO* o sistema deve enviar o e-mail com o link
+
+Tipo de Execução:
+Pendente de Automacao
+
+## Validar que o link expirado é recusado
+
+Rastreio: CT-02
+
+Summary:
+[INTERFACE] Recusa link usado no minuto 16
+
+Action:
+*DADO* que exista um link gerado há 16 minutos
+*QUANDO* o usuário abre o link
+
+Expected Result:
+*ENTÃO* o sistema deve exibir "Link expirado"
+
+Tipo de Execução:
+Pendente de Automacao
+
+## Validar que o link de 3 dias é recusado pela API
+
+Rastreio: CT-02
+
+Summary:
+[API] Recusa link de 3 dias
+
+Action:
+*DADO* que exista um link gerado há 3 dias
+*QUANDO* a API é chamada com o token
+
+Expected Result:
+*ENTÃO* a resposta deve ser 410
+
+Tipo de Execução:
+Nao Automatizavel
+
+## Resumo dos Casos de Teste
+
+**Total de casos:** 3
+**Aderência ao contrato:** 3 casos sugeridos, 3 escritos
+"""
+
+
 class ValidadorDeArtefatosTest(unittest.TestCase):
     """O primeiro validador que olha para a saída, e o que fecha a lacuna dos três itens.
 
@@ -2424,7 +2558,102 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
             env=dict(os.environ, PYTHONIOENCODING="utf-8"),
         )
         self.assertIn("quality-profile.json", resultado.stdout, "não achou o perfil do projeto")
-        self.assertIn("o título não começa com 'Garantir que'", resultado.stdout)
+        # Todos os títulos do fixture divergem do prefixo do projeto, então o aviso vem
+        # uma vez pelo documento — o teste vizinho cobre o caminho por caso.
+        self.assertIn("'Garantir que'", resultado.stdout)
+        self.assertNotIn("'Validar que'", resultado.stdout, "mediu contra o default")
+
+    # -- o formato por palavras-chave -------------------------------------------------
+    #
+    # O envelope Gherkin é uma codificação das invariantes, não a definição delas. Estes
+    # testes prendem a fronteira: o formato muda, o que precisa ser provável não.
+
+    def test_formato_por_palavras_chave_passa(self):
+        """O contrário do afrouxamento: o documento correto neste formato tem que passar."""
+        resultado = self.rodar(
+            ("x.cenarios.md", CENARIOS_OK), ("x.casos.md", CASOS_PALAVRAS_CHAVE_OK)
+        )
+        self.assertEqual(resultado.returncode, 0, resultado.stdout)
+
+    def test_o_formato_e_detectado_no_documento_nao_lido_do_perfil(self):
+        """O perfil diz o que o agente escreve; o validador confere o que recebeu.
+
+        Documento escrito à mão, ou vindo de outra ferramenta, não tem perfil junto.
+        """
+        saida = self.problemas(("x.casos.md", CASOS_PALAVRAS_CHAVE_OK))
+        self.assertNotIn("não parece nenhum dos artefatos", saida)
+        self.assertNotIn("sem bloco de código gherkin", saida)
+
+    def test_nao_exige_envelope_gherkin_neste_formato(self):
+        """`Funcionalidade`, `# language:` e o bloco de código são do outro formato."""
+        saida = self.problemas(("x.casos.md", CASOS_PALAVRAS_CHAVE_OK))
+        for marca in ("Funcionalidade", "# language:", "bloco gherkin"):
+            with self.subTest(marca=marca):
+                self.assertNotIn(marca, saida)
+
+    def test_caso_sem_campo_de_rastreio(self):
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace("Rastreio: CT-01", "", 1)
+        self.assertIn("sem campo 'Rastreio:'", self.problemas(("x.casos.md", texto)))
+
+    def test_caso_sem_marca_de_camada(self):
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace("[INTERFACE] Envia", "Envia", 1)
+        self.assertIn("esperada uma marca [API]/[INTERFACE]", self.problemas(("x.casos.md", texto)))
+
+    def test_caso_sem_campo_de_tipo_de_execucao(self):
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace("Nao Automatizavel", "Talvez", 1)
+        self.assertIn("esperado um campo 'Tipo de Execução:'", self.problemas(("x.casos.md", texto)))
+
+    def test_a_concordancia_da_mensagem_segue_o_formato(self):
+        """"tag" é feminino, "campo" é masculino. Montar a frase por concatenação produzia
+        "esperado um tag de execução": aqui a mensagem é o produto, é o que o time lê."""
+        gherkin = self.problemas(("x.casos.md", CASOS_OK.replace("@pendente-de-automacao", "", 1)))
+        self.assertIn("esperada uma tag de execução", gherkin)
+        self.assertNotIn("esperado um tag", gherkin)
+        palavras = self.problemas(
+            ("x.casos.md", CASOS_PALAVRAS_CHAVE_OK.replace("Nao Automatizavel", "Talvez", 1))
+        )
+        self.assertIn("esperado um campo", palavras)
+        self.assertNotIn("esperada uma campo", palavras)
+
+    def test_valor_de_execucao_vale_com_e_sem_acento(self):
+        """`Pendente de Automação` e `Pendente de Automacao` são o mesmo valor.
+
+        Ferramenta que não normaliza acento exporta as duas formas; reprovar uma delas seria
+        reprovar o documento por causa da exportação, não do conteúdo.
+        """
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace("Pendente de Automacao", "Pendente de Automação")
+        self.assertEqual(self.rodar(("x.casos.md", texto)).returncode, 0)
+
+    def test_o_campo_vale_na_mesma_linha_do_rotulo(self):
+        """`Tipo de Execução: Pendente de Automacao` numa linha só, como sai de exportação."""
+        quebrado = "Tipo de Execução:" + chr(10) + "Pendente de Automacao"
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace(quebrado, "Tipo de Execução: Pendente de Automacao")
+        self.assertNotEqual(texto, CASOS_PALAVRAS_CHAVE_OK, "a mutação do teste não pegou")
+        self.assertEqual(self.rodar(("x.casos.md", texto)).returncode, 0)
+
+    def test_o_contrato_entre_fases_roda_neste_formato(self):
+        """A checagem que mais importa, e a que o formato Gherkin ganhava de graça das tags."""
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace("Rastreio: CT-02", "Rastreio: CT-99", 1)
+        saida = self.problemas(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", texto))
+        self.assertIn("rastreia @CT-99, que não existe", saida)
+
+    def test_secao_de_fechamento_nao_conta_como_caso(self):
+        """`## Resumo` e `## Observações` fecham o documento; contá-los inflaria o total."""
+        nl = chr(10)
+        texto = CASOS_PALAVRAS_CHAVE_OK + nl + "## Observações" + nl * 2 + "- Nada a registrar." + nl
+        self.assertEqual(self.rodar(("x.casos.md", texto)).returncode, 0)
+
+    def test_caso_malformado_e_contado_e_reprovado_nao_ignorado(self):
+        """A regra é "todo ## é caso, menos as seções de fechamento", e é de propósito.
+
+        Reconhecer caso só por ele ter os campos certos sumiria com o caso malformado da
+        contagem — falha silenciosa, que é pior que a barulhenta.
+        """
+        nl = chr(10)
+        texto = CASOS_PALAVRAS_CHAVE_OK + nl + "## Validar que um caso pela metade é pego" + nl * 2 + "Summary:" + nl + "sem campo nenhum" + nl
+        saida = self.problemas(("x.casos.md", texto))
+        self.assertIn("(caso 4)", saida)
+        self.assertIn("'Total de casos' diz 3, o bloco tem 4", saida)
 
     # -- severidade e CLI --------------------------------------------------------------
 
@@ -2435,7 +2664,11 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
         self.assertEqual(self.rodar(("x.casos.md", texto), strict=True).returncode, 1)
 
     def test_arquivo_que_nao_e_artefato_de_qa(self):
-        self.assertIn("não parece um documento", self.problemas(("leiame.md", "# Um readme qualquer\n")))
+        """Recusar é metade; a outra metade é dizer qual âncora faltou em cada formato."""
+        saida = self.problemas(("leiame.md", "# Um readme qualquer"))
+        self.assertIn("não parece nenhum dos artefatos", saida)
+        self.assertIn("markdown-gherkin", saida)
+        self.assertIn("markdown-palavras-chave", saida)
 
     def test_as_skills_das_duas_fases_mandam_rodar_o_validador(self):
         """Um validador que ninguém roda não valida nada, e o agente é quem tem a chance.

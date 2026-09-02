@@ -359,7 +359,7 @@ peça ao agente para remover.
 
 ## E a pasta `templates`? (opcional, pule se estiver com pressa)
 
-O instalador também criou `.qagente/templates/`, vazia. Ela existe para um caso só: **quando o seu
+O instalador também criou `.qagente/templates-do-time/`, vazia. Ela existe para um caso só: **quando o seu
 time já tem um formato de documento que o resto da empresa espera.**
 
 Por padrão, o agente usa os modelos que vêm com ele — e eles são bons. Mas se o seu documento de
@@ -382,7 +382,7 @@ carregam técnica junto com o formato, e trocá-los desligaria proteções sem n
 
 Duas garantias, para você não ter medo de mexer:
 
-- **O agente avisa quando usa o seu modelo**, na entrega: `Layout: .qagente/templates/casos-de-teste.md`.
+- **O agente avisa quando usa o seu modelo**, na entrega: `Layout: .qagente/templates-do-time/casos-de-teste.md`.
 - **Reinstalar o QAGente nunca apaga o que você colocou ali** — nem com `--force`.
 
 Não precisa fazer nada agora. A pasta fica lá para o dia em que fizer falta.

@@ -36,6 +36,7 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from datetime import date
 from pathlib import Path
 
@@ -76,6 +77,67 @@ RE_ADERENCIA = re.compile(r"\*\*Aderência ao contrato:\*\*\s*(\d+)\s*casos? sug
 RE_TAGS = re.compile(r"^\s*(@[\w-]+(?:\s+@[\w-]+)*)\s*$")
 RE_CASO = re.compile(r"^\s*(Esquema do Cenário|Cenário):\s*(.*)$")
 RE_LANGUAGE = re.compile(r"^\s*#\s*language:\s*(\S+)")
+
+# --------------------------------------------------------------------------------------
+# Os dois formatos do documento de casos
+#
+# O envelope Gherkin (bloco de código, `Funcionalidade:`, `Cenário:`, `@tags`) é UMA
+# codificação das invariantes, não a definição delas. O que precisa ser provável em qualquer
+# formato é sempre o mesmo: cada caso tem título específico, rastreio à origem, camada e tipo
+# de execução; e o documento fecha com totais que batem e a aderência ao contrato declarada.
+#
+# Times que escrevem os passos com as palavras-chave (DADO/QUANDO/ENTÃO) mas registram os
+# casos em campos rotulados — o padrão de quem gerencia caso de teste no Jira/Xray — ficavam
+# de fora, porque `classificar()` reconhecia um documento de casos só pelo bloco ```gherkin.
+# Não era uma invariante barrando: era o envelope.
+#
+# O formato é **detectado no documento**, não lido do perfil: o perfil diz o que o agente
+# escreve, e o validador precisa conferir também documento escrito à mão ou vindo de fora.
+FORMATO_GHERKIN = "markdown-gherkin"
+FORMATO_PALAVRAS_CHAVE = "markdown-palavras-chave"
+
+# Vocabulário das mensagens. A checagem é a mesma nos dois formatos; o nome da coisa que
+# falta, não — mandar um time que não usa Gherkin "pôr a tag @api" é mandar para o lugar errado.
+#
+# A frase inteira é guardada, não só o substantivo: "tag" é feminino e "campo" é masculino, e
+# montar a mensagem por concatenação produz "esperado um tag de execução". O par de `camada` e
+# `execucao` é (frase, particípio de contagem) pela mesma razão.
+NOMES_DA_ANCORA = {
+    FORMATO_GHERKIN: {
+        "rastreio": "sem tag de rastreio ao cenário de origem",
+        "camada": ("esperada uma tag de camada (@api/@interface)", "encontradas"),
+        "execucao": ("esperada uma tag de execução", "encontradas"),
+    },
+    FORMATO_PALAVRAS_CHAVE: {
+        "rastreio": "sem campo 'Rastreio:' ao cenário de origem",
+        "camada": ("esperada uma marca [API]/[INTERFACE] no caso", "encontradas"),
+        "execucao": ("esperado um campo 'Tipo de Execução:'", "encontrados"),
+    },
+}
+
+# Um `##` abre um caso, salvo as seções de fechamento do documento. A regra é deliberadamente
+# "tudo é caso menos estas": se um caso esquecer um campo, ele ainda é contado e a checagem
+# reprova por campo ausente. O inverso — reconhecer caso só por ter os campos certos — some
+# com o caso malformado da contagem, que é falha silenciosa.
+RE_H2 = re.compile(r"^##\s+(.*\S)\s*$")
+SECOES_DE_FECHAMENTO = ("resumo", "observac", "observaç")
+
+RE_CAMADA_MARCADA = re.compile(r"\[(API|INTERFACE)\]")
+RE_CAMPO_RASTREIO = re.compile(r"^\s*Rastreio:\s*(.*)$", re.IGNORECASE)
+RE_CAMPO_EXECUCAO = re.compile(r"^\s*Tipo de Execu[çc][ãa]o:\s*(.*)$", re.IGNORECASE)
+RE_ID_RASTREIO = re.compile(r"@?([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+|CT-\d+)")
+
+# `Pendente de Automacao`, `Pendente de Automação`, `Nao Automatizavel`, `Não Automatizável`:
+# o mesmo valor com e sem acento, que é como ele aparece em ferramenta que não normaliza.
+EXECUCAO_POR_TEXTO = {
+    "pendente de automacao": "@pendente-de-automacao",
+    "nao automatizavel": "@nao-automatizavel",
+}
+
+
+def _sem_acento(texto: str) -> str:
+    decomposto = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in decomposto if not unicodedata.combining(c)).strip().lower()
 
 
 def log(msg: str) -> None:
@@ -230,7 +292,122 @@ def ler_cenarios(texto: str) -> dict:
     return dados
 
 
+def formato_dos_casos(texto: str) -> str:
+    """Diz em qual dos dois formatos o documento de casos está escrito."""
+    return FORMATO_GHERKIN if "```gherkin" in texto else FORMATO_PALAVRAS_CHAVE
+
+
 def ler_casos(texto: str) -> dict:
+    """Lê o documento de casos no formato em que ele estiver.
+
+    Os dois leitores devolvem **o mesmo dicionário** — em particular `casos`, como
+    `[(titulo, tags, tipo)]` com as tags já normalizadas para `@api`/`@interface` e
+    `@pendente-de-automacao`/`@nao-automatizavel`. É o que deixa `validar_casos()` e
+    `validar_contrato()` intocados: as invariantes não sabem, nem precisam saber, qual
+    envelope o time usou.
+    """
+    if formato_dos_casos(texto) == FORMATO_GHERKIN:
+        return ler_casos_gherkin(texto)
+    return ler_casos_palavras_chave(texto)
+
+
+def _ler_rodape(texto: str, dados: dict) -> None:
+    """Totais e aderência, iguais nos dois formatos: moram fora do corpo, em Markdown."""
+    for linha in texto.split("\n"):
+        total = RE_TOTAL_CASOS.search(linha)
+        if total:
+            dados["total_declarado"] = int(total.group(1))
+        aderencia = RE_ADERENCIA.search(linha)
+        if aderencia:
+            dados["aderencia"] = (int(aderencia.group(1)), int(aderencia.group(2)))
+
+
+def ler_casos_palavras_chave(texto: str) -> dict:
+    """Lê o documento de casos escrito em campos rotulados, com as palavras-chave nos passos.
+
+    Cada `##` é um caso; `[API]`/`[INTERFACE]`, `Rastreio:` e `Tipo de Execução:` são as
+    âncoras dos metadados, procuradas em qualquer lugar do bloco do caso. A gramática dos
+    passos (DADO/QUANDO/ENTÃO) não é lida aqui: ela é julgamento de escrita, e continua sendo
+    trabalho da skill `gherkin-palavras-chave`, como no formato Gherkin.
+    """
+    dados: dict = {
+        "casos": [],
+        "funcionalidades": 0,
+        "language": None,
+        "tem_bloco_gherkin": False,
+        "total_declarado": None,
+        "aderencia": None,
+        "exemplos_por_caso": {},
+        "tem_origem": "Origem:" in texto,
+        "formato": FORMATO_PALAVRAS_CHAVE,
+    }
+
+    blocos: list[tuple[str, list[str]]] = []
+    titulo_atual: str | None = None
+    corpo: list[str] = []
+    for linha in texto.split("\n"):
+        cabecalho = RE_H2.match(linha)
+        if cabecalho:
+            if titulo_atual is not None:
+                blocos.append((titulo_atual, corpo))
+            titulo = cabecalho.group(1)
+            titulo_atual = None if _sem_acento(titulo).startswith(SECOES_DE_FECHAMENTO) else titulo
+            corpo = []
+            continue
+        if titulo_atual is not None:
+            corpo.append(linha)
+    if titulo_atual is not None:
+        blocos.append((titulo_atual, corpo))
+
+    for titulo, linhas_do_caso in blocos:
+        dados["casos"].append((titulo, _tags_do_bloco(titulo, linhas_do_caso), "Caso"))
+
+    _ler_rodape(texto, dados)
+    return dados
+
+
+def _tags_do_bloco(titulo: str, linhas: list[str]) -> tuple[str, ...]:
+    """Traduz os campos rotulados de um caso para as mesmas tags que o leitor Gherkin produz."""
+    tags: list[str] = []
+
+    rastreio = _valor_do_campo(linhas, RE_CAMPO_RASTREIO)
+    if rastreio:
+        tags.extend(f"@{i}" for i in RE_ID_RASTREIO.findall(rastreio))
+
+    corpo = "\n".join(linhas)
+    camadas = {f"@{m.lower()}" for m in RE_CAMADA_MARCADA.findall(corpo)}
+    tags.extend(sorted(camadas))
+
+    execucao = _valor_do_campo(linhas, RE_CAMPO_EXECUCAO)
+    if execucao is not None:
+        conhecida = EXECUCAO_POR_TEXTO.get(_sem_acento(execucao))
+        if conhecida:
+            tags.append(conhecida)
+
+    return tuple(tags)
+
+
+def _valor_do_campo(linhas: list[str], padrao: re.Pattern[str]) -> str | None:
+    """Lê `Campo: valor` e também `Campo:` com o valor na linha seguinte.
+
+    As duas formas aparecem em template de time real: a segunda é o que a exportação do Jira
+    produz, e recusá-la seria reprovar o documento por causa de uma quebra de linha.
+    """
+    for indice, linha in enumerate(linhas):
+        casou = padrao.match(linha)
+        if not casou:
+            continue
+        valor = casou.group(1).strip()
+        if valor:
+            return valor
+        for seguinte in linhas[indice + 1:]:
+            if seguinte.strip():
+                return seguinte.strip()
+        return ""
+    return None
+
+
+def ler_casos_gherkin(texto: str) -> dict:
     """Extrai do documento de casos tudo que as checagens precisam."""
     linhas = texto.split("\n")
     dados: dict = {
@@ -238,6 +415,7 @@ def ler_casos(texto: str) -> dict:
         "funcionalidades": 0,
         "language": None,
         "tem_bloco_gherkin": "```gherkin" in texto,
+        "formato": FORMATO_GHERKIN,
         "total_declarado": None,
         "aderencia": None,      # (sugeridos, escritos)
         "exemplos_por_caso": {},
@@ -363,33 +541,55 @@ def validar_cenarios(dados: dict, perfil: dict, alvo: str) -> list[tuple[str, st
 def validar_casos(dados: dict, perfil: dict, alvo: str) -> list[tuple[str, str, str]]:
     problemas: list[tuple[str, str, str]] = []
 
-    if not dados["tem_bloco_gherkin"]:
-        problemas.append(("erro", alvo, "sem bloco de código gherkin"))
-        return problemas
-    if not dados["casos"]:
-        problemas.append(("erro", alvo, "o bloco gherkin não tem nenhum Cenário"))
+    formato = dados.get("formato", FORMATO_GHERKIN)
+    ancora = NOMES_DA_ANCORA[formato]
+
+    # Envelope: só o formato Gherkin tem bloco de código, `# language:` e `Funcionalidade`.
+    # As invariantes de cada caso, logo abaixo, valem igual nos dois.
+    if formato == FORMATO_GHERKIN:
+        if not dados["tem_bloco_gherkin"]:
+            problemas.append(("erro", alvo, "sem bloco de código gherkin"))
+            return problemas
+        if not dados["casos"]:
+            problemas.append(("erro", alvo, "o bloco gherkin não tem nenhum Cenário"))
+            return problemas
+        if dados["language"] is None:
+            problemas.append(("erro", alvo, "o bloco gherkin não abre com '# language:'"))
+        if dados["funcionalidades"] != 1:
+            problemas.append(
+                ("erro", alvo, f"esperada exatamente uma Funcionalidade, encontradas {dados['funcionalidades']}")
+            )
+    elif not dados["casos"]:
+        problemas.append(("erro", alvo, "nenhum caso encontrado — cada caso é um cabeçalho '## '"))
         return problemas
 
-    if dados["language"] is None:
-        problemas.append(("erro", alvo, "o bloco gherkin não abre com '# language:'"))
-    if dados["funcionalidades"] != 1:
+    # Prefixo do título: um aviso por caso quando alguns divergem — são esses que precisam de
+    # correção. Quando *nenhum* caso usa o prefixo, o documento inteiro segue outra convenção,
+    # e N avisos idênticos só ensinam o time a ignorar a saída. Vira um aviso, apontando o
+    # campo do perfil que decide. Mesma informação, uma vez, com o que fazer junto.
+    prefixo = prefixo_de_titulo(perfil)
+    fora_do_prefixo = [t for t, _, _ in dados["casos"] if not t.startswith(prefixo)] if prefixo else []
+    prefixo_e_do_documento = len(fora_do_prefixo) == len(dados["casos"])
+    if prefixo and prefixo_e_do_documento:
         problemas.append(
-            ("erro", alvo, f"esperada exatamente uma Funcionalidade, encontradas {dados['funcionalidades']}")
+            ("aviso", alvo, f"nenhum dos {len(dados['casos'])} títulos começa com {prefixo!r} — "
+                            "se o time usa outra convenção, declare 'conventions.scenario_title_prefix'")
         )
 
-    prefixo = prefixo_de_titulo(perfil)
     for indice, (titulo, tags, tipo) in enumerate(dados["casos"], start=1):
         etiqueta = f"{alvo} (caso {indice})"
         rastreio = [t for t in tags if t not in CAMADAS and t not in EXECUCOES]
         if not rastreio:
-            problemas.append(("erro", etiqueta, "sem tag de rastreio ao cenário de origem"))
+            problemas.append(("erro", etiqueta, ancora["rastreio"]))
         camadas = [t for t in tags if t in CAMADAS]
         if len(camadas) != 1:
-            problemas.append(("erro", etiqueta, f"esperada uma tag de camada (@api/@interface), encontradas {len(camadas)}"))
+            frase, contagem = ancora["camada"]
+            problemas.append(("erro", etiqueta, f"{frase}, {contagem} {len(camadas)}"))
         execucoes = [t for t in tags if t in EXECUCOES]
         if len(execucoes) != 1:
-            problemas.append(("erro", etiqueta, f"esperada uma tag de execução, encontradas {len(execucoes)}"))
-        if prefixo and not titulo.startswith(prefixo):
+            frase, contagem = ancora["execucao"]
+            problemas.append(("erro", etiqueta, f"{frase}, {contagem} {len(execucoes)}"))
+        if prefixo and not prefixo_e_do_documento and not titulo.startswith(prefixo):
             problemas.append(("aviso", etiqueta, f"o título não começa com {prefixo!r}"))
         if tipo == "Esquema do Cenário" and dados["exemplos_por_caso"].get(indice - 1, 0) < 3:
             problemas.append(
@@ -820,6 +1020,18 @@ ASSINATURAS = (
     ("quarentena", ("## Testes em quarentena", "Registro de Quarentena")),
     ("revisao", ("Cobertura das seis dimensões", "Revisão de Qualidade de Testes")),
     ("reproducao", ("Dimensões extraídas do relato", "Status da reprodução")),
+    # Casos em campos rotulados. Vem por último de propósito: é a assinatura mais fraca das
+    # sete, então só reclama o documento que nenhuma das outras reconheceu.
+    ("casos", ("Tipo de Execução:", "Tipo de Execucao:")),
+)
+
+# O que faltou, quando nada reconheceu o arquivo. Sem isto a mensagem era só "não parece um
+# documento de cenários nem de casos de teste", que diz que está errado e não diz o que fazer
+# — e era exatamente o que um time via ao apontar o validador para um template próprio.
+DICA_DESCONHECIDO = (
+    "não parece nenhum dos artefatos do harness. Um documento de casos precisa de um bloco "
+    "```gherkin (formato markdown-gherkin) ou de um campo 'Tipo de Execução:' por caso "
+    "(formato markdown-palavras-chave); um de cenários, da seção 'Casos sugeridos por cenário'"
 )
 
 
@@ -843,7 +1055,7 @@ def collect_problems(caminhos: list[Path], perfil_cli: Path | None) -> list[tupl
         texto = caminho.read_text(encoding="utf-8")
         tipo = classificar(texto)
         if tipo == "desconhecido":
-            problemas.append(("erro", alvo, "não parece um documento de cenários nem de casos de teste"))
+            problemas.append(("erro", alvo, DICA_DESCONHECIDO))
             continue
         if e_template(texto):
             problemas.append(("aviso", alvo, "é um template, não um artefato preenchido — pulado"))

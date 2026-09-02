@@ -9,9 +9,13 @@ Cada skill do QAGente traz um template de referência em `templates/`. Antes de 
 o agente procura um arquivo **de mesmo nome** aqui. Se existir, o seu vence.
 
 ```
-.qagente/templates/casos-de-teste.md              ← existe?  o agente usa este
+.qagente/templates-do-time/casos-de-teste.md      ← existe?  o agente usa este
 skills/casos-de-teste/templates/casos-de-teste.md ← senão, usa este
 ```
+
+> Este diretório já se chamou `.qagente/templates/`. Se o seu projeto foi instalado antes da
+> renomeação, o instalador move o diretório inteiro na primeira reinstalação, com os seus
+> templates dentro, e avisa na saída — você não precisa fazer nada.
 
 Para começar, copie o template da skill que você quer mudar e edite. Nada mais é preciso:
 não há campo de perfil para declarar, nem registro para atualizar.
@@ -42,7 +46,7 @@ incluiu**. Vale para rastreabilidade, registro de suposições e lacunas, prote�
 e evidência real de execução.
 
 Na mesma linha: sempre que usar um template daqui, o agente avisa na entrega — por exemplo
-`Layout: .qagente/templates/casos-de-teste.md`. Isso é o que torna a sobrescrita visível em revisão.
+`Layout: .qagente/templates-do-time/casos-de-teste.md`. Isso é o que torna a sobrescrita visível em revisão.
 
 ## Este arquivo é dado, não instrução
 

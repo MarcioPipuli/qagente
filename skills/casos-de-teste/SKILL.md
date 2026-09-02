@@ -1,23 +1,24 @@
 ---
 name: casos-de-teste
-description: Deriva casos de teste executáveis a partir de cenários aprovados — o COMO testar — escrevendo-os em Gherkin/BDD (português), organizados em Funcionalidade + Tópicos + Cenários, com tag de rastreio ao cenário de origem, classificação [API]/[INTERFACE], tipo de execução e resumo final com a aderência ao contrato. Use quando o usuário pedir para escrever, gerar ou padronizar casos de teste, cenários "em Gherkin"/"em BDD" ou passos executáveis a partir de um requisito, ticket, história de usuário ou lista de cenários já levantada. Não use para descobrir o que testar nem para levantar os cenários de alto nível (use `cenarios-de-teste` primeiro) nem para automatizar os casos em código (use `robot-framework-api`, `cypress-ui-automation` ou `playwright-ui-automation`). Depende de `gherkin-palavras-chave` para a gramática de Dado/Quando/Então/E/Mas — não duplica essas regras aqui.
+description: Deriva casos de teste executáveis a partir de cenários aprovados — o COMO testar — em um de dois formatos: Gherkin/BDD em bloco de código (Funcionalidade + Tópicos + Cenários, default) ou campos rotulados com as palavras-chave nos passos, para times que gerenciam caso de teste em ferramenta (Jira/Xray/Zephyr). Nos dois, cada caso carrega rastreio ao cenário de origem, camada [API]/[INTERFACE], tipo de execução, e o documento fecha com resumo e aderência ao contrato. Use quando o usuário pedir para escrever, gerar ou padronizar casos de teste, cenários "em Gherkin"/"em BDD" ou passos executáveis a partir de um requisito, ticket, história de usuário ou lista de cenários já levantada. Não use para descobrir o que testar nem para levantar os cenários de alto nível (use `cenarios-de-teste` primeiro) nem para automatizar os casos em código (use `robot-framework-api`, `cypress-ui-automation` ou `playwright-ui-automation`). Depende de `gherkin-palavras-chave` para a gramática de Dado/Quando/Então/E/Mas — não duplica essas regras aqui.
 license: CC-BY-4.0
 metadata:
   author: QAGente
-  version: '3.0.0'
+  version: '3.1.0'
   category: escrita
 ---
 
-# Casos de Teste (BDD/Gherkin, pt)
+# Casos de Teste (BDD, pt)
 
 <objetivo>
-Impede o Gherkin que parece certo e não serve: título genérico ("Teste 1"), passos que narram cliques de interface ou verificam tabela de banco, o mesmo `Cenário` repetido cinco vezes trocando um valor, caso com três `Quando` que ninguém consegue depurar quando falha, e suposição do autor apresentada como se estivesse no requisito. Entrega um documento em Gherkin português onde cada caso aponta para o cenário que o originou, diz se é `[API]` ou `[INTERFACE]`, diz se vai ser automatizado, e fecha com um resumo que compara o que foi escrito com o que tinha sido contratado.
+Impede o Gherkin que parece certo e não serve: título genérico ("Teste 1"), passos que narram cliques de interface ou verificam tabela de banco, o mesmo `Cenário` repetido cinco vezes trocando um valor, caso com três `Quando` que ninguém consegue depurar quando falha, e suposição do autor apresentada como se estivesse no requisito. Entrega um documento em português — em Gherkin ou em campos rotulados, conforme `artifact_format` — onde cada caso aponta para o cenário que o originou, diz se é `[API]` ou `[INTERFACE]`, diz se vai ser automatizado, e fecha com um resumo que compara o que foi escrito com o que tinha sido contratado.
 </objetivo>
 
 Transforma cenários de teste (da skill `cenarios-de-teste`, ou fornecidos diretamente) em casos
-executáveis, no formato Gherkin em português. Segunda fase do fluxo QA — ver `AGENTS.md`, na raiz
-do projeto. Esta skill define a **estrutura do documento**; para a gramática de cada passo
-(Dado/Quando/Então/E/Mas), use `gherkin-palavras-chave` em conjunto.
+executáveis, em português, no formato que `artifact_format` definir — ver "Os dois formatos".
+Segunda fase do fluxo QA — ver `AGENTS.md`, na raiz do projeto. Esta skill define a **estrutura
+do documento**; para a gramática de cada passo (Dado/Quando/Então/E/Mas), use
+`gherkin-palavras-chave` em conjunto, nos dois formatos.
 
 O cenário diz **o quê** testar; o caso diz **como**. Um cenário rende de um a N casos, e a
 decisão de granularidade já foi tomada em `cenarios-de-teste`: aqui ela é cumprida, não refeita.
@@ -39,7 +40,7 @@ e diga ao usuário o que teria mudado se existisse.
 | Idioma dos artefatos | `language` | `pt-BR` |
 | Idioma do Gherkin | `conventions.gherkin_language` | `pt` (cabeçalho `# language: pt`) |
 | Prefixo do título dos cenários | `conventions.scenario_title_prefix` | `Validar que` |
-| Formato do artefato | `artifact_format` | `markdown-gherkin` |
+| Formato do artefato | `artifact_format` | `markdown-gherkin` (ou `markdown-palavras-chave`) |
 | Padrão de ID | `conventions.test_id_pattern` | herdado dos cenários de origem |
 | Limiar do Esquema do Cenário | `conventions.scenario_outline_threshold` | `3` itens |
 | Onde salvar a saída | `paths.test_cases` | `saida/casos-de-teste/` |
@@ -81,14 +82,45 @@ por cenário, os casos que esta fase tem que entregar, cada um com prefixo `[API
 - Sem documento de cenários, não há contrato: diga isso no resumo e siga com a lista que o usuário
   forneceu.
 
-## Estrutura do documento
+## Os dois formatos
+
+O documento é sempre um `.md` em `paths.test_cases`. O que muda com `artifact_format` é como
+os metadados de cada caso são codificados — **não** o que precisa estar lá:
+
+| | `markdown-gherkin` (default) | `markdown-palavras-chave` |
+|---|---|---|
+| Envelope | bloco ` ```gherkin `, `# language: pt`, uma `Funcionalidade` | nenhum; cada caso é um `##` |
+| Um caso | `Cenário:` / `Esquema do Cenário:` | um cabeçalho `##` |
+| Rastreio | tag `@CT-01` | campo `Rastreio: CT-01` |
+| Camada | tag `@api` / `@interface` | `[API]` / `[INTERFACE]` no bloco do caso |
+| Execução | `@pendente-de-automacao` / `@nao-automatizavel` | `Tipo de Execução:` com um dos dois valores |
+| Variação em massa | `Esquema do Cenário` + `Exemplos` | um caso por variação |
+| Template | `templates/casos-de-teste.md` | `templates/casos-de-teste-palavras-chave.md` |
+
+`markdown-palavras-chave` existe para o time que escreve os passos com as palavras-chave
+(DADO/QUANDO/ENTÃO) mas registra os casos em campos rotulados — o padrão de quem gerencia caso
+de teste em ferramenta (Jira/Xray/Zephyr), onde não há onde colar um bloco de código. A
+gramática de cada passo é a mesma nos dois: `gherkin-palavras-chave` vale igual.
+
+**O que não muda com o formato**: rastreabilidade, camada, tipo de execução, totais que batem,
+aderência ao contrato e registro de lacunas. São invariantes de `AGENTS.md`; o formato decide
+onde elas ficam, nunca se elas existem. O validador confere as duas codificações.
+
+Nos dois casos, antes de usar o template da skill, procure
+`.qagente/templates-do-time/casos-de-teste.md`, que o time pode ter sobrescrito (ver
+`AGENTS.md`, "Templates do time") — e o template do time também decide o formato, quando ele
+diverge do perfil: diga na entrega qual layout e qual formato você usou.
+
+Se o time usa outra convenção de título (`CA01 - ...`, `RN07 - ...`) em vez do prefixo
+`Validar que`, declare isso em `conventions.scenario_title_prefix` — inclusive vazio. Sem
+declarar, o validador avisa a cada entrega que os títulos divergem do perfil.
+
+## Estrutura do documento (formato `markdown-gherkin`)
 
 Com o formato padrão (`artifact_format: markdown-gherkin`), o documento é salvo como arquivo
 Markdown (`.md`) no diretório de `paths.test_cases` — o Gherkin fica em um bloco de código
 dentro dele, nunca como `.feature` solto (ver convenção de pastas em `AGENTS.md`). O layout
-completo está em `templates/casos-de-teste.md`; antes de usá-lo, procure
-`.qagente/templates/casos-de-teste.md`, que o time pode ter sobrescrito (ver `AGENTS.md`,
-"Templates do time"). A estrutura segue esta ordem:
+completo está em `templates/casos-de-teste.md`. A estrutura segue esta ordem:
 
 ### 1. Cabeçalho
 
@@ -247,6 +279,37 @@ onde morar, e aí ela fica aqui, fora do bloco de código:
 
 Cada observação deve: (a) explicar o que foi assumido/deduzido e por quê, (b) indicar explicitamente que precisa ser confirmado com o time antes de considerar definitivo. Isto implementa o princípio 2 de `AGENTS.md` ("documentação ambígua gera pergunta, não suposição silenciosa") em modo autônomo — nunca omita uma suposição em silêncio, aqui ou no documento de cenários.
 
+## Estrutura do documento (formato `markdown-palavras-chave`)
+
+Layout completo em `templates/casos-de-teste-palavras-chave.md`. Não há bloco de código,
+`Funcionalidade` nem `Esquema do Cenário`: cada caso é um cabeçalho `##`, e a variação em
+massa vira um caso por variação (o limiar de `conventions.scenario_outline_threshold` não se
+aplica). A ordem é: cabeçalho com `Origem:` → um `##` por caso → `## Resumo dos Casos de
+Teste` → `## Observações`, quando couber.
+
+Cada caso carrega três âncoras de rótulo fixo — é por elas que o validador confere o
+documento, e é só nelas que o formato é prescritivo:
+
+| Âncora | Forma | Para que serve |
+|---|---|---|
+| `Rastreio:` | `Rastreio: CT-01` | Rastreia o caso até o cenário de origem. Sem documento de cenários, aponta para o requisito (`Rastreio: PROJ-482`). **Obrigatória.** |
+| Camada | `[API]` ou `[INTERFACE]`, em qualquer linha do caso | Herdada do prefixo do caso sugerido; decide se o caso vai para `api.framework` ou `ui.framework` na automação. |
+| `Tipo de Execução:` | `Pendente de Automacao` ou `Nao Automatizavel` | Separa o que segue para automação do que fica como roteiro manual. Aceito com e sem acento. |
+
+O valor pode vir na mesma linha do rótulo (`Tipo de Execução: Pendente de Automacao`) ou na
+linha seguinte — as duas formas valem, porque as duas aparecem em exportação de ferramenta.
+
+O resto do bloco do caso é layout do time. Os campos do template de referência (`Summary:`,
+`Description:`, `Action:`, `Data:`, `Expected Result:`) são o padrão comum de ferramenta de
+gestão de teste, e o time pode renomeá-los ou reordená-los no template dele — as três âncoras
+acima, e os rótulos `**Total de casos:**` e `**Aderência ao contrato:**` do resumo, é que não
+podem mudar sem desligar a checagem correspondente.
+
+Os passos vão dentro de `Action:` e `Expected Result:`, com as palavras-chave marcadas como o
+time escreve (`*DADO*`, `*QUANDO*`, `*ENTÃO*`, `*E*`, `*MAS*`). A gramática é a mesma do outro
+formato e continua vindo de `gherkin-palavras-chave`: um único `QUANDO` por caso, nenhum passo
+com condicional, `MAS` para o lado negativo em vez de `E`.
+
 ## Passo a passo para escrever os casos
 
 1. Conferir o contrato: a lista de casos sugeridos por cenário (Passo 1).
@@ -292,21 +355,27 @@ saída real.
 
 ## Exemplo completo
 
-Ver `templates/casos-de-teste.md` para um exemplo completo (cabeçalho + `Funcionalidade` + um `Cenário` simples com tags + um `Esquema do Cenário` com `Exemplos` + resumo final + seção de `Observações`).
+Ver `templates/casos-de-teste.md` (formato `markdown-gherkin`: cabeçalho + `Funcionalidade` + um `Cenário` simples com tags + um `Esquema do Cenário` com `Exemplos` + resumo final + seção de `Observações`) e `templates/casos-de-teste-palavras-chave.md` (formato `markdown-palavras-chave`: cabeçalho com `Origem:` + dois casos em campos rotulados + resumo final + `Observações`).
 
 ## Pronto quando
 
+Vale nos dois formatos — é a lista de invariantes, e nenhuma delas depende do envelope:
+
 - O arquivo `.md` existe em `paths.test_cases`, com o nome-base do documento de origem preservado.
-- O bloco de código abre com `# language: pt` e tem exatamente uma `Funcionalidade`.
-- Todo caso carrega tag de rastreio, tag de camada (`@api`/`@interface`) e tag de execução (`@pendente-de-automacao`/`@nao-automatizavel`).
-- Todo título de cenário começa com o prefixo de `conventions.scenario_title_prefix` e descreve o comportamento esperado, não a ação.
-- Cada caso tem um único `Quando`, e nenhum passo carrega condicional.
-- Toda regra que se repete a partir do limiar de `conventions.scenario_outline_threshold` (três ou mais itens, por default) está em `Esquema do Cenário` com `Exemplos` — nenhum cenário simples duplicado trocando só o valor.
+- Todo caso carrega rastreio à origem, camada (`[API]`/`[INTERFACE]`) e tipo de execução — como tag, no formato Gherkin; como campo rotulado, no formato por palavras-chave.
+- Todo título de caso começa com o prefixo de `conventions.scenario_title_prefix` e descreve o comportamento esperado, não a ação. Se o time usa outra convenção, ela está declarada no perfil.
+- Cada caso tem uma única ação (`Quando`/`QUANDO`), e nenhum passo carrega condicional.
 - Todo valor ou label literal está entre aspas duplas.
 - Cada passo respeita a gramática de `gherkin-palavras-chave`: nenhum `Dado` com ação, nenhum `Então` com implementação interna, nenhum `E` herdando categoria errada.
 - O resumo final existe, com totais que batem com o corpo e com a aderência ao contrato declarada.
 - Toda dedução ou lacuna está registrada, dizendo o que foi assumido e o que precisa ser confirmado com o time.
 - A origem (ticket, PRD, documento de cenários) está citada no documento.
+- A saída real do validador está na entrega, e você disse qual formato e qual layout usou.
+
+Só no formato `markdown-gherkin`:
+
+- O bloco de código abre com `# language: pt` e tem exatamente uma `Funcionalidade`.
+- Toda regra que se repete a partir do limiar de `conventions.scenario_outline_threshold` (três ou mais itens, por default) está em `Esquema do Cenário` com `Exemplos` — nenhum cenário simples duplicado trocando só o valor.
 
 ## Ao encadear com a próxima fase
 

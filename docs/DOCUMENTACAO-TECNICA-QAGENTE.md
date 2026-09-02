@@ -483,7 +483,7 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
   | Transição de estados | Entidade com ciclo de vida | Um teste por transição válida + um por inválida |
   | Análise de risco | Priorização final | Uma prioridade por cenário |
 
-- **Formato da saída** (`templates/cenarios.md`, sobrescrevível em `.qagente/templates/`):
+- **Formato da saída** (`templates/cenarios.md`, sobrescrevível em `.qagente/templates-do-time/`):
   índice `ID | Cenário | Tipo | Técnica | Prioridade` → um bloco `## CT-xx — …` por cenário, com
   **Objetivo**, **Escopo de Validações** (citando RN/CA/seção de origem) e **Resultados
   Esperados** → `## Resumo dos Cenários` (totais por prioridade e por técnica + **casos
@@ -507,7 +507,7 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
   ou verificando tabela de banco, o mesmo `Cenário` repetido cinco vezes trocando um valor,
   suposição do autor apresentada como se estivesse no requisito.
 - **Estrutura fixa do documento** (`templates/casos-de-teste.md`, sobrescrevível em
-  `.qagente/templates/`): cabeçalho `# Casos de Teste BDD – <requisito>` → bloco de código
+  `.qagente/templates-do-time/`): cabeçalho `# Casos de Teste BDD – <requisito>` → bloco de código
   `gherkin` com `# language: pt` → uma `Funcionalidade` (Como/Quero/Para) → tópicos
   (`# Tópico N - …`, um por cenário de origem) → casos com linha de tags → fora do bloco,
   `## Resumo dos Casos de Teste` e, quando não há documento de cenários, `## Observações`.
@@ -751,7 +751,7 @@ e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da exec
 | `profile_version` | `"1.0"` | Versão do schema | Instalador (aviso se desconhecida) |
 | `profile_name` | texto | Nome do perfil, citado na entrega ("Perfil aplicado: frontend-web") | Agente |
 | `language` | texto | Idioma dos artefatos | Todas as skills |
-| `artifact_format` | texto | Formato do artefato (`markdown-gherkin`) | Fase 2 |
+| `artifact_format` | texto | Formato do documento de casos: `markdown-gherkin` (default) ou `markdown-palavras-chave` (campos rotulados, para time que gerencia caso em ferramenta). Muda a codificação dos metadados, não as invariantes | Fase 2 |
 | `risk_levels` | lista | Escala de prioridade — identificadores canônicos em inglês | Fase 1, priorização |
 | `risk_method` | texto | Método (`probability-impact`) | Fase 1, priorização |
 | `workflow.require_traceability` | bool | Invariante — `false` é ignorado com aviso | Núcleo |

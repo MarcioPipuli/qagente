@@ -210,12 +210,12 @@ variável fora do padrão" são exatamente os erros de digitação que passariam
 O perfil decide *como trabalhar*; os **templates do time** decidem *que cara o artefato tem*. São
 coisas diferentes, e a segunda não precisa de nenhuma chave de configuração.
 
-O instalador cria `.qagente/templates/`, vazio, com um README. Coloque ali um arquivo com o **mesmo
+O instalador cria `.qagente/templates-do-time/`, vazio, com um README. Coloque ali um arquivo com o **mesmo
 nome** do template de uma skill e ele vence — a busca é por nome-base, sem subdiretório:
 
 ```bash
 # o layout de cenários passa a ser o do time
-cp <clone-do-qagente>/skills/cenarios-de-teste/templates/cenarios.md .qagente/templates/
+cp <clone-do-qagente>/skills/cenarios-de-teste/templates/cenarios.md .qagente/templates-do-time/
 # edite à vontade: ordem das seções, colunas da tabela, cabeçalho com o logo do time
 ```
 
@@ -227,7 +227,7 @@ isolamento e limpeza — sobrescrevê-los desligaria garantia de qualidade em si
 
 Três coisas que valem saber:
 
-- **O agente diz qual layout usou**, na entrega: `Layout: .qagente/templates/casos-de-teste.md`. É
+- **O agente diz qual layout usou**, na entrega: `Layout: .qagente/templates-do-time/casos-de-teste.md`. É
   o que torna a sobrescrita visível em revisão.
 - **O template define o layout, não as regras.** Se o seu template não tiver a seção onde uma
   regra invariante deveria aparecer — rastreabilidade, lacunas, evidência de execução — o agente
@@ -236,6 +236,41 @@ Três coisas que valem saber:
 
 Vale a pena quando o time já tem um formato de documento que o resto da empresa espera. Se não
 tem, não invente: os templates das skills são o padrão, e são bons.
+
+---
+
+### 3.5 Casos de teste sem bloco Gherkin
+
+O documento de casos sai em um de dois formatos, e quem decide é `artifact_format` no perfil:
+
+| | `markdown-gherkin` (default) | `markdown-palavras-chave` |
+|---|---|---|
+| Como é | um bloco ` ```gherkin ` dentro do `.md`, com `Funcionalidade` e `Cenário:` | um `##` por caso, com campos rotulados |
+| Rastreio | tag `@CT-01` | campo `Rastreio: CT-01` |
+| Camada | tag `@api` / `@interface` | `[API]` / `[INTERFACE]` no caso |
+| Execução | `@pendente-de-automacao` / `@nao-automatizavel` | `Tipo de Execução:` com um dos dois valores |
+
+O segundo existe para o time que escreve os passos com as palavras-chave (`*DADO*`, `*QUANDO*`,
+`*ENTÃO*`) mas registra os casos em campos — o padrão de quem gerencia caso de teste no Jira,
+Xray ou Zephyr, onde não há onde colar um bloco de código. Para usar:
+
+```jsonc
+// .qagente/quality-profile.json
+"artifact_format": "markdown-palavras-chave",
+"conventions": {
+  "scenario_title_prefix": ""   // se os títulos do time são "CA01 - ...", e não "Validar que ..."
+}
+```
+
+O que **não** muda entre os dois: rastreio, camada, tipo de execução, totais que batem, aderência
+ao contrato e registro de lacunas. São invariantes de `AGENTS.md` — o formato decide onde elas
+ficam, nunca se elas existem. `validate_artefatos.py` confere as duas codificações, inclusive a
+checagem de contrato entre a Fase 1 e a Fase 2.
+
+Três rótulos são fixos no formato por palavras-chave, porque são as âncoras que o validador lê:
+`Rastreio:`, `Tipo de Execução:` e, no resumo, `**Total de casos:**` e
+`**Aderência ao contrato:**`. O resto do layout do caso é seu — inclusive via template do time
+(3.4), que também pode declarar o formato.
 
 ---
 

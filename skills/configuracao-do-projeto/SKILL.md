@@ -88,7 +88,7 @@ auditável e inteiramente falso. Excluída da varredura, sempre, toda a superfí
 escreve:
 
 - `AGENTS.md` e `CLAUDE.md` (o bloco QAGente dentro deles)
-- `.qagente/` inteiro, incluindo `.qagente/skills/` e `.qagente/templates/`
+- `.qagente/` inteiro, incluindo `.qagente/skills/` e `.qagente/templates-do-time/`
 - `.claude/` (skills e agents)
 - `.github/copilot-instructions.md`, `.github/agents/`, `.cursor/rules/`, `.windsurf/rules/`
 - `saida/` — são artefatos que o próprio agente escreveu, não evidência sobre o produto
@@ -149,7 +149,13 @@ Pergunte só o que o Passo 1 não respondeu, e apresente o resto como confirmaç
    "Nenhum ainda" é resposta válida e comum: as Fases 1 e 2 funcionam sem automação nenhuma.
 4. **Qual atributo de seletor a aplicação usa?** — só se `ui.enabled`, e só se o Passo 1 não tiver
    achado um vencedor claro.
-5. **Em que idioma os artefatos devem sair?**
+5. **Em que idioma os artefatos devem sair, e em qual formato os casos de teste?** — o
+   formato é uma confirmação, não uma invenção: proponha `markdown-gherkin` (o default, casos
+   em bloco Gherkin dentro do `.md`) e ofereça `markdown-palavras-chave` quando o Passo 1 achar
+   sinal de que o time gerencia caso de teste em ferramenta — um template do time em
+   `.qagente/templates-do-time/casos-de-teste.md` sem bloco ```gherkin, ou documento de casos
+   existente em campos rotulados. Os dois formatos carregam as mesmas invariantes; ver
+   `casos-de-teste`, "Os dois formatos".
 
 **Nada de `conventions.*` aqui, por desenho.** `scenario_title_prefix` e `test_id_pattern` só se
 revelam errados quando o time vê o primeiro documento de casos; `stability_runs` e

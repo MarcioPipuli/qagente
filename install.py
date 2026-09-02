@@ -47,7 +47,11 @@ PROFILES_SRC = HARNESS_DIR / "profiles"
 ADAPTERS_SRC = HARNESS_DIR / "adapters"
 CONTEXTO_SRC = HARNESS_DIR / "contexto" / "contexto-projeto.md"
 MEMORIA_SRC = HARNESS_DIR / "memoria" / "memoria-projeto.md"
-TEMPLATES_README_SRC = HARNESS_DIR / "templates-do-time" / "README.md"
+# Mesmo nome dos dois lados: `templates-do-time/` no clone do harness e `.qagente/templates-do-time/`
+# no projeto instalado. Chamar o diretório do projeto de `templates` colidia de leitura com o
+# `templates/` que cada skill tem para o template *dela* — ver migrar_templates_do_time().
+TEMPLATES_DIRNAME = "templates-do-time"
+TEMPLATES_README_SRC = HARNESS_DIR / TEMPLATES_DIRNAME / "README.md"
 
 # Validadores que o agente chama durante o uso, copiados para `.qagente/bin/` do projeto.
 # Sem eles instalados, a skill manda rodar um arquivo que não existe ali — ver install_bin().
@@ -61,7 +65,7 @@ MARKER_END = "<!-- QAGente:end -->"
 
 TOOLS = ("claude", "copilot", "cursor", "windsurf")
 
-# Templates que o time pode sobrescrever em `.qagente/templates/`, por nome-base. Só layout
+# Templates que o time pode sobrescrever em `.qagente/templates-do-time/`, por nome-base. Só layout
 # puro entra aqui: a ordem e a existência das seções do artefato. Os templates de automação
 # carregam técnica junto com o layout, e `fabrica-dados.js`/`massa_template.resource`
 # carregam isolamento e limpeza de massa — sobrescrever esses desligaria uma garantia de
@@ -388,6 +392,35 @@ def install_memoria(project_root: Path, *, force: bool, dry_run: bool) -> None:
     log(f"  memória instalada, vazia (o agente propõe, você aprova) -> {destination}")
 
 
+def migrar_templates_do_time(project_root: Path, *, dry_run: bool) -> bool:
+    """Move o diretório do nome antigo (`.qagente/templates/`) para o novo.
+
+    O diretório nasceu como `templates/`, mesmo nome que as skills usam para os templates
+    *delas* — e era exatamente a leitura errada que o nome convidava. Sem esta migração, um
+    projeto instalado antes da renomeação continua com o template do time no caminho velho,
+    que nenhuma skill procura mais: a sobrescrita para de valer em silêncio, que é o modo de
+    falha que o diretório inteiro existe para evitar.
+
+    Move o diretório inteiro, com os templates do time dentro. Se os dois nomes existirem
+    (instalou de novo antes de migrar), preserva os dois e devolve False: fundir diretório é
+    decisão do time, não do instalador.
+    """
+    antigo = project_root / ".qagente" / "templates"
+    novo = project_root / ".qagente" / TEMPLATES_DIRNAME
+    if not antigo.is_dir():
+        return False
+    if novo.exists():
+        log(f"  aviso: '{antigo}' e '{novo}' existem os dois — nada movido, junte-os à mão")
+        return False
+    if dry_run:
+        log(f"  [dry-run] renomear diretório do time: {antigo} -> {novo}")
+        return True
+    ensure_dir(novo.parent, dry_run=False)
+    shutil.move(str(antigo), str(novo))
+    log(f"  diretório do time renomeado (conteúdo preservado): {antigo} -> {novo}")
+    return True
+
+
 def install_templates(project_root: Path, *, force: bool, dry_run: bool) -> None:
     """Instala o README do diretório de templates do time.
 
@@ -400,7 +433,8 @@ def install_templates(project_root: Path, *, force: bool, dry_run: bool) -> None
     skill usa o template dela; a sobrescrita é opt-in, arquivo por arquivo.
     """
     log("\n== Templates do time ==")
-    destination = project_root / ".qagente" / "templates" / "README.md"
+    migrar_templates_do_time(project_root, dry_run=dry_run)
+    destination = project_root / ".qagente" / TEMPLATES_DIRNAME / "README.md"
     if not TEMPLATES_README_SRC.is_file():
         log(f"  aviso: README não encontrado, pulado: {TEMPLATES_README_SRC}")
         return

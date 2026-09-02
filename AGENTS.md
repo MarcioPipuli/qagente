@@ -146,18 +146,18 @@ disso, nada é removido sem aprovação: mesma porta da escrita.
 ## Templates do time
 
 Cada skill traz um template de referência em `templates/`. Antes de usar o da skill, procure
-um arquivo de **mesmo nome** em `.qagente/templates/`: se existir, ele vence — o layout é do
+um arquivo de **mesmo nome** em `.qagente/templates-do-time/`: se existir, ele vence — o layout é do
 time. Se não existir, use o da skill. A busca é por nome-base, sem subdiretório.
 
 Só estes seis são sobrescrevíveis, porque são layout puro — a ordem e a existência das
 seções do artefato: `cenarios.md`, `casos-de-teste.md`, `matriz-risco.md`,
 `relatorio-revisao.md`, `relato-reproducao.md`, `registro-quarentena.md`. Arquivo com qualquer outro nome em
-`.qagente/templates/` é ignorado: os templates de automação carregam técnica junto com o
+`.qagente/templates-do-time/` é ignorado: os templates de automação carregam técnica junto com o
 layout, e `fabrica-dados.js` e `massa_template.resource` carregam isolamento e limpeza de
 massa — sobrescrevê-los desligaria garantia de qualidade em silêncio.
 
 Sempre que usar um template do time, diga na entrega qual foi, por exemplo
-`Layout: .qagente/templates/casos-de-teste.md`. É o que torna a sobrescrita visível em revisão.
+`Layout: .qagente/templates-do-time/casos-de-teste.md`. É o que torna a sobrescrita visível em revisão.
 
 O template define o layout, não as regras. Se ele não tiver a seção onde uma regra invariante
 deveria aparecer — rastreabilidade, registro de suposições e lacunas, proteção de segredos,

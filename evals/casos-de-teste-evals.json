@@ -68,7 +68,7 @@
     {
       "id": "cas-010",
       "prompt": "Me dá um modelo de documento de casos para copiar.",
-      "expected_patterns": ["templates/casos-de-teste.md", ".qagente/templates/casos-de-teste.md"],
+      "expected_patterns": ["templates/casos-de-teste.md", ".qagente/templates-do-time/casos-de-teste.md"],
       "anti_patterns": [],
       "tags": ["template"]
     },

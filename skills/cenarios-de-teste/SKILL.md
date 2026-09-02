@@ -158,7 +158,7 @@ perde poder de discriminação e volta a ser de três níveis na prática.
 
 Salve o resultado como arquivo Markdown (`.md`) no diretório de `paths.scenarios` — sem perfil,
 `saida/cenarios/` (ver convenção de pastas em `AGENTS.md`). O layout completo está em
-`templates/cenarios.md`; antes de usá-lo, procure `.qagente/templates/cenarios.md`, que o time
+`templates/cenarios.md`; antes de usá-lo, procure `.qagente/templates-do-time/cenarios.md`, que o time
 pode ter sobrescrito (ver `AGENTS.md`, "Templates do time"). A estrutura tem três partes:
 
 **1. Índice** — a tabela que se lê de cima para decidir onde investir:

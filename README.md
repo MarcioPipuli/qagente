@@ -118,7 +118,7 @@ a seção fica marcada como **Não respondido**, que o agente trata como ausente
 quando você rodá-la de novo. Ela é re-executável a qualquer momento e nunca sobrescreve o que
 você já respondeu sem confirmar antes.
 
-Além dos dois, o instalador cria `.qagente/templates/` — vazio, com um README. É onde o time
+Além dos dois, o instalador cria `.qagente/templates-do-time/` — vazio, com um README. É onde o time
 sobrescreve o **layout** dos artefatos: um arquivo com o mesmo nome do template de uma skill
 vence o dela. Só os seis de layout puro são sobrescrevíveis (`cenarios.md`,
 `casos-de-teste.md`, `matriz-risco.md`, `relatorio-revisao.md`, `relato-reproducao.md`,
@@ -133,7 +133,7 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 
 | Campo | Governa |
 |---|---|
-| `language`, `artifact_format` | Idioma e formato dos artefatos gerados |
+| `language`, `artifact_format` | Idioma e formato dos artefatos gerados. O formato aceita `markdown-gherkin` (default) e `markdown-palavras-chave` — este para o time que escreve os passos com as palavras-chave mas registra os casos em campos rotulados (Jira/Xray/Zephyr) |
 | `paths.*` | Onde o agente lê a entrada e grava cada fase; quais pastas o instalador cria |
 | `paths.risk_matrix`, `paths.reviews` | Opcionais: saída das skills de apoio. Só criadas se declaradas — sem elas, a skill cai no fallback de [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas) |
 | `risk_levels`, `risk_method` | Escala e método de priorização dos cenários |
@@ -216,7 +216,7 @@ Não usa dependências externas (só a biblioteca padrão do Python 3). O instal
 - **mescla** (não sobrescreve) o conteúdo de `AGENTS.md` no `AGENTS.md` do projeto alvo, dentro de um bloco marcado (`<!-- QAGente:start/end -->`) que é atualizado, não duplicado, em reinstalações;
 - cria `CLAUDE.md` (ponteiro para `AGENTS.md`) se não existir, ou apenas adiciona uma nota referenciando `AGENTS.md` se o projeto já tiver seu próprio `CLAUDE.md`;
 - copia o perfil escolhido para `<projeto>/.qagente/quality-profile.json` (um perfil já existente é preservado, salvo com `--force`);
-- cria `<projeto>/.qagente/templates/` com um README (diretório do time: `--force` atualiza só o README e nunca apaga um template que o time colocou lá);
+- cria `<projeto>/.qagente/templates-do-time/` com um README (diretório do time: `--force` atualiza só o README e nunca apaga um template que o time colocou lá). Esse diretório se chamava `.qagente/templates/`; em projeto instalado antes da renomeação, o instalador **move** o diretório com o conteúdo intacto na primeira reinstalação, e avisa na saída. Se os dois nomes existirem, não junta nada e diz para juntar à mão;
 - copia `validate_perfil.py` e `validate_artefatos.py` para `<projeto>/.qagente/bin/` — são os dois validadores que o **agente** chama na hora da entrega, e sem eles no projeto o comando citado pelas skills apontaria para um arquivo que não existe ali. Sempre atualizados na reinstalação: é código do harness, não conteúdo do time;
 - cria as pastas de entrada/saída declaradas em `paths` **pelo perfil efetivo do projeto** — ou seja, se um perfil anterior foi preservado, são as pastas dele que são criadas, não as do perfil passado em `--profile`.
 

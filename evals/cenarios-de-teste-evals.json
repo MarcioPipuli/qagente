@@ -234,7 +234,7 @@
       "prompt": "Me dá um modelo de documento de cenários para copiar.",
       "expected_patterns": [
         "templates/cenarios.md",
-        ".qagente/templates/cenarios.md"
+        ".qagente/templates-do-time/cenarios.md"
       ],
       "anti_patterns": [],
       "tags": [
