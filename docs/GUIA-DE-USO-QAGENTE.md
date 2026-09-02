@@ -234,6 +234,11 @@ Três coisas que valem saber:
   **inclui a seção assim mesmo e avisa que incluiu**.
 - **O instalador nunca apaga o que você colocou ali**, nem com `--force`. Só o README é atualizado.
 
+- **O seu template precisa de algumas âncoras.** O layout é seu, mas o validador procura textos
+  fixos para achar o que confere — título de tabela, nome de coluna, rótulo do resumo. A lista
+  completa, por artefato, está em `.qagente/templates-do-time/README.md`, na seção "O que o seu
+  template precisa ter". Copiar o template da skill e editar por cima já satisfaz todas.
+
 Vale a pena quando o time já tem um formato de documento que o resto da empresa espera. Se não
 tem, não invente: os templates das skills são o padrão, e são bons.
 

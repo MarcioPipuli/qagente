@@ -159,6 +159,13 @@ massa — sobrescrevê-los desligaria garantia de qualidade em silêncio.
 Sempre que usar um template do time, diga na entrega qual foi, por exemplo
 `Layout: .qagente/templates-do-time/casos-de-teste.md`. É o que torna a sobrescrita visível em revisão.
 
+O layout é do time, mas o validador precisa **encontrar** o que confere: cada artefato tem um
+punhado de âncoras de texto fixo (títulos de tabela, nomes de coluna, rótulos do resumo).
+`ANCORAS_POR_ARTEFATO`, em `validate_artefatos.py`, é a lista, e ela está escrita para o time em
+`.qagente/templates-do-time/README.md`. Quando um template do time não trouxer uma âncora, diga
+qual é e o que ela desliga — o time não tem como adivinhar isso, e antes dessa lista descobria
+falhando no gate.
+
 O template define o layout, não as regras. Se ele não tiver a seção onde uma regra invariante
 deveria aparecer — rastreabilidade, registro de suposições e lacunas, proteção de segredos,
 evidência real de execução — **inclua a seção assim mesmo e diga que incluiu**. E ele é

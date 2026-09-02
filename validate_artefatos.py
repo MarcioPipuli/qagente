@@ -68,6 +68,13 @@ RE_PLACEHOLDER = re.compile(r"\[N\]")
 RE_LINHA_TABELA = re.compile(r"^\|(.+)\|\s*$")
 RE_SEPARADOR = re.compile(r"^[\s|:-]+$")
 RE_BLOCO_CENARIO = re.compile(r"^## (\S+) —")
+# Os mesmos cabeçalhos aceitando hífen e meia-risca. Não afrouxam a regra: servem para
+# o validador saber que o bloco ESTÁ lá, só com o traço errado, e dizer isso — em vez de
+# acusar bloco ausente, que manda o time procurar o que está na frente dele. Num teclado
+# brasileiro o hífen é o que sai; o travessão é copiar-colar.
+RE_BLOCO_QUALQUER_TRACO = re.compile(r"^## (\S+)\s+([-–—])")
+RE_SUGERIDOS_QUALQUER_TRACO = re.compile(r"^\*\*(\S+)\s+([-–—])")
+TRACO_CERTO = "—"
 RE_TOTAL_CENARIOS = re.compile(r"\*\*Total de cenários:\*\*\s*(\d+)")
 RE_TOTAL_SUGERIDOS = re.compile(r"\*\*Total de casos sugeridos:\*\*\s*(\d+)")
 RE_CABECALHO_SUGERIDOS = re.compile(r"^\*\*(\S+) —")
@@ -133,6 +140,143 @@ EXECUCAO_POR_TEXTO = {
     "pendente de automacao": "@pendente-de-automacao",
     "nao automatizavel": "@nao-automatizavel",
 }
+
+
+# --------------------------------------------------------------------------------------
+# O contrato dos templates do time
+#
+# Um time pode sobrescrever o layout de seis artefatos (ver AGENTS.md, "Templates do time").
+# O layout é dele; estas âncoras não são — são os textos por onde este validador encontra a
+# informação que confere. Trocar uma delas não muda a aparência do documento: desliga a
+# checagem correspondente, em silêncio.
+#
+# Até esta tabela existir, o contrato morava só no código daqui e, implícito, no template de
+# cada skill. Quem escrevia um template do zero descobria a regra falhando no gate.
+#
+# Cada entrada é (arquivo sobrescrevível, template de referência, ((tipo, texto, para que serve), ...)).
+# `casos-de-teste.md` aparece duas vezes porque tem dois formatos; o time escolhe um.
+#
+# Os tipos dizem ONDE o texto precisa estar, e correspondem a como o validador procura:
+#   titulo  um heading (`#`...) que contenha o texto — é assim que `tabela_sob()` acha a tabela
+#   coluna  uma célula do cabeçalho da tabela que contenha o texto (`_coluna()`, sem case)
+#   linha   uma linha que COMECE com o texto
+#   texto   o literal em qualquer lugar do documento
+#   regra   contrato estrutural, não um literal: a explicação é a regra inteira
+#
+# Dois testes seguram esta tabela: um confere que toda âncora literal existe, no lugar certo,
+# no template de referência citado; outro confere que o README do diretório do time lista
+# todas elas — senão o time não tem como saber.
+ANCORAS_POR_ARTEFATO = (
+    (
+        "cenarios.md",
+        "skills/cenarios-de-teste/templates/cenarios.md",
+        (
+            ("titulo", "Índice", "abre a tabela do índice; é a assinatura que identifica o artefato"),
+            ("regra", "primeira coluna do índice = o ID do cenário",
+             "o índice é lido por POSIÇÃO, não por nome de coluna: a primeira célula de cada linha "
+             "é o ID. A linha de cabeçalho precisa ter exatamente `ID` na primeira célula — é como "
+             "ela é descartada; com outro nome, o cabeçalho vira um cenário fantasma"),
+            ("regra", "prioridade = ÚLTIMA coluna, e só com 5 colunas ou mais",
+             "com menos de 5 colunas a prioridade não é lida nem conferida contra `risk_levels`, "
+             "sem avisar. Reordenar o índice deixando outra coluna por último faz o validador "
+             "conferir a coluna errada"),
+            ("texto", "## CT-01 —", "um bloco por cenário do índice, no formato `## <ID> — <resumo>`. "
+             "O separador é TRAVESSÃO (—), não hífen: com hífen o bloco não é reconhecido"),
+            ("linha", "Origem:", "rastreabilidade do documento (princípio 1). Precisa começar a "
+             "linha e ter conteúdo depois dos dois-pontos"),
+            ("texto", "**Total de cenários:**", "total conferido contra os blocos do corpo"),
+            ("texto", "**Total de casos sugeridos:**", "total conferido contra a lista de sugeridos"),
+            ("titulo", "Casos sugeridos por cenário", "a seção que vira o contrato da Fase 2"),
+            ("texto", "**CT-01 —", "cabeçalho de cada grupo de sugeridos: `**<ID> — <resumo>**`. "
+             "Também com TRAVESSÃO"),
+            ("regra", "cada caso sugerido é um item numerado",
+             "`1.`, `2.`, ... sob o cabeçalho do grupo, de preferência com o prefixo `[API]` ou "
+             "`[INTERFACE]`. É a contagem desses itens que a Fase 2 tem que cumprir"),
+            ("titulo", "Lacunas", "seção de lacunas; quando não há nenhuma, ela diz isso"),
+        ),
+    ),
+    (
+        "casos-de-teste.md",
+        "skills/casos-de-teste/templates/casos-de-teste.md",
+        (
+            ("texto", "```gherkin", "abre o bloco de código; é o que seleciona o formato `markdown-gherkin`"),
+            ("texto", "# language:", "idioma do Gherkin, de `conventions.gherkin_language`"),
+            ("texto", "Funcionalidade:", "exatamente uma por documento"),
+            ("texto", "@CT-01", "tag de rastreio ao cenário de origem, uma por caso"),
+            ("texto", "@api", "tag de camada; a outra é `@interface`"),
+            ("texto", "@pendente-de-automacao", "tag de execução; a outra é `@nao-automatizavel`"),
+            ("texto", "**Total de casos:**", "total conferido contra os casos do corpo"),
+            ("texto", "**Aderência ao contrato:**", "no formato `N casos sugeridos, N escritos`"),
+            ("texto", "Origem:", "rastreabilidade do documento (princípio 1)"),
+        ),
+    ),
+    (
+        "casos-de-teste.md",
+        "skills/casos-de-teste/templates/casos-de-teste-palavras-chave.md",
+        (
+            ("texto", "Tipo de Execução:", "campo de execução, um por caso; é o que seleciona o "
+             "formato `markdown-palavras-chave`. Valor com ou sem acento"),
+            ("texto", "Rastreio:", "campo de rastreio ao cenário de origem, um por caso"),
+            ("texto", "[API]", "marca de camada no bloco do caso; a outra é `[INTERFACE]`"),
+            ("regra", "cada `##` é um caso", "menos as seções que começam com `Resumo` ou "
+             "`Observações`, que fecham o documento. Um `##` a mais vira um caso a mais na contagem"),
+            ("texto", "**Total de casos:**", "total conferido contra os casos do corpo"),
+            ("texto", "**Aderência ao contrato:**", "no formato `N casos sugeridos, N escritos`"),
+            ("texto", "Origem:", "rastreabilidade do documento (princípio 1)"),
+        ),
+    ),
+    (
+        "matriz-risco.md",
+        "skills/priorizacao-por-risco/templates/matriz-risco.md",
+        (
+            ("titulo", "Itens pontuados", "heading acima da tabela de pontuação"),
+            ("coluna", "ID", "identificador do item"),
+            ("coluna", "Impacto", "nota de 1 a 5"),
+            ("coluna", "Probabilidade", "nota de 1 a 5"),
+            ("coluna", "Composto", "produto impacto × probabilidade, recalculado pelo validador"),
+            ("coluna", "Zona", "faixa de risco, conferida contra `risk_levels`"),
+            ("coluna", "Área de risco", "conferida contra o contexto do projeto"),
+            ("titulo", "Alinhamento de cobertura", "heading acima da tabela que liga item a cobertura"),
+            ("texto", "Gatilho:", "campo de cada modo de falha; os outros são `Raio de impacto:`, "
+             "`Forma de detecção:`, `Mitigação atual:` e `Lacuna:`. Cada modo abre com "
+             "`### <ID> — <nome>`, também com TRAVESSÃO"),
+        ),
+    ),
+    (
+        "registro-quarentena.md",
+        "skills/confiabilidade-testes/templates/registro-quarentena.md",
+        (
+            ("titulo", "Testes em quarentena", "heading acima da tabela dos testes isolados"),
+            ("coluna", "Teste", "identificador do teste"),
+            ("coluna", "Categoria", "causa raiz, conferida contra o vocabulário do template"),
+            ("coluna", "Ticket", "o ticket que segura a correção"),
+            ("coluna", "Entrada", "data de entrada, em AAAA-MM-DD"),
+            ("coluna", "Expira", "prazo, de `conventions.quarantine_max_days`"),
+            ("titulo", "classificados e corrigidos", "heading acima da tabela de saída da quarentena"),
+            ("coluna", "Execuções", "número de execuções, de `conventions.stability_runs`"),
+        ),
+    ),
+    (
+        "relatorio-revisao.md",
+        "skills/revisao-qualidade-testes/templates/relatorio-revisao.md",
+        (
+            ("titulo", "seis dimensões", "heading acima da tabela de cobertura"),
+            ("coluna", "Dimensão", "nome da dimensão; as seis precisam aparecer"),
+            ("coluna", "Situação", "veredito; célula em branco reprova — é ausência de análise"),
+            ("titulo", "Evidência de execução", "heading acima da tabela de evidência real (princípio 6)"),
+        ),
+    ),
+    (
+        "relato-reproducao.md",
+        "skills/reproducao-bugs/templates/relato-reproducao.md",
+        (
+            ("titulo", "Dimensões extraídas", "heading acima da tabela de dimensões do relato"),
+            ("coluna", "Dimensão", "nome da dimensão"),
+            ("coluna", "Valor", "valor extraído do relato; célula em branco reprova"),
+            ("texto", "Status da reprodução", "conferido contra o vocabulário do template"),
+        ),
+    ),
+)
 
 
 def _sem_acento(texto: str) -> str:
@@ -240,6 +384,8 @@ def ler_cenarios(texto: str) -> dict:
         "total_sugeridos_declarado": None,
         "tem_origem": False,
         "tem_lacunas": False,
+        "blocos_com_traco_errado": {},     # id -> o traço que foi usado no lugar do travessão
+        "sugeridos_com_traco_errado": {},
     }
 
     secao = None
@@ -257,6 +403,10 @@ def ler_cenarios(texto: str) -> dict:
             if bloco:
                 dados["blocos"].append(bloco.group(1))
                 dentro_do_indice = False
+            else:
+                aproximado = RE_BLOCO_QUALQUER_TRACO.match(linha)
+                if aproximado and aproximado.group(2) != TRACO_CERTO:
+                    dados["blocos_com_traco_errado"][aproximado.group(1)] = aproximado.group(2)
             continue
 
         if linha.startswith("Origem:") and linha[len("Origem:"):].strip():
@@ -274,6 +424,10 @@ def ler_cenarios(texto: str) -> dict:
             if cabecalho:
                 cabecalho_atual = cabecalho.group(1)
                 dados["sugeridos_por"].setdefault(cabecalho_atual, 0)
+                continue
+            aproximado = RE_SUGERIDOS_QUALQUER_TRACO.match(linha)
+            if aproximado and aproximado.group(2) != TRACO_CERTO:
+                dados["sugeridos_com_traco_errado"][aproximado.group(1)] = aproximado.group(2)
                 continue
             caso = RE_CASO_SUGERIDO.match(linha)
             if caso and cabecalho_atual:
@@ -482,8 +636,20 @@ def validar_cenarios(dados: dict, perfil: dict, alvo: str) -> list[tuple[str, st
     for identificador in sorted(duplicados):
         problemas.append(("erro", alvo, f"o índice repete o ID {identificador}"))
 
+    # O separador do cabeçalho é travessão. Quando o bloco está lá com hífen, dizer "não tem
+    # bloco próprio" manda o time procurar o que está na frente dele — e o mesmo engano rende
+    # cinco erros num documento correto. O validador sabe o que houve: então diz.
     for identificador in ids_indice:
-        if identificador not in dados["blocos"]:
+        if identificador in dados["blocos"]:
+            continue
+        traco = dados["blocos_com_traco_errado"].get(identificador)
+        if traco:
+            problemas.append((
+                "erro", alvo,
+                f"o bloco de {identificador} usa {traco!r} como separador; o cabeçalho precisa de "
+                f"travessão: '## {identificador} {TRACO_CERTO} <resumo>'",
+            ))
+        else:
             problemas.append(("erro", alvo, f"{identificador} está no índice mas não tem bloco próprio"))
     for identificador in dados["blocos"]:
         if identificador not in ids_indice:
@@ -512,7 +678,16 @@ def validar_cenarios(dados: dict, perfil: dict, alvo: str) -> list[tuple[str, st
                 ("erro", alvo, f"a lista de casos sugeridos cita {identificador}, que não está no índice")
             )
     for identificador in ids_indice:
-        if identificador not in dados["sugeridos_por"]:
+        if identificador in dados["sugeridos_por"]:
+            continue
+        traco = dados["sugeridos_com_traco_errado"].get(identificador)
+        if traco:
+            problemas.append((
+                "erro", alvo,
+                f"o grupo de casos sugeridos de {identificador} usa {traco!r} como separador; o "
+                f"cabeçalho precisa de travessão: '**{identificador} {TRACO_CERTO} <resumo>**'",
+            ))
+        else:
             problemas.append(
                 ("erro", alvo, f"{identificador} não tem caso sugerido — a Fase 2 não saberia o que escrever")
             )

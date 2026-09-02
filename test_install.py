@@ -40,6 +40,7 @@ sys.path.insert(0, str(HARNESS))
 import install  # noqa: E402
 import validate_skills  # noqa: E402
 import run_evals  # noqa: E402
+import validate_artefatos  # noqa: E402
 
 SKILL_NAMES = {
     # Fluxo: as fases mais a skill de referência gramatical.
@@ -1602,6 +1603,78 @@ class TemplatesDoTimeTest(unittest.TestCase):
                 if any(marca in linha for marca in historico):
                     continue
                 self.fail(f"{caminho.relative_to(HARNESS)} ainda cita o caminho antigo: {linha.strip()}")
+
+    # -- o contrato dos templates do time ---------------------------------------------
+    #
+    # `ANCORAS_POR_ARTEFATO` é a única descrição escrita do que um template precisa ter para
+    # passar no validador. Antes dela o contrato morava só no código, e quem escrevia um
+    # template do zero o descobria falhando no gate. Uma lista que envelhece é pior que
+    # nenhuma — ela mente com autoridade —, então estes dois testes a prendem nas duas pontas:
+    # ao template de referência (o código) e ao README do time (quem lê).
+
+    @staticmethod
+    def _ancora_presente(tipo: str, alvo: str, texto: str) -> bool:
+        """Procura a âncora do jeito que o validador procura — não como substring solta."""
+        linhas = texto.split("\n")
+        if tipo == "texto":
+            return alvo in texto
+        if tipo == "linha":
+            return any(l.startswith(alvo) for l in linhas)
+        if tipo == "titulo":
+            return any(l.startswith("#") and alvo.lower() in l.lower() for l in linhas)
+        if tipo == "coluna":
+            for l in linhas:
+                if not validate_artefatos.RE_LINHA_TABELA.match(l):
+                    continue
+                if validate_artefatos.RE_SEPARADOR.match(l):
+                    continue
+                if any(alvo.lower() in c.lower() for c in validate_artefatos._celulas(l)):
+                    return True
+            return False
+        raise AssertionError(f"tipo de âncora desconhecido: {tipo!r}")
+
+    def test_toda_ancora_existe_no_template_de_referencia(self):
+        """Se divergir, ou a tabela envelheceu ou o template de referência quebrou.
+
+        Os templates das skills passam no validador (outros testes garantem), então eles são a
+        prova viva do contrato: uma âncora que não está lá não é o contrato de verdade. Este
+        teste pegou cinco erros meus na primeira escrita da tabela — todos de coluna, porque
+        `_coluna()` casa por substring e os cabeçalhos reais são "Impacto (1-5)" e afins.
+        """
+        for arquivo, template, ancoras in validate_artefatos.ANCORAS_POR_ARTEFATO:
+            caminho = HARNESS / template
+            with self.subTest(artefato=arquivo, template=template):
+                self.assertTrue(caminho.is_file(), f"template citado não existe: {template}")
+                texto = caminho.read_text(encoding="utf-8")
+                for tipo, alvo, _ in ancoras:
+                    if tipo == "regra":
+                        continue
+                    with self.subTest(ancora=alvo, tipo=tipo):
+                        self.assertTrue(
+                            self._ancora_presente(tipo, alvo, texto),
+                            f"a âncora [{tipo}] {alvo!r} não está em {template}",
+                        )
+
+    def test_o_readme_do_time_lista_todas_as_ancoras(self):
+        """O README é o arquivo que o instalador põe na pasta onde o time escreve o template.
+
+        Uma âncora que o validador exige e o README não cita é uma regra que só se aprende
+        errando — que foi exatamente o buraco que esta tabela fechou.
+        """
+        texto = install.TEMPLATES_README_SRC.read_text(encoding="utf-8")
+        for arquivo, _, ancoras in validate_artefatos.ANCORAS_POR_ARTEFATO:
+            with self.subTest(artefato=arquivo):
+                self.assertIn(arquivo, texto)
+                for tipo, alvo, _ in ancoras:
+                    with self.subTest(ancora=alvo):
+                        # assertTrue, e não assertIn: em falha o assertIn despeja o README
+                        # inteiro (7 KB) no output, e a mensagem útil some no meio.
+                        self.assertTrue(alvo in texto, f"o README não cita a âncora {alvo!r}")
+
+    def test_os_seis_sobrescriveis_tem_contrato_declarado(self):
+        """Sobrescrevível sem âncora documentada é o buraco de novo, num arquivo diferente."""
+        com_contrato = {a for a, _, _ in validate_artefatos.ANCORAS_POR_ARTEFATO}
+        self.assertEqual(com_contrato, set(install.TEMPLATES_DO_TIME))
 
     def test_todo_sobrescrivel_existe_em_alguma_skill(self):
         """Nome que não corresponde a template de skill nenhuma nunca seria consultado."""
