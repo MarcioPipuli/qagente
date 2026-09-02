@@ -40,6 +40,7 @@ QAGente/
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
 ├── validate_skills.py      # Validador estrutural das skills (frontmatter, templates, referências)
+├── validate_artefatos.py   # Validador dos artefatos gerados (totais, tags, contrato entre as fases)
 ├── run_evals.py            # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
 ├── evals/                  # Uma spec por skill, 8+ casos cada
 ├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
@@ -247,7 +248,7 @@ python validate_skills.py --strict
 
 Enquanto `--validate-profile` valida a configuração do time, este valida o conteúdo que o
 agente lê como instrução: `name` do frontmatter igual ao diretório, `metadata.category` na
-lista (`analise`, `escrita`, `automacao`, `referencia`), as quatro seções de formato
+lista (`analise`, `escrita`, `automacao`, `referencia`, `configuracao`), as quatro seções de formato
 (`<objetivo>`, `## Perguntas de descoberta`, `## Pronto quando`, `## Skills relacionadas`),
 presença da seção `## Configuração` e da leitura do perfil, template citado que existe e
 template em disco que é citado, referência `skills/<nome>` que resolve, teto de linhas, e
@@ -261,6 +262,45 @@ referência (`gherkin-palavras-chave`) é consultada dentro de outra fase e não
 descoberta a percorrer. A dispensa é estreita de propósito — seção vazia só para satisfazer
 o validador é pior que a ausência dela. O CI roda com `--strict`, então hoje qualquer aviso
 também reprova.
+
+### Validação dos artefatos gerados
+
+```bash
+python validate_artefatos.py saida/cenarios/x.cenarios.md
+python validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
+python validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json --strict
+```
+
+O terceiro validador, e o primeiro que olha para a **saída**. Fecha a lacuna que os outros dois
+não alcançam: eles provam que a regra está escrita na skill; este prova que o documento
+entregue a respeita — e a respeita contra o **perfil efetivo do projeto**, não contra o valor
+de exemplo citado na skill.
+
+Escopo deliberado: só o que é verificável **sem julgamento**.
+
+| Checa | Severidade |
+|---|---|
+| Totais do resumo contra o corpo (cenários, casos sugeridos, casos escritos) | erro |
+| Todo ID do índice tem bloco, e todo bloco está no índice | erro |
+| Todo cenário tem ao menos um caso sugerido | erro |
+| Tag de rastreio, de camada (`@api`/`@interface`) e de execução em todo caso | erro |
+| `# language:` presente e exatamente uma `Funcionalidade` | erro |
+| `Esquema do Cenário` com tabela de `Exemplos` preenchida | erro |
+| Prioridade dentro de `risk_levels`; título com o prefixo de `conventions.scenario_title_prefix` | aviso |
+| Linha `Origem:`, seção de lacunas, prefixo `[API]`/`[INTERFACE]` nos casos sugeridos | aviso |
+
+**Passando os dois documentos na mesma chamada**, rodam também as checagens de contrato entre
+as fases: toda tag de rastreio aponta para um cenário que existe, a aderência declarada bate com
+a lista de casos sugeridos da Fase 1, e nenhum cenário ficou sem caso.
+
+O que exige entender o requisito — se há um cenário negativo por regra, se dois cenários diferem
+só na condição de entrada — **fica de fora de propósito**: um validador que chuta nisso gera
+falso positivo, e um validador em que não se confia deixa de ser rodado. Isso continua sendo
+trabalho da skill.
+
+O perfil é procurado subindo a partir do artefato (`.qagente/quality-profile.json`); sem ele,
+valem os defaults do QAGente, e o validador diz qual usou. Rodar sobre um template embarcado é
+reconhecido e pulado, em vez de reprovar tudo.
 
 ### Evals das skills
 

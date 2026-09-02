@@ -273,6 +273,24 @@ Cada observação deve: (a) explicar o que foi assumido/deduzido e por quê, (b)
 - [ ] Toda suposição/dedução/lacuna está registrada — no documento de cenários, ou em `## Observações` quando ele não existe.
 - [ ] Origem (ticket, PRD, documento de cenários) está identificável a partir do cabeçalho.
 
+## Conferir o documento antes de entregar
+
+Depois da revisão acima, rode o validador estático — ele pega o que é mecânico e escapa da leitura:
+tag obrigatória ausente, total que não bate, título fora do prefixo do perfil, e a **aderência ao
+contrato** contra o documento de cenários de verdade, não contra o número que você escreveu.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo de cenários> <arquivo de casos>
+```
+
+Passe **os dois documentos** sempre que a Fase 1 existir: as checagens de contrato entre as fases
+— toda tag de rastreio aponta para um cenário real, e nenhum cenário ficou sem caso — só rodam com
+os dois na mesma chamada.
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não for
+localizável, diga que não validou e deixe o comando. Nunca declare o documento conferido sem a
+saída real.
+
 ## Exemplo completo
 
 Ver `templates/casos-de-teste.md` para um exemplo completo (cabeçalho + `Funcionalidade` + um `Cenário` simples com tags + um `Esquema do Cenário` com `Exemplos` + resumo final + seção de `Observações`).

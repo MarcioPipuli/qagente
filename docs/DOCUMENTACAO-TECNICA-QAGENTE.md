@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **12 skills, 150 evals, 217 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **12 skills, 150 evals, 239 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -61,13 +61,21 @@ com o gatilho certo, é o que o modelo carrega e obedece.
 
 Isso explica três decisões de projeto que de outra forma parecem exageradas:
 
+- **Por que existe um validador de artefatos** (`validate_artefatos.py`): é o único dos três
+  que roda **no projeto do usuário**, chamado pelo agente no fim das Fases 1 e 2. Os outros dois
+  provam que a regra está escrita; este prova que o documento entregue a respeita — e a respeita
+  contra o perfil efetivo do projeto, não contra o valor de exemplo da skill. Foi a lacuna
+  apontada de forma independente por três itens de melhoria. O escopo é fechado no que é
+  verificável sem julgamento: totais, contrato entre as fases, tags obrigatórias, campos do
+  perfil. Cobertura semântica ficaria a cargo de heurística, e heurística que erra faz o
+  usuário parar de rodar o validador — o que custa mais do que a checagem valia.
 - **Por que existe um validador de skills** (`validate_skills.py`): um `name` errado no
   frontmatter não quebra nada visivelmente — faz o agente procurar arquivo no lugar errado, em
   silêncio. O validador é o compilador que essa "linguagem" não tem.
 - **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
-- **Por que 217 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
+- **Por que 239 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
   testa **promessas do núcleo** (que toda skill mande ler o perfil, que toda chave `paths.*`
   citada exista no instalador, que a `description` só prometa artefato que tem skill e destino).
 
@@ -89,8 +97,9 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `adapters/<tool>/*` | Reembalagem do núcleo no formato de cada ferramenta | Instalador (copia) → depois a ferramenta | Instalação / conversa |
 | `install.py` | Instalador + validador de perfil | Pessoa / CI | Instalação |
 | `validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
+| `validate_artefatos.py` | Validador dos artefatos gerados (saída) | Pessoa / **agente** | Uso |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 217 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `test_install.py` | 239 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -1034,7 +1043,7 @@ Quatro comandos, obrigatórios antes e depois de qualquer alteração (`CONTRIBU
 exatamente o que o CI roda:
 
 ```bash
-python -m py_compile install.py validate_skills.py run_evals.py test_install.py
+python -m py_compile install.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
 python validate_skills.py --strict
 python run_evals.py
 python -m unittest test_install
@@ -1120,7 +1129,7 @@ regex) · qualquer outra coisa é substring sem diferenciar maiúsculas.
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 217 testes
+### 14.3 `test_install.py` — 239 testes
 
 | Grupo de classes | O que prende |
 |---|---|

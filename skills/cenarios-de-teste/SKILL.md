@@ -238,6 +238,24 @@ Regras do resumo:
 
 **Ação**: ler o ticket completo → identificar entradas (email), regras (token expira em 15min, só um token ativo por vez, rate limit de 3 solicitações/hora) → aplicar valor limite no tempo de expiração e no rate limit, particionamento no formato de email → agrupar as variações de formato inválido em um único cenário de recusa, com um caso sugerido por variação → escrever índice + blocos CT-01 a CT-06, priorizados, citando PROJ-482 como origem → fechar com o resumo (6 cenários, 14 casos sugeridos) e registrar que o ticket não especifica o comportamento quando o usuário solicita novo token com um token anterior ainda válido (lacuna a confirmar).
 
+## Conferir o documento antes de entregar
+
+O harness traz um validador estático dos artefatos. Ele não julga cobertura nem qualidade de
+análise — pega o que é mecânico e falha em silêncio: total do resumo que não bate com o corpo,
+cenário sem caso sugerido, ID no índice sem bloco, prioridade fora de `risk_levels`.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo de cenários>
+```
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md` — o mesmo critério
+que vale para a automação vale para o documento. Se o clone não for localizável, diga que não
+validou e deixe o comando para o usuário rodar. Nunca declare o documento conferido sem a saída.
+
+O validador mede o artefato contra o **perfil efetivo do projeto**, não contra os exemplos desta
+skill: é ele que pega o documento que seguiu o default do exemplo num projeto que configurou outra
+coisa.
+
 ## Pronto quando
 
 - O arquivo `.md` existe em `paths.scenarios`, com o nome-base do documento de origem preservado.

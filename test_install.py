@@ -2058,5 +2058,255 @@ class MemoriaDoProjetoTest(InstallerTestCase):
         self.assertIn("Nunca pergunte o que a memória já responde", skill)
 
 
+CENARIOS_OK = """# Cenários de Teste — Recuperação de senha
+Origem: PROJ-482
+
+## Índice
+
+| ID | Cenário | Tipo | Técnica | Prioridade |
+|---|---|---|---|---|
+| CT-01 | Solicitar com e-mail cadastrado | Caminho feliz | — | Alta |
+| CT-02 | Usar o link fora do prazo | Negativo | Valor limite | Crítica |
+
+## CT-01 — Solicitar com e-mail cadastrado
+
+**Objetivo:** prova que o link chega.
+
+## CT-02 — Usar o link fora do prazo
+
+**Objetivo:** prova que o link expira.
+
+## Resumo dos Cenários
+
+**Total de cenários:** 2
+**Total de casos sugeridos:** 3
+
+### Casos sugeridos por cenário
+
+**CT-01 — Solicitar com e-mail cadastrado**
+1. [INTERFACE] E-mail cadastrado recebe o link
+
+**CT-02 — Usar o link fora do prazo**
+1. [INTERFACE] Link usado no minuto 16
+2. [API] Link usado 3 dias depois
+
+## Lacunas identificadas na documentação
+
+- Nenhuma.
+"""
+
+CASOS_OK = """# Casos de Teste BDD – Recuperação de senha
+<!-- Origem: PROJ-482 · Cenários: saida/cenarios/x.cenarios.md -->
+
+```gherkin
+# language: pt
+
+Funcionalidade: Recuperação de senha
+
+  @CT-01 @interface @pendente-de-automacao
+  Cenário: Validar que o e-mail cadastrado recebe o link
+    Dado que exista um usuário com o e-mail "maria@example.com"
+    Quando ele pedir a recuperação de senha
+    Então o sistema deve enviar o e-mail com o link
+
+  @CT-02 @interface @pendente-de-automacao
+  Cenário: Validar que o link expirado é recusado
+    Dado que exista um link gerado há 16 minutos
+    Quando o usuário abrir o link
+    Então o sistema deve exibir "Link expirado"
+
+  @CT-02 @api @pendente-de-automacao
+  Cenário: Validar que o link de 3 dias é recusado pela API
+    Dado que exista um link gerado há 3 dias
+    Quando a API for chamada com o token
+    Então a resposta deve ser 410
+```
+
+## Resumo dos Casos de Teste
+
+**Total de casos:** 3 (3 Cenário + 0 Esquema do Cenário com 0 Exemplos)
+**Por camada:** @api 1 · @interface 2
+**Aderência ao contrato:** 3 casos sugeridos, 3 escritos
+"""
+
+
+class ValidadorDeArtefatosTest(unittest.TestCase):
+    """O primeiro validador que olha para a saída, e o que fecha a lacuna dos três itens.
+
+    O gate prende a regra no texto da skill; nada provava que o artefato entregue respeita o
+    valor efetivo do perfil em vez do default citado no exemplo. As checagens aqui são só as
+    verificáveis sem julgamento: totais, contrato entre as fases, tags obrigatórias e o que o
+    perfil decide. Um validador que chuta no resto gera falso positivo, e um validador em que
+    não se confia deixa de ser rodado — por isso o escopo é fechado, e é este teste que o
+    mantém fechado.
+    """
+
+    def setUp(self) -> None:
+        self.dir = Path(tempfile.mkdtemp(prefix="qagente-artefatos-"))
+        self.addCleanup(shutil.rmtree, self.dir, True)
+
+    def escrever(self, nome: str, conteudo: str) -> Path:
+        caminho = self.dir / nome
+        caminho.write_text(conteudo, encoding="utf-8")
+        return caminho
+
+    def rodar(self, *conteudos: tuple[str, str], strict: bool = False) -> subprocess.CompletedProcess:
+        caminhos = [str(self.escrever(nome, texto)) for nome, texto in conteudos]
+        args = [sys.executable, str(HARNESS / "validate_artefatos.py"), *caminhos]
+        if strict:
+            args.append("--strict")
+        return subprocess.run(
+            args, capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+        )
+
+    def problemas(self, *conteudos: tuple[str, str]) -> str:
+        return self.rodar(*conteudos).stdout
+
+    # -- o caminho feliz --------------------------------------------------------------
+
+    def test_artefatos_corretos_passam(self):
+        """Sem isto, qualquer aperto nas checagens vira falso positivo sem ninguém notar."""
+        resultado = self.rodar(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", CASOS_OK))
+        self.assertEqual(resultado.returncode, 0, resultado.stdout)
+        self.assertIn("nenhum problema encontrado", resultado.stdout)
+
+    def test_os_templates_embarcados_sao_reconhecidos_como_template(self):
+        """Rodar o validador no template reprovaria tudo — os totais dele são `[N]`.
+
+        E é o erro mais provável de quem experimenta a ferramenta pela primeira vez.
+        """
+        for skill, template in (("cenarios-de-teste", "cenarios.md"), ("casos-de-teste", "casos-de-teste.md")):
+            caminho = HARNESS / "skills" / skill / "templates" / template
+            with self.subTest(template=template):
+                resultado = subprocess.run(
+                    [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                    env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+                )
+                self.assertEqual(resultado.returncode, 0, resultado.stdout)
+                self.assertIn("é um template", resultado.stdout)
+
+    # -- totais do resumo contra o corpo ----------------------------------------------
+
+    def test_total_de_cenarios_que_nao_bate_com_o_indice(self):
+        texto = CENARIOS_OK.replace("**Total de cenários:** 2", "**Total de cenários:** 5")
+        self.assertIn("'Total de cenários' diz 5", self.problemas(("x.cenarios.md", texto)))
+
+    def test_total_de_casos_sugeridos_que_nao_bate_com_a_lista(self):
+        texto = CENARIOS_OK.replace("**Total de casos sugeridos:** 3", "**Total de casos sugeridos:** 9")
+        self.assertIn("'Total de casos sugeridos' diz 9", self.problemas(("x.cenarios.md", texto)))
+
+    def test_total_de_casos_que_nao_bate_com_o_bloco(self):
+        texto = CASOS_OK.replace("**Total de casos:** 3", "**Total de casos:** 7")
+        self.assertIn("'Total de casos' diz 7", self.problemas(("x.casos.md", texto)))
+
+    # -- coerência interna do documento de cenários -----------------------------------
+
+    def test_bloco_sem_linha_no_indice(self):
+        texto = CENARIOS_OK.replace("## CT-02 — Usar o link", "## CT-99 — Usar o link")
+        saida = self.problemas(("x.cenarios.md", texto))
+        self.assertIn("CT-99 tem bloco mas não está no índice", saida)
+        self.assertIn("CT-02 está no índice mas não tem bloco próprio", saida)
+
+    def test_cenario_sem_caso_sugerido(self):
+        """A lista de sugeridos é o contrato da Fase 2: cenário fora dela não vira caso."""
+        texto = CENARIOS_OK.replace("**CT-01 — Solicitar com e-mail cadastrado**\n1. [INTERFACE] E-mail cadastrado recebe o link\n\n", "")
+        texto = texto.replace("**Total de casos sugeridos:** 3", "**Total de casos sugeridos:** 2")
+        self.assertIn("CT-01 não tem caso sugerido", self.problemas(("x.cenarios.md", texto)))
+
+    # -- tags obrigatórias -------------------------------------------------------------
+
+    def test_caso_sem_tag_de_camada(self):
+        texto = CASOS_OK.replace("@CT-01 @interface @pendente-de-automacao", "@CT-01 @pendente-de-automacao")
+        self.assertIn("esperada uma tag de camada", self.problemas(("x.casos.md", texto)))
+
+    def test_caso_sem_tag_de_execucao(self):
+        texto = CASOS_OK.replace("@CT-01 @interface @pendente-de-automacao", "@CT-01 @interface")
+        self.assertIn("esperada uma tag de execução", self.problemas(("x.casos.md", texto)))
+
+    def test_caso_sem_tag_de_rastreio(self):
+        texto = CASOS_OK.replace("@CT-01 @interface @pendente-de-automacao", "@interface @pendente-de-automacao")
+        self.assertIn("sem tag de rastreio", self.problemas(("x.casos.md", texto)))
+
+    def test_gherkin_sem_language(self):
+        texto = CASOS_OK.replace("# language: pt\n", "")
+        self.assertIn("não abre com '# language:'", self.problemas(("x.casos.md", texto)))
+
+    # -- o contrato entre as duas fases ------------------------------------------------
+
+    def test_caso_que_rastreia_cenario_inexistente(self):
+        """Só visível com os dois documentos: é a fronteira que o item 3 criou."""
+        texto = CASOS_OK.replace("@CT-02 @api", "@CT-77 @api")
+        saida = self.problemas(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", texto))
+        self.assertIn("rastreia @CT-77, que não existe no documento de cenários", saida)
+
+    def test_aderencia_declarada_que_nao_bate_com_a_fase_1(self):
+        texto = CASOS_OK.replace("3 casos sugeridos, 3 escritos", "9 casos sugeridos, 3 escritos")
+        saida = self.problemas(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", texto))
+        self.assertIn("a aderência diz 9 casos sugeridos, os cenários sugerem 3", saida)
+
+    def test_cenario_sem_nenhum_caso_que_o_rastreie(self):
+        texto = CASOS_OK.replace("@CT-01 @interface @pendente-de-automacao", "@CT-02 @interface @pendente-de-automacao")
+        saida = self.problemas(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", texto))
+        self.assertIn("nenhum caso rastreia CT-01", saida)
+
+    # -- o valor EFETIVO do perfil, que é a lacuna que os três itens nomearam ----------
+
+    def test_prioridade_fora_da_escala_do_perfil(self):
+        texto = CENARIOS_OK.replace("| Valor limite | Crítica |", "| Valor limite | Urgentíssima |")
+        self.assertIn("fora de risk_levels", self.problemas(("x.cenarios.md", texto)))
+
+    def test_titulo_sem_o_prefixo_do_perfil(self):
+        texto = CASOS_OK.replace("Cenário: Validar que o link expirado", "Cenário: O link expirado")
+        self.assertIn("o título não começa com 'Validar que'", self.problemas(("x.casos.md", texto)))
+
+    def test_o_prefixo_verificado_e_o_do_perfil_do_projeto_nao_o_default(self):
+        """O coração do item: o artefato é medido contra o perfil efetivo do projeto.
+
+        Um artefato que segue o default do exemplo da skill, num projeto que configurou
+        outro prefixo, está errado — e era exatamente isso que nada pegava.
+        """
+        projeto = self.dir / "projeto"
+        (projeto / ".qagente").mkdir(parents=True)
+        perfil = json.loads((HARNESS / "profiles" / "default.json").read_text(encoding="utf-8"))
+        perfil["conventions"]["scenario_title_prefix"] = "Garantir que"
+        (projeto / ".qagente" / "quality-profile.json").write_text(
+            json.dumps(perfil, ensure_ascii=False), encoding="utf-8"
+        )
+        artefato = projeto / "x.casos.md"
+        artefato.write_text(CASOS_OK, encoding="utf-8")
+
+        resultado = subprocess.run(
+            [sys.executable, str(HARNESS / "validate_artefatos.py"), str(artefato)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+        )
+        self.assertIn("quality-profile.json", resultado.stdout, "não achou o perfil do projeto")
+        self.assertIn("o título não começa com 'Garantir que'", resultado.stdout)
+
+    # -- severidade e CLI --------------------------------------------------------------
+
+    def test_aviso_nao_reprova_sem_strict_e_reprova_com_strict(self):
+        """Mesma semântica de `validate_skills.py`: convenção avisa, contradição reprova."""
+        texto = CASOS_OK.replace("Cenário: Validar que o link expirado", "Cenário: O link expirado")
+        self.assertEqual(self.rodar(("x.casos.md", texto)).returncode, 0)
+        self.assertEqual(self.rodar(("x.casos.md", texto), strict=True).returncode, 1)
+
+    def test_arquivo_que_nao_e_artefato_de_qa(self):
+        self.assertIn("não parece um documento", self.problemas(("leiame.md", "# Um readme qualquer\n")))
+
+    def test_as_skills_das_duas_fases_mandam_rodar_o_validador(self):
+        """Um validador que ninguém roda não valida nada, e o agente é quem tem a chance.
+
+        A skill precisa dizer para rodar E mostrar a saída: princípio 6 vale para o artefato
+        como vale para a automação.
+        """
+        for skill in ("cenarios-de-teste", "casos-de-teste"):
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn("validate_artefatos.py", texto)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
