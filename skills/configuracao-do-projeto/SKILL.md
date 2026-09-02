@@ -49,8 +49,16 @@ escolha criaria expectativa falsa.
 entrevista curta: toda pergunta que o repositório responde vira confirmação, não pergunta. Só o
 que sobrar daqui pode virar pergunta ao usuário.
 
-- **Já existe configuração?** `.qagente/quality-profile.json` e `.qagente/contexto-projeto.md` —
-  se existirem, esta execução é revisão, não criação: leia o Passo 6 antes de perguntar qualquer coisa.
+- **Já existe configuração, ou só o template?** `.qagente/quality-profile.json` e
+  `.qagente/contexto-projeto.md` — o instalador **sempre** cria os dois, então existir não quer
+  dizer respondido, e é por isso que o teste aqui é de **estado**, nunca de presença. Perfil
+  idêntico a um dos 5 embarcados e contexto com `[colchetes]` são o template intacto: esta
+  execução é **criação**, e os Estágios 1 e 2 rodam inteiros. Só há **revisão** quando existe
+  conteúdo do time — campo que não bate com nenhum perfil embarcado, ou seção do contexto já
+  respondida, derivada ou com marca de lacuna —, e aí leia o Passo 6 antes de perguntar qualquer
+  coisa. Na dúvida entre os dois, trate como criação: perguntar de novo custa uma pergunta, e
+  pular o Estágio 1 deixa o time no perfil `default` sem nunca ter sido consultado — que é
+  exatamente o modo de falha do `<objetivo>`, só que agora no perfil em vez do contexto.
 - **O que a memória já aprendeu?** `.qagente/memoria-projeto.md` — cada linha ali já foi aprovada
   pelo usuário numa conversa anterior. **Nunca pergunte o que a memória já responde**: trate como
   resposta dada, e se um fato dali couber numa seção do contexto, proponha promovê-lo em vez de
@@ -65,9 +73,33 @@ que sobrar daqui pode virar pergunta ao usuário.
 - **Onde roda?** `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`.
 - **Em que idioma o time escreve?** README e documentação do próprio repositório.
 
+### O que o reconhecimento nunca lê
+
 Nunca leia fora do repositório do usuário para responder isso: princípio 7 de `AGENTS.md` vale
 para esta skill como para qualquer outra. Diretório home, `.env` de outro projeto e chaves de
 acesso estão fora, mesmo que ajudassem.
+
+E **nunca leia o próprio QAGente como se fosse o produto do time.** Numa instalação limpa — que é
+o caso normal, não a exceção — o único conteúdo da pasta é o corpo do agente, e ele está cheio de
+exemplos: `data-cy` e `data-testid` aparecem dezenas de vezes nas skills, e
+`skills/playwright-ui-automation/templates/` contém um `playwright.config.ts` de verdade, que casa
+com o glob deste reconhecimento. Contar isso produz um achado com contagem e origem — crível,
+auditável e inteiramente falso. Excluída da varredura, sempre, toda a superfície que o instalador
+escreve:
+
+- `AGENTS.md` e `CLAUDE.md` (o bloco QAGente dentro deles)
+- `.qagente/` inteiro, incluindo `.qagente/skills/` e `.qagente/templates/`
+- `.claude/` (skills e agents)
+- `.github/copilot-instructions.md`, `.github/agents/`, `.cursor/rules/`, `.windsurf/rules/`
+- `saida/` — são artefatos que o próprio agente escreveu, não evidência sobre o produto
+
+`entrada/` conta como **local** dos requisitos, nunca como fonte de configuração: o que está
+dentro é documento de entrada, e princípio 7 se aplica inteiro.
+
+**Reconhecimento vazio é o resultado esperado de uma instalação limpa, não uma falha.** Depois de
+excluir a lista acima, se não sobrou nada, diga exatamente isso — "não encontrei nada sobre o
+produto neste repositório; vou perguntar" — e vá para as perguntas. Raspar o que sobrou para não
+chegar de mãos vazias é o pior desfecho possível deste passo.
 
 ## Passo 1 — Reconhecer, sem perguntar nada
 
@@ -82,7 +114,9 @@ permite ao usuário discordar com uma palavra:
 | `paths.input` | `docs/requisitos` | diretório existe, com 12 arquivos `.md` |
 
 Palpite sem origem não vai para a tabela — vira pergunta. **Nunca apresente como achado algo que
-você deduziu do nome do projeto ou do domínio dele.**
+você deduziu do nome do projeto, do domínio dele, ou dos arquivos do próprio QAGente.** Um achado
+só vale quando a origem é um arquivo que o time escreveu. A tabela pode sair vazia, e vazia ela é
+honesta.
 
 ## Passo 2 — Escolher o perfil-base
 
@@ -125,10 +159,14 @@ defaults, e `AGENTS.md` já manda escrever no artefato o número efetivo, nunca 
 
 Ao final do estágio, grave **os dois arquivos** — ver o Passo 5.
 
-## Passo 4 — Estágio 2: o contexto (no máximo 5 perguntas)
+## Passo 4 — Estágio 2: o contexto (5 perguntas, ou 7 sem repositório)
 
 É o estágio de maior ganho: o perfil tem 5 modelos prontos que cobrem boa parte dos casos, o
 contexto não tem nenhum, e é dele que sai a priorização por impacto de negócio.
+
+**O produto é o sistema que o time testa — o QAGente nunca é o produto**, nem quando é a única
+coisa na pasta. Se o reconhecimento voltou vazio, a primeira pergunta é literalmente a primeira
+coisa que você sabe sobre o sistema: faça-a sem preâmbulo e não ofereça palpite de resposta.
 
 1. **O que o produto faz, em uma frase, e quem usa?**
 2. **Quais são os 3 a 5 fluxos que, se quebrarem, param o produto ou o negócio?** — peça em ordem.
@@ -140,11 +178,27 @@ contexto não tem nenhum, e é dele que sai a priorização por impacto de negó
 5. **A prática de teste do time está no início, em crescimento ou estabelecida?** — calibra o
    tamanho de toda entrega seguinte, e as três opções são difíceis de errar.
 
-**"Stack e ambientes" e "Testes que já existem" não são perguntados: são preenchidos com o que o
-Passo 1 achou**, marcados como derivados, e confirmados numa linha. O que o repositório não sabe —
-URL do ambiente de teste, como se obtém credencial, se o teste pode escrever no banco, como se
-prepara massa — vira lacuna (Passo 5), não pergunta. E credencial nunca é escrita no arquivo, só
-como se obtém: `AGENTS.md` princípio 5.
+**"Stack e ambientes" e "Testes que já existem" são preenchidos com o que o Passo 1 achou** —
+marcados como derivados e confirmados numa linha —, e por isso não gastam pergunta. O que o
+repositório não sabe — URL do ambiente de teste, como se obtém credencial, se o teste pode
+escrever no banco, como se prepara massa — vira lacuna (Passo 5), não pergunta. E
+credencial nunca é escrita no arquivo, só como se obtém: `AGENTS.md` princípio 5.
+
+**Quando o Passo 1 volta vazio, essas duas seções deixam de ser derivadas e passam a ser
+perguntáveis.** A regra acima existe para não gastar pergunta com o que o repositório já responde;
+sem repositório ela não economiza nada — só garante que as duas seções fiquem `Não respondido`
+para sempre, e são justamente as que as Fases 3a/3b consomem. Nesse caso, acrescente ao estágio:
+
+6. **Contra o que a automação vai rodar?** — frontend, backend/API, banco, e se existe ambiente de
+   teste. Uma resposta em bloco, não um campo por vez.
+7. **Já existe suíte de testes em algum lugar, mesmo fora deste repositório?** — "nenhuma" é
+   resposta comum e útil: fecha a seção em vez de deixá-la aberta.
+
+**O teto de 5 perguntas é do caso com repositório.** Ele conta com o reconhecimento como redutor;
+onde não há reconhecimento, o redutor não existe e o teto viraria uma promessa de brevidade paga
+com seções em branco. Sem repositório, o Estágio 2 vai até 7 — e **diga ao usuário que são 7 e por
+quê**, porque a razão é exatamente a que ele precisa entender: aqui não há código para consultar,
+então tudo que você souber sobre o sistema veio dele.
 
 ## Passo 5 — Gravar: o que entra, o que vira lacuna
 
@@ -229,6 +283,13 @@ mudado — a mesma lista que ficou registrada em `## Observações`.
 
 ## Erros comuns
 
+- ❌ **Ler o próprio QAGente como se fosse o produto.** É o erro mais provável de todos, porque
+  numa instalação limpa o corpo do agente é o único conteúdo da pasta. Contar `data-cy` nas skills
+  e anunciar "38 ocorrências" é palpite com aparência de auditoria — pior que não achar nada. Ver
+  a lista de exclusão no Passo 1.
+- ❌ **Tratar o que o instalador criou como resposta do time.** Os dois arquivos de `.qagente/`
+  existem desde a instalação; ler "o perfil já existe" como "o perfil já foi configurado" pula o
+  Estágio 1 na única execução em que ele importa. Presença não é resposta — ver Passo 1.
 - ❌ **Perguntar o que o repositório responde.** "Qual framework de UI vocês usam?" quando existe
   `cypress.config.js` na raiz gasta a paciência do usuário no começo da conversa, que é onde ela é
   mais cara. Reconheça primeiro, confirme depois.
@@ -261,6 +322,16 @@ Stack, Testes existentes e seletor já preenchidos como derivados e marca de lac
 **estágio 2**: quatro perguntas, entram Produto, 4 fluxos críticos, 3 áreas de risco e maturidade
 `crescimento` → rodar `--validate-profile` no clone e colar a saída → entregar dizendo que
 Restrições e `conventions.*` ficaram em aberto, e o que cada um mudaria.
+
+**Usuário**: "configure o QAGente neste projeto" — pasta nova, só o que o instalador escreveu.
+
+**Ação**: rodar o Passo 1 excluindo a superfície do QAGente → **não sobra nada**, e é isso que se
+diz: "não encontrei nada sobre o produto neste repositório; vou perguntar" → propor `default`
+dizendo que a escolha vem da ausência de convenção encontrada, não de um achado → **estágio 1**:
+as 5 perguntas de verdade, nenhuma confirmação, porque não há o que confirmar → gravar os dois
+arquivos → **estágio 2**: 7 perguntas, avisando por que são 7 → gravar, com Stack e Testes
+existentes vindos de resposta do usuário e não de derivação → não achar o clone do QAGente para
+validar, e dizer isso na entrega em vez de declarar o perfil válido.
 
 ## Pronto quando
 
