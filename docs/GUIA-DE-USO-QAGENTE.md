@@ -188,6 +188,40 @@ variável fora do padrão" são exatamente os erros de digitação que passariam
 
 ---
 
+### 3.4 O layout dos artefatos também é do time
+
+O perfil decide *como trabalhar*; os **templates do time** decidem *que cara o artefato tem*. São
+coisas diferentes, e a segunda não precisa de nenhuma chave de configuração.
+
+O instalador cria `.qagente/templates/`, vazio, com um README. Coloque ali um arquivo com o **mesmo
+nome** do template de uma skill e ele vence — a busca é por nome-base, sem subdiretório:
+
+```bash
+# o layout de cenários passa a ser o do time
+cp <clone-do-qagente>/skills/cenarios-de-teste/templates/cenarios.md .qagente/templates/
+# edite à vontade: ordem das seções, colunas da tabela, cabeçalho com o logo do time
+```
+
+**Só estes seis são sobrescrevíveis**, porque são layout puro — a ordem e a existência das seções:
+`cenarios.md`, `casos-de-teste.md`, `matriz-risco.md`, `relatorio-revisao.md`,
+`relato-reproducao.md`, `registro-quarentena.md`. Arquivo com qualquer outro nome ali é ignorado:
+os templates de automação carregam técnica junto com o layout, e os de massa de dados carregam
+isolamento e limpeza — sobrescrevê-los desligaria garantia de qualidade em silêncio.
+
+Três coisas que valem saber:
+
+- **O agente diz qual layout usou**, na entrega: `Layout: .qagente/templates/casos-de-teste.md`. É
+  o que torna a sobrescrita visível em revisão.
+- **O template define o layout, não as regras.** Se o seu template não tiver a seção onde uma
+  regra invariante deveria aparecer — rastreabilidade, lacunas, evidência de execução — o agente
+  **inclui a seção assim mesmo e avisa que incluiu**.
+- **O instalador nunca apaga o que você colocou ali**, nem com `--force`. Só o README é atualizado.
+
+Vale a pena quando o time já tem um formato de documento que o resto da empresa espera. Se não
+tem, não invente: os templates das skills são o padrão, e são bons.
+
+---
+
 ## 4. Preencher o contexto do projeto — o maior ganho por hora investida
 
 `.qagente/contexto-projeto.md` responde **o que é o produto**. Sem ele, o agente ainda trabalha,

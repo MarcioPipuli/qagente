@@ -1663,6 +1663,39 @@ class PromessasDoHarnessTest(unittest.TestCase):
             with self.subTest(chave=chave):
                 self.assertIn(f"conventions.{chave}", corpus)
 
+    def test_o_manual_e_o_guia_ensinam_os_templates_do_time(self):
+        """Mecanismo entregue que o usuário não descobre é mecanismo que não existe.
+
+        Foi o que aconteceu com 2c: o diretório do time entrou em `main` com testes e README,
+        e passou três commits sem aparecer em nenhum documento de uso. O `README.md` fala com
+        quem instala; quem *usa* lê estes dois.
+        """
+        manual = (HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8")
+        guia = (HARNESS / "docs" / "GUIA-DE-USO-QAGENTE.md").read_text(encoding="utf-8")
+        for nome, texto in (("manual", manual), ("guia", guia)):
+            with self.subTest(documento=nome):
+                self.assertIn(".qagente/templates", texto, "não menciona o diretório do time")
+                for template in install.TEMPLATES_DO_TIME:
+                    self.assertIn(template, texto, f"não lista {template} entre os sobrescrevíveis")
+
+    def test_o_manual_distingue_cenario_de_caso_de_teste(self):
+        """A separação das duas fases (item 3) só vale se quem usa souber que são duas entregas.
+
+        A lista de casos sugeridos é o contrato entre elas: se o manual não disser que ela
+        existe, o usuário aprova a Fase 1 sem revisar a única parte que decide a Fase 2.
+        """
+        manual = (HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8")
+        marcas = (
+            "Cenário e caso de teste não são a mesma coisa",
+            # A frase que diz ao usuário POR QUE olhar a lista. Só "Casos sugeridos" casaria
+            # com o cabeçalho dentro do bloco de exemplo, sem nada explicar.
+            'A lista de "Casos sugeridos" é a parte que decide',
+            "Aderência ao contrato",
+        )
+        for marca in marcas:
+            with self.subTest(marca=marca):
+                self.assertIn(marca, manual)
+
     def test_as_regras_de_manutencao_do_harness_estao_versionadas(self):
         """Eram a seção 11 do documento de continuidade: não derivam do código nem do git log."""
         texto = (HARNESS / "CONTRIBUTING.md").read_text(encoding="utf-8")

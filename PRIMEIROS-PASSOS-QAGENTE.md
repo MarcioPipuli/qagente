@@ -353,6 +353,38 @@ peça ao agente para remover.
 
 ---
 
+## E a pasta `templates`? (opcional, pule se estiver com pressa)
+
+O instalador também criou `.qagente/templates/`, vazia. Ela existe para um caso só: **quando o seu
+time já tem um formato de documento que o resto da empresa espera.**
+
+Por padrão, o agente usa os modelos que vêm com ele — e eles são bons. Mas se o seu documento de
+casos de teste precisa abrir com o cabeçalho da área, ou ter as seções noutra ordem, você copia o
+modelo para essa pasta, edita, e **o seu passa a valer**.
+
+O nome do arquivo é o que manda. Estes seis podem ser trocados:
+
+| Arquivo | É o layout de... |
+|---|---|
+| `cenarios.md` | documento de cenários (Passo 13) |
+| `casos-de-teste.md` | documento de casos em Gherkin (Passo 14) |
+| `matriz-risco.md` | matriz de risco |
+| `relatorio-revisao.md` | relatório de revisão de testes |
+| `relato-reproducao.md` | relato de reprodução de bug |
+| `registro-quarentena.md` | registro de teste em quarentena |
+
+Qualquer outro arquivo colocado ali é ignorado, de propósito: os modelos de código de automação
+carregam técnica junto com o formato, e trocá-los desligaria proteções sem ninguém perceber.
+
+Duas garantias, para você não ter medo de mexer:
+
+- **O agente avisa quando usa o seu modelo**, na entrega: `Layout: .qagente/templates/casos-de-teste.md`.
+- **Reinstalar o QAGente nunca apaga o que você colocou ali** — nem com `--force`.
+
+Não precisa fazer nada agora. A pasta fica lá para o dia em que fizer falta.
+
+---
+
 # PARTE 4 — Usar no dia a dia
 
 Agora sim, o trabalho.
@@ -394,6 +426,22 @@ Pronto. Não existe comando especial nem palavra mágica.
 **Responda o que você souber. E diga quando não souber.** "Não sei" é uma resposta boa — ele
 registra a dúvida em vez de inventar.
 
+### Cenário e caso de teste não são a mesma coisa
+
+Esta é a distinção que mais economiza retrabalho, e são **duas entregas separadas**:
+
+| | Responde | Entrega |
+|---|---|---|
+| **Cenário** (Passo 13) | **O quê** testar, em alto nível | Uma lista priorizada por risco, que você leva para o PO |
+| **Caso de teste** (Passo 14) | **Como** testar, passo a passo | Gherkin executável, que vira automação |
+
+Um cenário vira **vários** casos: "usar o link fora do prazo" é um comportamento, e o link
+expirado por 1 minuto e por 3 dias são duas variações dele. Por isso o Passo 13 vem primeiro —
+é mais barato descobrir que faltou um comportamento na lista do que depois de 20 casos escritos.
+
+Você pode parar no Passo 13 (validar a cobertura com o negócio) ou entrar direto no Passo 14, se
+já tiver os cenários.
+
 ### O que ele devolve
 
 Ele grava um arquivo em `saida/cenarios/` e mostra o conteúdo no chat. Assim:
@@ -402,19 +450,35 @@ Ele grava um arquivo em `saida/cenarios/` e mostra o conteúdo no chat. Assim:
 ## Cenários de Teste — Recuperação de senha
 Origem: PROJ-482
 
-| ID | Cenário | Tipo | Prioridade | Observação |
+| ID | Cenário | Tipo | Técnica | Prioridade |
 |---|---|---|---|---|
-| TC-SENHA-001 | Solicitar recuperação com e-mail cadastrado | Caminho feliz | Alta | Área de risco: Login |
-| TC-SENHA-002 | Solicitar com e-mail não cadastrado | Negativo | Alta | Não deve revelar se o e-mail existe |
-| TC-SENHA-003 | Usar o link dentro dos 15 minutos | Borda | Crítica | Área de risco: Login |
-| TC-SENHA-004 | Usar o link depois de 16 minutos | Negativo | Crítica | |
-| TC-SENHA-005 | Pedir o 4º link na mesma hora | Negativo | Alta | |
+| CT-01 | Solicitar recuperação com e-mail cadastrado | Caminho feliz | — | Alta |
+| CT-02 | Solicitar com e-mail não cadastrado | Negativo | Particionamento | Alta |
+| CT-03 | Usar o link dentro do prazo de validade | Borda | Valor limite | Crítica |
+| CT-04 | Usar o link fora do prazo de validade | Negativo | Valor limite | Crítica |
+| CT-05 | Estourar o limite de pedidos na mesma hora | Negativo | Valor limite | Alta |
+
+...um bloco por cenário, com objetivo, validações e resultados esperados...
+
+### Casos sugeridos por cenário
+
+**CT-03 — Usar o link dentro do prazo de validade**
+1. [INTERFACE] Link usado no primeiro minuto
+2. [INTERFACE] Link usado no minuto 15 exato
+
+**CT-04 — Usar o link fora do prazo de validade**
+1. [INTERFACE] Link usado no minuto 16
+2. [API] Link usado 3 dias depois
 
 ### Lacunas identificadas na documentação
 - O ticket não diz o que acontece se o usuário pedir um link novo com o anterior ainda válido.
   Confirmar com o time.
 - O limite de 15 minutos vale ou não vale no minuto 15 exato? Assumido que vale.
 ```
+
+**A lista de "Casos sugeridos" é a parte que decide o Passo 14.** Ela é o *contrato*: o agente vai
+escrever exatamente esses casos, e vai avisar se escrever algum a mais ou a menos, com o motivo. Se
+faltar um caso ali, é **agora** que sai mais barato dizer.
 
 ### O que olhar primeiro
 
@@ -448,8 +512,17 @@ Funcionalidade: Recuperação de senha
     E deve exibir a mensagem "Verifique seu e-mail"
 ```
 
-No final do arquivo tem uma seção **Observações**, com tudo que ele assumiu e precisa da sua
-confirmação. Leia essa parte.
+Repare nas etiquetas antes de cada caso: `@CT-01` diz de qual cenário ele veio, `@api` ou
+`@interface` diz em qual camada roda, e `@pendente-de-automacao` diz que ainda é só documentação.
+São elas que deixam rastrear cada caso até o requisito de origem.
+
+No final do arquivo tem o **Resumo**, e a linha que vale a pena ler é a **Aderência ao contrato**:
+"12 casos sugeridos, 12 escritos" — ou o motivo de cada diferença. É como você confere que nada
+da lista do Passo 13 se perdeu no caminho.
+
+> Quando você entra direto no Passo 14, sem passar pelo 13, o arquivo ganha uma seção
+> **Observações** com tudo que ele assumiu — porque nesse caminho não existe documento de cenários
+> para segurar as lacunas. Leia essa parte.
 
 ### Não gostou de algo? Peça a correção
 
