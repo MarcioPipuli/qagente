@@ -167,11 +167,10 @@ mesmo impacto × probabilidade, se a zona é a que decorre do composto, se todo 
 diferença entre analisado e preenchido.
 
 ```bash
-python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo da matriz>
+python .qagente/bin/validate_artefatos.py <arquivo da matriz>
 ```
 
-Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
-for localizável, diga que não validou e deixe o comando. Um composto errado desloca a zona, e a
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. O instalador copia o validador para `.qagente/bin/`, então o caminho é o mesmo em todo projeto instalado. Se o arquivo não estiver lá — instalação feita antes de o instalador passar a copiá-lo —, diga na entrega que não validou e deixe o comando para o usuário rodar depois de reinstalar. Um composto errado desloca a zona, e a
 zona errada prescreve a cobertura errada — em silêncio.
 
 ## Erros comuns

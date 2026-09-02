@@ -245,12 +245,12 @@ análise — pega o que é mecânico e falha em silêncio: total do resumo que n
 cenário sem caso sugerido, ID no índice sem bloco, prioridade fora de `risk_levels`.
 
 ```bash
-python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo de cenários>
+python .qagente/bin/validate_artefatos.py <arquivo de cenários>
 ```
 
 Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md` — o mesmo critério
-que vale para a automação vale para o documento. Se o clone não for localizável, diga que não
-validou e deixe o comando para o usuário rodar. Nunca declare o documento conferido sem a saída.
+que vale para a automação vale para o documento. O instalador copia o validador para `.qagente/bin/`, então o caminho é o mesmo em todo projeto instalado. Se o arquivo não estiver lá — instalação feita antes de o instalador passar a copiá-lo —, diga na entrega que não validou e deixe o comando para o usuário rodar depois de reinstalar.
+Nunca declare o documento conferido sem a saída.
 
 O validador mede o artefato contra o **perfil efetivo do projeto**, não contra os exemplos desta
 skill: é ele que pega o documento que seguiu o default do exemplo num projeto que configurou outra

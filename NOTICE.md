@@ -12,7 +12,7 @@ adaptação. Aqui ficam os avisos formais.
 
 | Parte | Licença |
 |---|---|
-| Código (`install.py`, `test_install.py`, `validate_skills.py`, `run_evals.py`) | MIT — ver [`LICENSE`](LICENSE) |
+| Código (`install.py`, `validate_perfil.py`, `validate_artefatos.py`, `test_install.py`, `validate_skills.py`, `run_evals.py`) | MIT — ver [`LICENSE`](LICENSE) |
 | Conteúdo das 6 skills do fluxo (`SKILL.md`) | CC-BY-4.0, declarado no frontmatter de cada arquivo |
 | Conteúdo das 5 skills de apoio (`SKILL.md`) | MIT, declarado no frontmatter — são adaptações de material MIT (seção 2) |
 

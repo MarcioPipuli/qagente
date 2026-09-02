@@ -155,11 +155,10 @@ branco** — em branco, ninguém sabe se a dimensão foi avaliada e não achou n
 olhada. Dimensão que não se aplica é marcada como não aplicável e justificada.
 
 ```bash
-python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo do relatório>
+python .qagente/bin/validate_artefatos.py <arquivo do relatório>
 ```
 
-Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
-for localizável, diga que não validou e deixe o comando.
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. O instalador copia o validador para `.qagente/bin/`, então o caminho é o mesmo em todo projeto instalado. Se o arquivo não estiver lá — instalação feita antes de o instalador passar a copiá-lo —, diga na entrega que não validou e deixe o comando para o usuário rodar depois de reinstalar.
 
 ## Erros comuns
 

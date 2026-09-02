@@ -39,6 +39,7 @@ QAGente/
 │   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
+├── validate_perfil.py      # Validador do perfil de qualidade (usado pelo instalador e copiado para o projeto)
 ├── validate_skills.py      # Validador estrutural das skills (frontmatter, templates, referências)
 ├── validate_artefatos.py   # Validador dos 6 artefatos gerados (totais, tags, contrato, aritmética da matriz)
 ├── run_evals.py            # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
@@ -216,6 +217,7 @@ Não usa dependências externas (só a biblioteca padrão do Python 3). O instal
 - cria `CLAUDE.md` (ponteiro para `AGENTS.md`) se não existir, ou apenas adiciona uma nota referenciando `AGENTS.md` se o projeto já tiver seu próprio `CLAUDE.md`;
 - copia o perfil escolhido para `<projeto>/.qagente/quality-profile.json` (um perfil já existente é preservado, salvo com `--force`);
 - cria `<projeto>/.qagente/templates/` com um README (diretório do time: `--force` atualiza só o README e nunca apaga um template que o time colocou lá);
+- copia `validate_perfil.py` e `validate_artefatos.py` para `<projeto>/.qagente/bin/` — são os dois validadores que o **agente** chama na hora da entrega, e sem eles no projeto o comando citado pelas skills apontaria para um arquivo que não existe ali. Sempre atualizados na reinstalação: é código do harness, não conteúdo do time;
 - cria as pastas de entrada/saída declaradas em `paths` **pelo perfil efetivo do projeto** — ou seja, se um perfil anterior foi preservado, são as pastas dele que são criadas, não as do perfil passado em `--profile`.
 
 Caminhos absolutos ou que escapem da raiz do projeto (`../`) são recusados com aviso, e `--dry-run` mostra os caminhos efetivos antes de qualquer alteração.
@@ -227,6 +229,10 @@ Use `--symlink` em vez de cópia se preferir manter os arquivos vinculados a est
 ```bash
 python install.py --validate-profile fullstack
 python install.py --validate-profile ./meu-time.json
+python validate_perfil.py ./meu-time.json
+
+# no projeto instalado, sem argumento: valida o perfil do próprio projeto
+python .qagente/bin/validate_perfil.py
 ```
 
 Valida e sai, sem instalar nada. Reporta dois níveis:
@@ -266,9 +272,10 @@ também reprova.
 ### Validação dos artefatos gerados
 
 ```bash
-python validate_artefatos.py saida/cenarios/x.cenarios.md
-python validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
-python validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json --strict
+# no projeto instalado, é o caminho que as skills citam
+python .qagente/bin/validate_artefatos.py saida/cenarios/x.cenarios.md
+python .qagente/bin/validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
+python .qagente/bin/validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json --strict
 ```
 
 O terceiro validador, e o primeiro que olha para a **saída**. Fecha a lacuna que os outros dois
@@ -314,7 +321,8 @@ falso positivo, e um validador em que não se confia deixa de ser rodado. Isso c
 trabalho da skill.
 
 O perfil é procurado subindo a partir do artefato (`.qagente/quality-profile.json`); sem ele,
-valem os defaults do QAGente, e o validador diz qual usou. Rodar sobre um template embarcado é
+valem os defaults do QAGente, e o validador diz qual usou. Ele roda tanto do clone quanto de
+`.qagente/bin/`, para onde o instalador o copia. Rodar sobre um template embarcado é
 reconhecido e pulado, em vez de reprovar tudo.
 
 ### Evals das skills

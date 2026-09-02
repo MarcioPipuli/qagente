@@ -489,7 +489,7 @@ Antes de gastar sua atenção, saiba o que **não** precisa conferir a olho. O a
 `validate_artefatos.py` no fim das fases e cola a saída na entrega:
 
 ```bash
-python <caminho-do-clone-do-qagente>/validate_artefatos.py <cenários> <casos>
+python .qagente/bin/validate_artefatos.py <cenários> <casos>
 ```
 
 Ele cobre os seis artefatos e pega o que é mecânico e escapa da leitura:
@@ -512,8 +512,10 @@ Duas coisas que valem entender:
   deixado de fora a regra de negócio que mais importava. Por isso as listas 8.1 e 8.2 abaixo
   continuam sendo suas: elas são o que a máquina não consegue ver.
 
-Se a entrega disser **"não validei"**, é porque o agente não localizou o clone do QAGente. Não é
-erro no documento — mas rode o comando você mesmo antes de aprovar.
+O instalador copia esse validador (e o do perfil) para `.qagente/bin/` do seu projeto — o caminho
+é o mesmo em toda instalação. Se a entrega disser **"não validei"**, o arquivo não está lá: a
+instalação é anterior à versão que passou a copiá-lo. Reinstale e rode o comando você mesmo antes
+de aprovar.
 
 ### 8.1 Cenários (Fase 1)
 

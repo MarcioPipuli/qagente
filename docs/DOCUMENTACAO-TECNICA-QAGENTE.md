@@ -53,6 +53,7 @@ Consequência prática, e é a chave para entender todo o resto:
 | `agent.md`, `AGENTS.md`, `skills/*/SKILL.md`, `contexto/`, `adapters/` | **Instrução em Markdown** | Lido pelo modelo, em tempo de conversa |
 | `profiles/*.json`, `.qagente/quality-profile.json` | **Dado declarativo** | Lido pelo instalador **e** pelo modelo |
 | `install.py` | Código Python | Só na instalação |
+| `validate_perfil.py`, `validate_artefatos.py` | Código Python | Na instalação **e** no uso — copiados para `.qagente/bin/` do projeto |
 | `validate_skills.py`, `run_evals.py`, `test_install.py` | Código Python | Só na manutenção do harness / CI |
 
 Nenhuma linha de Python roda enquanto o agente trabalha. O "comportamento do agente" é
@@ -61,8 +62,11 @@ com o gatilho certo, é o que o modelo carrega e obedece.
 
 Isso explica três decisões de projeto que de outra forma parecem exageradas:
 
-- **Por que existe um validador de artefatos** (`validate_artefatos.py`): é o único dos três
-  que roda **no projeto do usuário**, chamado pelo agente no fim das Fases 1 e 2. Os outros dois
+- **Por que dois validadores são instalados no projeto** (`validate_artefatos.py` e
+  `validate_perfil.py`): são os únicos chamados **pelo agente**, durante o uso — o de artefatos no
+  fim das Fases 1 e 2, o de perfil no fim da entrevista de configuração. Por isso o instalador os
+  copia para `.qagente/bin/`: um comando que cita caminho no clone do harness é um comando que o
+  agente, dentro do projeto instalado, não tem como resolver. Os outros dois
   provam que a regra está escrita; este prova que o documento entregue a respeita — e a respeita
   contra o perfil efetivo do projeto, não contra o valor de exemplo da skill. Foi a lacuna
   apontada de forma independente por três itens de melhoria. O escopo é fechado no que é
@@ -97,6 +101,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `adapters/<tool>/*` | Reembalagem do núcleo no formato de cada ferramenta | Instalador (copia) → depois a ferramenta | Instalação / conversa |
 | `install.py` | Instalador + validador de perfil | Pessoa / CI | Instalação |
 | `validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
+| `validate_perfil.py` | Validador do perfil de qualidade; importado pelo instalador | Instalador / Pessoa / **agente** | Instalação e uso |
 | `validate_artefatos.py` | Validador dos 6 artefatos gerados (saída) | Pessoa / **agente** | Uso |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
 | `test_install.py` | 256 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
@@ -127,6 +132,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 | `.qagente/quality-profile.json` | **Como** trabalhar | Sim (só `--force`) |
 | `.qagente/contexto-projeto.md` | **O que é o produto** | Sim (só `--force`) |
 | `.qagente/skills/` | Cópia portátil das skills (só quando há ferramenta ≠ claude) | Sim (só `--force`) |
+| `.qagente/bin/` | `validate_perfil.py` e `validate_artefatos.py`, que o agente chama na entrega | **Não** — sempre atualizados: é código do harness, não conteúdo do time |
 | `.github/copilot-instructions.md`, `.github/agents/*.agent.md`, `.cursor/rules/qagente.mdc`, `.windsurf/rules/qagente.md` | Adaptadores | Sim (só `--force`) |
 | Pastas de `paths.*` | Entrada e saídas, com `.gitkeep` | Existentes nunca são recriadas |
 
@@ -688,8 +694,8 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
   própria skill reencontra na re-execução. O que ficou aberto é registrado em `## Observações`,
   sob cabeçalho fixo reescrito a cada execução.
 - **Nunca monta o JSON do zero**: parte de um dos 5 perfis embarcados, o que elimina na origem a
-  chave inventada e o tipo errado. Valida com `--validate-profile` **no clone do harness** — o
-  instalador não se copia para o projeto — ou declara na entrega que não validou.
+  chave inventada e o tipo errado. Valida com `python .qagente/bin/validate_perfil.py`, que o
+  instalador deixa no projeto justamente porque `install.py` não se copia para lá.
 
 ---
 
@@ -809,8 +815,10 @@ Dois níveis: **erro** impede a instalação; **aviso** é reportado e a instala
 | `*_env` fora do padrão `MAIÚSCULAS_COM_UNDERSCORE` | aviso |
 | `profile_version` fora de `("1.0",)` | aviso |
 
-Comando: `python install.py --validate-profile <nome-ou-caminho>` — valida e sai, sem instalar
-nada. Sai com código 1 se houver erro. **A mesma validação roda a cada instalação.**
+Comandos: `python install.py --validate-profile <nome-ou-caminho>` no clone, e
+`python .qagente/bin/validate_perfil.py` no projeto instalado (sem argumento, valida o perfil do
+próprio projeto). Ambos chamam a mesma função de `validate_perfil.py` e saem com 1 se houver erro.
+**A mesma validação roda a cada instalação.**
 
 ### 10.3 Os cinco perfis embarcados
 
@@ -1043,7 +1051,7 @@ Quatro comandos, obrigatórios antes e depois de qualquer alteração (`CONTRIBU
 exatamente o que o CI roda:
 
 ```bash
-python -m py_compile install.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
+python -m py_compile install.py validate_perfil.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
 python validate_skills.py --strict
 python run_evals.py
 python -m unittest test_install

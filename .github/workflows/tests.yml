@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Compilar
-        run: python -m py_compile install.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
+        run: python -m py_compile install.py validate_perfil.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
 
       - name: Validar as skills
         run: python validate_skills.py --strict

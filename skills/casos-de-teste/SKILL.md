@@ -280,15 +280,14 @@ tag obrigatória ausente, total que não bate, título fora do prefixo do perfil
 contrato** contra o documento de cenários de verdade, não contra o número que você escreveu.
 
 ```bash
-python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo de cenários> <arquivo de casos>
+python .qagente/bin/validate_artefatos.py <arquivo de cenários> <arquivo de casos>
 ```
 
 Passe **os dois documentos** sempre que a Fase 1 existir: as checagens de contrato entre as fases
 — toda tag de rastreio aponta para um cenário real, e nenhum cenário ficou sem caso — só rodam com
 os dois na mesma chamada.
 
-Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não for
-localizável, diga que não validou e deixe o comando. Nunca declare o documento conferido sem a
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. O instalador copia o validador para `.qagente/bin/`, então o caminho é o mesmo em todo projeto instalado. Se o arquivo não estiver lá — instalação feita antes de o instalador passar a copiá-lo —, diga na entrega que não validou e deixe o comando para o usuário rodar depois de reinstalar. Nunca declare o documento conferido sem a
 saída real.
 
 ## Exemplo completo

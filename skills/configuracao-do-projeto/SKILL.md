@@ -258,22 +258,24 @@ suficiente para responder — o gatilho natural é a primeira entrega, não a in
 
 ## Passo 7 — Validar o que foi gerado
 
-O instalador não se copia para o projeto: num projeto instalado **não existe `install.py` para
-chamar**. Duas camadas, nesta ordem:
+O instalador não se copia para o projeto — **não procure `install.py` aqui**. O que ele copia é o
+validador do perfil, em `.qagente/bin/`, e é esse o comando. Duas camadas, nesta ordem:
 
 1. **Prevenção** — o Passo 2 já resolve a maior parte: partindo de um perfil embarcado, chave
    inventada e tipo errado quase não têm como aparecer.
-2. **Verificação** — se o clone do QAGente estiver acessível, rode e **mostre a saída**:
+2. **Verificação** — rode e **mostre a saída**:
 
    ```bash
-   python <caminho-do-clone-do-qagente>/install.py --validate-profile .qagente/quality-profile.json
+   python .qagente/bin/validate_perfil.py
    ```
 
-   Pergunte o caminho uma vez, no estágio 1. Sai com 1 se houver erro.
+   Sem argumento ele valida o perfil do próprio projeto, de qualquer subpasta. Sai com 1 se houver
+   erro.
 
-Se o clone não for localizável, **diga na entrega que o arquivo não foi validado** e deixe o
-comando para o usuário rodar depois. Princípio 6 vale para esta skill como para as outras: nada é
-declarado verificado sem a saída real.
+Se o arquivo não estiver em `.qagente/bin/` — instalação feita antes de o instalador passar a
+copiá-lo —, **diga na entrega que o arquivo não foi validado** e deixe o comando para o usuário
+rodar depois de reinstalar. Princípio 6 vale para esta skill como para as outras: nada é declarado
+verificado sem a saída real.
 
 ## Saída
 
@@ -305,8 +307,8 @@ mudado — a mesma lista que ficou registrada em `## Observações`.
   metade — só que agora com a sua assinatura.
 - ❌ **Sobrescrever o que o time escreveu.** Numa re-execução, seção respondida só muda com
   confirmação explícita e antes → depois na tela.
-- ❌ **Declarar o perfil válido sem rodar o validador.** Se o clone não foi achado, o que se diz é
-  "não validei", não "está tudo certo".
+- ❌ **Declarar o perfil válido sem rodar o validador.** Se `.qagente/bin/validate_perfil.py` não
+  estiver no projeto, o que se diz é "não validei", não "está tudo certo".
 
 ## Exemplo
 
@@ -320,7 +322,7 @@ verdade ("achei a API mas nenhum teste dela — vocês automatizam API hoje?", "
 `docs/requisitos` como pasta de entrada?") e três confirmações → gravar os dois arquivos, com
 Stack, Testes existentes e seletor já preenchidos como derivados e marca de lacuna no resto →
 **estágio 2**: quatro perguntas, entram Produto, 4 fluxos críticos, 3 áreas de risco e maturidade
-`crescimento` → rodar `--validate-profile` no clone e colar a saída → entregar dizendo que
+`crescimento` → rodar `python .qagente/bin/validate_perfil.py` e colar a saída → entregar dizendo que
 Restrições e `conventions.*` ficaram em aberto, e o que cada um mudaria.
 
 **Usuário**: "configure o QAGente neste projeto" — pasta nova, só o que o instalador escreveu.
@@ -330,8 +332,8 @@ diz: "não encontrei nada sobre o produto neste repositório; vou perguntar" →
 dizendo que a escolha vem da ausência de convenção encontrada, não de um achado → **estágio 1**:
 as 5 perguntas de verdade, nenhuma confirmação, porque não há o que confirmar → gravar os dois
 arquivos → **estágio 2**: 7 perguntas, avisando por que são 7 → gravar, com Stack e Testes
-existentes vindos de resposta do usuário e não de derivação → não achar o clone do QAGente para
-validar, e dizer isso na entrega em vez de declarar o perfil válido.
+existentes vindos de resposta do usuário e não de derivação → rodar
+`python .qagente/bin/validate_perfil.py` e colar a saída na entrega.
 
 ## Pronto quando
 
@@ -342,8 +344,8 @@ validar, e dizer isso na entrega em vez de declarar o perfil válido.
   respondida, derivada e marcada como tal, ou com a marca de lacuna.
 - O bloco `### Entrevista de configuração` em `## Observações` lista o que ficou em aberto e o que
   cada item teria mudado.
-- O perfil foi validado com `--validate-profile` e a saída foi mostrada — ou a entrega diz
-  explicitamente que não foi validado, e por quê.
+- O perfil foi validado com `python .qagente/bin/validate_perfil.py` e a saída foi mostrada — ou a
+  entrega diz explicitamente que não foi validado, e por quê.
 - Nenhuma seção previamente respondida pelo time foi alterada sem confirmação explícita.
 - O usuário sabe que pode rodar a skill de novo, e o que ainda falta responder quando rodar.
 

@@ -68,7 +68,7 @@
     {
       "id": "cfg-010",
       "prompt": "Confirma pra mim que o perfil que você gerou está válido.",
-      "expected_patterns": ["--validate-profile", "não existe `install.py`", "não foi validado"],
+      "expected_patterns": [".qagente/bin/validate_perfil.py", "não procure `install.py` aqui", "não foi validado"],
       "anti_patterns": ["Declarar o perfil válido sem rodar o validador"],
       "tags": ["validacao"]
     },

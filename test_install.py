@@ -786,6 +786,115 @@ class ValidateProfileCliTest(InstallerTestCase):
 
 
 # --------------------------------------------------------------------------------------
+# Validadores instalados no projeto
+# --------------------------------------------------------------------------------------
+
+
+class ValidadoresInstaladosTest(InstallerTestCase):
+    """`.qagente/bin/` — os dois validadores que o agente chama durante o uso.
+
+    Enquanto nada era copiado, as skills mandavam rodar um caminho no clone do harness que o
+    agente, dentro do projeto instalado, não tinha como resolver: ele saía procurando
+    `install.py` no projeto e não achava. Estes testes prendem o caminho que as skills citam.
+    """
+
+    VALIDADORES = ("validate_perfil.py", "validate_artefatos.py")
+
+    def rodar_no_projeto(self, *args: str) -> subprocess.CompletedProcess:
+        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        return subprocess.run(
+            [sys.executable, *args],
+            cwd=str(self.project),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+        )
+
+    def test_instalacao_copia_os_dois_validadores(self):
+        self.install_ok("--profile", "default")
+        for nome in self.VALIDADORES:
+            self.assertExists(f".qagente/bin/{nome}")
+
+    def test_dry_run_nao_cria_os_validadores(self):
+        self.install_ok("--profile", "default", "--dry-run")
+        self.assertMissing(".qagente/bin")
+
+    def test_validadores_sao_atualizados_sem_force(self):
+        """Código do harness, não conteúdo do time: um validador defasado falha em silêncio."""
+        self.install_ok("--profile", "default")
+        alvo = self.project / ".qagente" / "bin" / "validate_perfil.py"
+        alvo.write_text("# versão antiga\n", encoding="utf-8")
+        self.install_ok("--profile", "default")
+        self.assertEqual(
+            alvo.read_text(encoding="utf-8"),
+            (HARNESS / "validate_perfil.py").read_text(encoding="utf-8"),
+        )
+
+    def test_validador_de_perfil_instalado_roda_sem_argumento(self):
+        """É a forma que a skill de configuração manda usar: sem caminho, do projeto."""
+        self.install_ok("--profile", "default")
+        resultado = self.rodar_no_projeto(".qagente/bin/validate_perfil.py")
+        self.assertEqual(resultado.returncode, 0, resultado.stdout + resultado.stderr)
+        self.assertIn("quality-profile.json", resultado.stdout)
+        self.assertIn("0 erro(s)", resultado.stdout)
+
+    def test_validador_de_perfil_instalado_acha_o_perfil_de_uma_subpasta(self):
+        self.install_ok("--profile", "default")
+        subpasta = self.project / "saida" / "cenarios"
+        resultado = subprocess.run(
+            [sys.executable, str(self.project / ".qagente" / "bin" / "validate_perfil.py")],
+            cwd=str(subpasta),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+        )
+        self.assertEqual(resultado.returncode, 0, resultado.stdout + resultado.stderr)
+        self.assertIn("quality-profile.json", resultado.stdout)
+
+    def test_validador_de_perfil_instalado_reprova_perfil_com_erro(self):
+        self.install_ok("--profile", "default")
+        perfil = self.project / ".qagente" / "quality-profile.json"
+        dados = json.loads(perfil.read_text(encoding="utf-8"))
+        dados["api"] = {"enabled": "sim"}
+        perfil.write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
+        resultado = self.rodar_no_projeto(".qagente/bin/validate_perfil.py")
+        self.assertEqual(resultado.returncode, 1)
+        self.assertIn("api.enabled", resultado.stdout)
+
+    def test_validador_de_artefatos_instalado_usa_o_perfil_do_projeto(self):
+        """Sem `profiles/` ao lado, ele ainda mede contra o perfil efetivo — não contra defaults."""
+        self.install_ok("--profile", "default")
+        artefato = self.project / "saida" / "cenarios" / "x.cenarios.md"
+        artefato.write_text(CENARIOS_OK, encoding="utf-8")
+        resultado = self.rodar_no_projeto(
+            ".qagente/bin/validate_artefatos.py", "saida/cenarios/x.cenarios.md"
+        )
+        self.assertIn("quality-profile.json", resultado.stdout)
+        self.assertNotIn("nenhum perfil encontrado", resultado.stdout)
+
+    def test_skills_citam_o_caminho_instalado_dos_validadores(self):
+        """Nenhuma skill pode mandar rodar um caminho que o projeto instalado não tem."""
+        for skill in sorted((HARNESS / "skills").glob("*/SKILL.md")):
+            texto = skill.read_text(encoding="utf-8")
+            self.assertNotIn("<caminho-do-clone-do-qagente>", texto, f"{skill.parent.name}: placeholder de clone")
+            for nome in self.VALIDADORES:
+                for linha in texto.splitlines():
+                    if nome in linha and linha.strip().startswith("python"):
+                        self.assertIn(f".qagente/bin/{nome}", linha, f"{skill.parent.name}: {linha}")
+
+    def test_nenhuma_skill_manda_rodar_o_instalador(self):
+        """`install.py` não se copia para o projeto — citá-lo numa skill é mandar procurar o que não existe."""
+        for skill in sorted((HARNESS / "skills").glob("*/SKILL.md")):
+            for linha in skill.read_text(encoding="utf-8").splitlines():
+                if linha.strip().startswith("python"):
+                    self.assertNotIn("install.py", linha, f"{skill.parent.name}: {linha}")
+
+
+# --------------------------------------------------------------------------------------
 # Perfis embarcados
 # --------------------------------------------------------------------------------------
 
@@ -1908,20 +2017,22 @@ class EntrevistaDeConfiguracaoTest(InstallerTestCase):
     def test_a_re_execucao_nao_sobrescreve_o_que_o_time_respondeu(self):
         self.assertIn("Nunca sobrescreva seção respondida sem confirmação explícita", self.skill())
 
-    def test_a_validacao_do_perfil_roda_no_clone_do_harness(self):
-        """O instalador não se copia para o projeto: um `install.py` local não existe.
+    def test_a_validacao_do_perfil_roda_no_validador_instalado(self):
+        """A skill promete validar o que gerou, e o comando precisa existir no projeto.
 
-        A skill promete validar o que gerou. Se algum dia o instalador passar a se copiar,
-        a instrução dela vira volta desnecessária; se alguém "simplificar" a instrução para
-        `python install.py`, ela quebra em todo projeto instalado. Este teste prende as duas
-        pontas contra o comportamento real da instalação.
+        O instalador não se copia: um `install.py` local não existe, e a instrução antiga
+        mandava rodar um caminho no clone do harness que o agente não tinha como resolver
+        daqui — o que na prática virava o agente procurando `install.py` no projeto. Este
+        teste prende as três pontas: o instalador não deixa `install.py`, deixa o validador,
+        e é o validador que a skill cita.
         """
         self.install_ok("--tool", "claude")
         self.assertMissing("install.py")
+        self.assertExists(".qagente/bin/validate_perfil.py")
         texto = self.skill()
-        self.assertIn("--validate-profile", texto)
-        self.assertIn("não existe `install.py`", texto)
-        self.assertIn("caminho-do-clone-do-qagente", texto)
+        self.assertIn("python .qagente/bin/validate_perfil.py", texto)
+        self.assertIn("não procure `install.py` aqui", texto)
+        self.assertNotIn("caminho-do-clone-do-qagente", texto)
 
     def test_a_entrevista_nao_produz_artefato_em_paths(self):
         """É a única skill cujo artefato é a configuração — declarar isso evita a pasta órfã."""

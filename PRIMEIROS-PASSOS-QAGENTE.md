@@ -305,8 +305,12 @@ Salve o arquivo.
 Volte para a janela do PowerShell (a do Passo 4) e digite:
 
 ```
-python install.py --validate-profile "C:\Users\SeuNome\Documents\meu-projeto\.qagente\quality-profile.json"
+python "C:\Users\SeuNome\Documents\meu-projeto\.qagente\bin\validate_perfil.py"
 ```
+
+O instalador deixou esse validador dentro do seu projeto, em `.qagente\bin\`. Sem argumento nenhum,
+ele valida o perfil do próprio projeto — é o mesmo comando que o agente roda ao fim da entrevista
+de configuração.
 
 **O que você deve ver:**
 

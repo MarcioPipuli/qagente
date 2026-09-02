@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Valida os artefatos que o agente produz — os documentos de cenários e de casos de teste.
 
-O terceiro validador do harness, e o primeiro que olha para a **saída**. `validate_profile`
+O terceiro validador do harness, e o primeiro que olha para a **saída**. `validate_perfil.py`
 valida a configuração do time; `validate_skills.py` valida o que o agente lê como instrução;
 este valida o que ele escreveu. A lacuna que ele fecha foi apontada por três itens
 independentes: o gate prende a regra no texto da skill, e nada prova que o artefato entregue
@@ -18,7 +18,8 @@ Severidade segue o mesmo contrato dos outros dois: 'erro' é contradição inter
 — um total que não bate, uma referência órfã, uma tag obrigatória ausente. 'aviso' é
 convenção que o perfil governa e que o idioma do artefato pode legitimamente variar.
 
-Uso:
+Uso (no projeto instalado o instalador deixa este arquivo em `.qagente/bin/`, que é o caminho
+que as skills citam):
     python validate_artefatos.py saida/cenarios/x.cenarios.md
     python validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
     python validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json
@@ -38,8 +39,11 @@ import sys
 from datetime import date
 from pathlib import Path
 
-HARNESS = Path(__file__).resolve().parent
-DEFAULT_PROFILE = HARNESS / "profiles" / "default.json"
+# No clone do harness este arquivo fica na raiz, com `profiles/` ao lado. Instalado pelo
+# `install.py`, ele fica em `.qagente/bin/`, onde o vizinho é o perfil do próprio projeto.
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_PROFILE = BASE_DIR / "profiles" / "default.json"
+PERFIL_VIZINHO = BASE_DIR.parent / "quality-profile.json"
 
 # Níveis canônicos são declarados em inglês no perfil e escritos no idioma de `language`
 # nos artefatos (AGENTS.md). Só o pt-BR tem tradução conhecida aqui; em qualquer outro
@@ -86,9 +90,8 @@ def log(msg: str) -> None:
 def carregar_perfil(caminho: Path | None, artefato: Path) -> tuple[dict, str]:
     """Devolve (perfil, origem). Procura `.qagente/quality-profile.json` subindo do artefato.
 
-    O artefato mora no projeto do usuário e o validador roda a partir do clone do harness —
-    o mesmo caminho que `--validate-profile` já estabeleceu. Procurar para cima a partir do
-    arquivo evita exigir que o usuário saiba onde o perfil está.
+    Procurar para cima a partir do arquivo evita exigir que o usuário saiba onde o perfil
+    está — e vale tanto rodando de `.qagente/bin/` no projeto quanto do clone do harness.
     """
     if caminho is not None:
         return _ler_json(caminho), str(caminho)
@@ -98,7 +101,22 @@ def carregar_perfil(caminho: Path | None, artefato: Path) -> tuple[dict, str]:
         if candidato.is_file():
             return _ler_json(candidato), str(candidato)
 
-    return _ler_json(DEFAULT_PROFILE), "defaults do QAGente (perfil do projeto não encontrado)"
+    return _perfil_de_ultimo_recurso()
+
+
+def _perfil_de_ultimo_recurso() -> tuple[dict, str]:
+    """Perfil usado quando não há `.qagente/quality-profile.json` acima do artefato.
+
+    Rodando do clone, é o `profiles/default.json` embarcado. Rodando de `.qagente/bin/` no
+    projeto instalado, esse arquivo não veio junto — mas o perfil do projeto está um nível
+    acima, e é o default certo ali. Sem nenhum dos dois, cada checagem cai no seu próprio
+    default e o validador diz que foi isso que aconteceu, em vez de abortar.
+    """
+    if DEFAULT_PROFILE.is_file():
+        return _ler_json(DEFAULT_PROFILE), "defaults do QAGente (perfil do projeto não encontrado)"
+    if PERFIL_VIZINHO.is_file():
+        return _ler_json(PERFIL_VIZINHO), str(PERFIL_VIZINHO)
+    return {}, "defaults internos do validador (nenhum perfil encontrado)"
 
 
 def _ler_json(caminho: Path) -> dict:

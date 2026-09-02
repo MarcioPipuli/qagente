@@ -35,7 +35,7 @@ Rode os quatro antes e depois de qualquer alteração. É o mesmo que o CI roda
 (`.github/workflows/tests.yml`), em Linux e Windows, nos Python 3.9 e 3.13:
 
 ```bash
-python -m py_compile install.py
+python -m py_compile install.py validate_perfil.py
 python validate_skills.py --strict
 python run_evals.py
 python -m unittest test_install
