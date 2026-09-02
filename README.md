@@ -40,7 +40,7 @@ QAGente/
 ├── adapters/               # Instruções para cada ferramenta de IA
 ├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
 ├── validate_skills.py      # Validador estrutural das skills (frontmatter, templates, referências)
-├── validate_artefatos.py   # Validador dos artefatos gerados (totais, tags, contrato entre as fases)
+├── validate_artefatos.py   # Validador dos 6 artefatos gerados (totais, tags, contrato, aritmética da matriz)
 ├── run_evals.py            # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
 ├── evals/                  # Uma spec por skill, 8+ casos cada
 ├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
@@ -276,6 +276,8 @@ não alcançam: eles provam que a regra está escrita na skill; este prova que o
 entregue a respeita — e a respeita contra o **perfil efetivo do projeto**, não contra o valor
 de exemplo citado na skill.
 
+Cobre os **seis artefatos**: os das duas fases e os das quatro skills de apoio.
+
 Escopo deliberado: só o que é verificável **sem julgamento**.
 
 | Checa | Severidade |
@@ -292,6 +294,19 @@ Escopo deliberado: só o que é verificável **sem julgamento**.
 **Passando os dois documentos na mesma chamada**, rodam também as checagens de contrato entre
 as fases: toda tag de rastreio aponta para um cenário que existe, a aderência declarada bate com
 a lista de casos sugeridos da Fase 1, e nenhum cenário ficou sem caso.
+
+Nos artefatos das skills de apoio, a regra é sempre a mesma, e cada template já a declara em
+prosa: **célula em branco é ausência de análise, não ausência de conteúdo.**
+
+| Artefato | Checa |
+|---|---|
+| `matriz-risco.md` | `Composto` = impacto × probabilidade; a zona é a que decorre do composto; todo item com composto ≥ 10 tem bloco de modo de falha, e nenhum campo do bloco está em branco |
+| `registro-quarentena.md` | prazo dentro de `conventions.quarantine_max_days`; execuções repetidas à altura de `conventions.stability_runs`; nunca há entrada sem ticket nem sem data de expiração |
+| `relatorio-revisao.md` | as seis dimensões estão na tabela e nenhuma ficou em branco |
+| `relato-reproducao.md` | nenhuma dimensão extraída do relato ficou em branco — em branco não é lacuna aceita, é a próxima pergunta ao relator |
+
+São `quarantine_max_days` e `stability_runs` que fecham o círculo do perfil: eram os dois campos
+externalizados que nada verificava no artefato entregue.
 
 O que exige entender o requisito — se há um cenário negativo por regra, se dois cenários diferem
 só na condição de entrada — **fica de fora de propósito**: um validador que chuta nisso gera

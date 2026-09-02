@@ -2308,5 +2308,238 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
                 self.assertIn("validate_artefatos.py", texto)
 
 
+MATRIZ_OK = """# Matriz de Risco — Checkout
+
+Data desta avaliação: 2026-09-02
+
+## Itens pontuados
+
+| ID | Item de risco | Consequência se falhar | Impacto (1-5) | Área de risco citada | Probabilidade (1-5) | Justificativa da probabilidade | Composto | Zona |
+|---|---|---|---|---|---|---|---|---|
+| R-01 | Pagamento não processa | Perda de receita | 5 | Pagamento | 4 | Alterado 31x em 3 meses | 20 | critical |
+| R-02 | Cupom acumulado errado | Perda de margem | 3 | Cupom | 2 | Regra estável | 6 | medium |
+
+## Modos de falha (obrigatório para composto >= 10)
+
+### R-01 — Gateway de pagamento (composto 20)
+
+```
+Modo de falha 1: timeout do gateway
+  Gatilho:            pico de tráfego
+  Raio de impacto:    todos os compradores
+  Forma de detecção:  alerta de erro 5xx
+  Mitigação atual:    retry com backoff
+  Lacuna:             sem teste de timeout
+```
+
+## Alinhamento de cobertura
+
+| ID | Zona | Cobertura prescrita | Cobertura atual | Lacuna | Responsável | Prazo |
+|---|---|---|---|---|---|---|
+| R-01 | critical | API todos os contratos | UI só caminho feliz | Sem teste de erro | Ana | 2026-10-01 |
+"""
+
+QUARENTENA_OK = """# Registro de Quarentena e Confiabilidade — suíte E2E
+
+## Testes em quarentena
+
+| Teste | Arquivo | Categoria de causa raiz | Sinal observado | Ticket | Entrada | Expira em | Responsável |
+|---|---|---|---|---|---|---|---|
+| deve pagar com cartão | checkout.cy.js | tempo | timeout intermitente | QA-77 | 2026-09-01 | 2026-09-10 | Ana |
+
+## Testes classificados e corrigidos
+
+| Teste | Categoria | Correção aplicada | Execuções repetidas | Falhas | Evidência |
+|---|---|---|---|---|---|
+| deve somar frete | tempo | espera pela resposta interceptada | 50 | 0 | log.html |
+"""
+
+REVISAO_OK = """# Revisão de Qualidade de Testes — suíte E2E
+
+## Evidência de execução
+
+| Verificação | Comando | Resultado real |
+|---|---|---|
+| Suíte verde (1ª execução) | npx cypress run | 42 passed |
+| Repetição 2 | npx cypress run | 42 passed |
+| Repetição 3 | npx cypress run | 41 passed, 1 flaky |
+
+## Cobertura das seis dimensões
+
+| Dimensão | Situação | Achados |
+|---|---|---|
+| Legibilidade | ok | nenhum |
+| Confiabilidade | 3 achados | esperas fixas |
+| Valor diagnóstico | ok | nenhum |
+| Projeto do teste | 1 achado | fixture compartilhada |
+| Origem em IA | não aplicável — testes escritos por humanos | — |
+| Cobertura | 2 achados | sem teste de erro de pagamento |
+"""
+
+REPRODUCAO_OK = """# Reprodução — Cupom acumulado zera o frete
+
+Origem: BUG-311
+Status da reprodução: reproduzido
+
+## 1. Dimensões extraídas do relato
+
+| Dimensão | Valor | Origem |
+|---|---|---|
+| Passos exatos | aplicar dois cupons e ir ao checkout | relato |
+| Build / versão / commit | v3.2.1 / a1b2c3d | relato |
+| Ambiente (SO, navegador+versão, dispositivo) | Windows 11 / Chrome 141 | relato |
+| Dados de entrada (conta, massa, cupom) | conta de teste, cupons FRETE10 e BEMVINDO | perguntado |
+| Esperado x obtido | esperado frete 12,00, obtido 0,00 | relato |
+| Frequência | toda vez | relato |
+| Fuso, idioma, moeda | America/Sao_Paulo, pt-BR, BRL | perguntado |
+| Momento da ocorrência | após a segunda aplicação | relato |
+"""
+
+
+class ValidadorDosArtefatosDeApoioTest(unittest.TestCase):
+    """Os quatro artefatos das skills de apoio, sob a mesma doutrina.
+
+    Cada um dos quatro templates declara a regra em prosa, e é sempre a mesma: **célula em
+    branco é ausência de análise, não ausência de conteúdo**. "Um modo de falha com a linha
+    `Lacuna` em branco não foi analisado, foi preenchido"; "linha em branco não é lacuna
+    aceita: é a próxima pergunta ao relator"; "dimensão que não se aplica é marcada como não
+    aplicável e justificada". Prosa não reprova nada — estas asserções, sim.
+
+    E é aqui que `quarantine_max_days` e `stability_runs` ganham verificador: eram os dois
+    campos que o item 2a externalizou e que nada checava no artefato entregue.
+    """
+
+    def setUp(self) -> None:
+        self.dir = Path(tempfile.mkdtemp(prefix="qagente-apoio-"))
+        self.addCleanup(shutil.rmtree, self.dir, True)
+
+    def rodar(self, texto: str, nome: str = "a.md", perfil: dict | None = None) -> str:
+        raiz = self.dir
+        if perfil is not None:
+            (raiz / ".qagente").mkdir(parents=True, exist_ok=True)
+            (raiz / ".qagente" / "quality-profile.json").write_text(
+                json.dumps(perfil, ensure_ascii=False), encoding="utf-8"
+            )
+        caminho = raiz / nome
+        caminho.write_text(texto, encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+        ).stdout
+
+    def perfil_com(self, **convencoes) -> dict:
+        perfil = json.loads((HARNESS / "profiles" / "default.json").read_text(encoding="utf-8"))
+        perfil["conventions"].update(convencoes)
+        return perfil
+
+    # -- os quatro são reconhecidos e passam limpos -----------------------------------
+
+    def test_os_quatro_artefatos_corretos_passam(self):
+        for nome, texto in (
+            ("matriz.md", MATRIZ_OK), ("quarentena.md", QUARENTENA_OK),
+            ("revisao.md", REVISAO_OK), ("reproducao.md", REPRODUCAO_OK),
+        ):
+            with self.subTest(artefato=nome):
+                self.assertIn("nenhum problema encontrado", self.rodar(texto, nome))
+
+    def test_os_seis_templates_embarcados_sao_reconhecidos_como_template(self):
+        """O H1 com placeholder é o sinal uniforme dos seis. Sem ele, rodar o validador no
+        template — o erro mais provável de quem experimenta — reprovaria tudo."""
+        templates = (
+            ("cenarios-de-teste", "cenarios.md"), ("casos-de-teste", "casos-de-teste.md"),
+            ("priorizacao-por-risco", "matriz-risco.md"), ("confiabilidade-testes", "registro-quarentena.md"),
+            ("revisao-qualidade-testes", "relatorio-revisao.md"), ("reproducao-bugs", "relato-reproducao.md"),
+        )
+        for skill, template in templates:
+            caminho = HARNESS / "skills" / skill / "templates" / template
+            with self.subTest(template=template):
+                resultado = subprocess.run(
+                    [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                    env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+                )
+                self.assertEqual(resultado.returncode, 0, resultado.stdout)
+                self.assertIn("é um template", resultado.stdout)
+
+    # -- matriz de risco: a aritmética que sustenta a prescrição de cobertura ----------
+
+    def test_composto_que_nao_e_o_produto_dos_dois_eixos(self):
+        texto = MATRIZ_OK.replace("| 20 | critical |", "| 18 | critical |")
+        self.assertIn("composto 18 não é 5 × 4 = 20", self.rodar(texto))
+
+    def test_zona_que_nao_corresponde_ao_composto(self):
+        """Zona errada prescreve cobertura errada, e nada mais avisa."""
+        texto = MATRIZ_OK.replace("| 20 | critical |", "| 20 | medium |")
+        self.assertIn("cai em 'critical', mas a zona diz 'medium'", self.rodar(texto))
+
+    def test_item_critico_sem_bloco_de_modo_de_falha(self):
+        texto = MATRIZ_OK.replace("### R-01 — Gateway", "### R-99 — Gateway")
+        self.assertIn("composto ≥ 10 sem bloco de modo de falha", self.rodar(texto))
+
+    def test_modo_de_falha_com_campo_em_branco(self):
+        """É a `Lacuna` que vira cenário de teste na Fase 1: em branco, não foi analisada."""
+        texto = MATRIZ_OK.replace("  Lacuna:             sem teste de timeout", "  Lacuna:")
+        self.assertIn("modo de falha com 'Lacuna' em branco", self.rodar(texto))
+
+    def test_area_de_risco_em_branco(self):
+        texto = MATRIZ_OK.replace("| 5 | Pagamento |", "| 5 |  |")
+        self.assertIn("sem área de risco citada", self.rodar(texto))
+
+    # -- quarentena: os dois campos do 2a que nada verificava --------------------------
+
+    def test_quarentena_acima_do_prazo_do_perfil(self):
+        texto = QUARENTENA_OK.replace("2026-09-10", "2026-10-11")
+        self.assertIn("acima de quarantine_max_days (14)", self.rodar(texto))
+
+    def test_o_prazo_verificado_e_o_do_perfil_do_projeto(self):
+        """O coração da extensão: o artefato é medido contra o valor efetivo do time.
+
+        Com `quarantine_max_days` em 5, a mesma quarentena de 9 dias que passava reprova.
+        """
+        saida = self.rodar(QUARENTENA_OK, perfil=self.perfil_com(quarantine_max_days=5))
+        self.assertIn("quality-profile.json", saida, "não achou o perfil do projeto")
+        self.assertIn("9 dias de quarentena, acima de quarantine_max_days (5)", saida)
+
+    def test_execucoes_repetidas_abaixo_de_stability_runs(self):
+        texto = QUARENTENA_OK.replace("| 50 | 0 |", "| 10 | 0 |")
+        self.assertIn("abaixo de stability_runs (50)", self.rodar(texto))
+
+    def test_quarentena_sem_ticket_e_sem_expiracao(self):
+        texto = QUARENTENA_OK.replace("| QA-77 | 2026-09-01 | 2026-09-10 |", "|  | 2026-09-01 |  |")
+        saida = self.rodar(texto)
+        self.assertIn("sem ticket", saida)
+        self.assertIn("sem data de expiração", saida)
+
+    # -- relatório de revisão e relato de reprodução: a célula em branco ---------------
+
+    def test_dimensao_da_revisao_em_branco(self):
+        texto = REVISAO_OK.replace("| Cobertura | 2 achados | sem teste de erro de pagamento |", "| Cobertura |  |  |")
+        self.assertIn("a dimensão 'Cobertura' está em branco", self.rodar(texto))
+
+    def test_dimensao_da_revisao_ausente(self):
+        texto = REVISAO_OK.replace("| Origem em IA | não aplicável — testes escritos por humanos | — |\n", "")
+        self.assertIn("a dimensão 'Origem em IA' não aparece", self.rodar(texto))
+
+    def test_dimensao_do_relato_em_branco(self):
+        texto = REPRODUCAO_OK.replace("| Frequência | toda vez | relato |", "| Frequência |  |  |")
+        self.assertIn("registre o que foi perguntado ao relator", self.rodar(texto))
+
+    def test_status_de_reproducao_fora_do_vocabulario(self):
+        texto = REPRODUCAO_OK.replace("Status da reprodução: reproduzido", "Status da reprodução: mais ou menos")
+        self.assertIn("fora do vocabulário do template", self.rodar(texto))
+
+    # -- as skills mandam rodar --------------------------------------------------------
+
+    def test_as_quatro_skills_de_apoio_mandam_rodar_o_validador(self):
+        """Validador que ninguém roda não valida nada — e o agente é quem tem a chance."""
+        for skill in ("priorizacao-por-risco", "confiabilidade-testes",
+                      "revisao-qualidade-testes", "reproducao-bugs"):
+            texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn("validate_artefatos.py", texto)
+                self.assertIn("mostre a saída na entrega", texto)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

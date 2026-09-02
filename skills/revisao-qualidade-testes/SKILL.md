@@ -148,6 +148,19 @@ Os dois caminhos entregam o mesmo artefato, no formato de `templates/relatorio-r
 
 A saída dos passos 1 a 3 é a evidência que sustenta todo achado de confiabilidade e de valor diagnóstico do relatório.
 
+## Conferir o relatório antes de entregar
+
+O validador de artefatos confere que as seis dimensões estão na tabela e que **nenhuma ficou em
+branco** — em branco, ninguém sabe se a dimensão foi avaliada e não achou nada, ou se não foi
+olhada. Dimensão que não se aplica é marcada como não aplicável e justificada.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo do relatório>
+```
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
+for localizável, diga que não validou e deixe o comando.
+
 ## Erros comuns
 
 - ❌ **Revisar sem rodar.** Análise estática não vê oscilação nem tempo de execução.

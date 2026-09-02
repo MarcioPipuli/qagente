@@ -179,6 +179,19 @@ Substitua o relato vago por um bloco estruturado, seguindo `templates/relato-rep
 6. Evidência — log, print, trace, artefato de execução
 7. Notas de determinismo — massa fixa, tempo congelado, interceptações
 
+## Conferir o relato antes de entregar
+
+O validador de artefatos confere que nenhuma das dimensões extraídas do relato ficou em branco.
+Linha em branco não é lacuna aceita: é a próxima pergunta ao relator, e o lugar dela é a célula,
+escrita como pergunta pendente.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo do relato>
+```
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
+for localizável, diga que não validou e deixe o comando.
+
 ## Pronto quando
 
 - Existe uma reprodução **mínima** documentada em `paths.test_cases` — menores passos ou comando único — que falha sob demanda, verificada em execuções repetidas.

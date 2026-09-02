@@ -159,6 +159,21 @@ Trate **quase-incidente como dado**: um bug grave pego em homologação não é 
 
 Salve a matriz como Markdown em `paths.risk_matrix` (ou, na falta dele, em `paths.scenarios`), seguindo `templates/matriz-risco.md`. Preserve o nome-base do escopo analisado no nome do arquivo, como manda a convenção de pastas de `AGENTS.md`.
 
+## Conferir a matriz antes de entregar
+
+O validador de artefatos confere a aritmética que sustenta a matriz inteira: se o composto é
+mesmo impacto × probabilidade, se a zona é a que decorre do composto, se todo item com composto
+≥ 10 tem bloco de modo de falha — e se **nenhum campo do bloco está em branco**, que é a
+diferença entre analisado e preenchido.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo da matriz>
+```
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
+for localizável, diga que não validou e deixe o comando. Um composto errado desloca a zona, e a
+zona errada prescreve a cobertura errada — em silêncio.
+
 ## Erros comuns
 
 - ❌ **Testar tudo igual.** Aplicar a mesma meta de cobertura a toda funcionalidade independentemente do risco. Uma meta de 90% numa tela de configurações é esforço roubado do checkout.

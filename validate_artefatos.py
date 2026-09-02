@@ -35,6 +35,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 HARNESS = Path(__file__).resolve().parent
@@ -53,7 +54,10 @@ NIVEIS_PT = {
 CAMADAS = ("@api", "@interface")
 EXECUCOES = ("@pendente-de-automacao", "@nao-automatizavel")
 
-# Um total escrito como `[N]` é o placeholder do template, não um artefato preenchido.
+# Os seis templates embarcados trazem um placeholder entre colchetes no próprio H1
+# (`# Matriz de Risco — [escopo analisado]`). Um artefato preenchido nunca tem: é o sinal
+# uniforme para reconhecer template, e o `[N]` dos totais é o segundo.
+RE_TITULO_PLACEHOLDER = re.compile(r"^# .*\[.+\]", re.MULTILINE)
 RE_PLACEHOLDER = re.compile(r"\[N\]")
 
 RE_LINHA_TABELA = re.compile(r"^\|(.+)\|\s*$")
@@ -141,7 +145,7 @@ def _celulas(linha: str) -> list[str]:
 
 def e_template(texto: str) -> bool:
     """O template embarcado traz `[N]` nos totais. Validá-lo reprovaria tudo, sem sentido."""
-    return bool(RE_PLACEHOLDER.search(texto))
+    return bool(RE_TITULO_PLACEHOLDER.search(texto) or RE_PLACEHOLDER.search(texto))
 
 
 def ler_cenarios(texto: str) -> dict:
@@ -432,8 +436,349 @@ def validar_contrato(cenarios: dict, casos: dict, alvo: str) -> list[tuple[str, 
 
 
 # --------------------------------------------------------------------------------------
+# Artefatos das skills de apoio
+#
+# Os quatro compartilham uma doutrina que cada template declara em prosa: **célula em branco
+# é ausência de análise, não ausência de conteúdo.** "Um modo de falha com a linha `Lacuna`
+# em branco não foi analisado, foi preenchido"; "linha em branco não é lacuna aceita: é a
+# próxima pergunta ao relator"; "dimensão que não se aplica é marcada como não aplicável e
+# justificada. Nunca deixe em branco". É a mesma regra três vezes, e é o que dá para prender.
+# --------------------------------------------------------------------------------------
+
+# Faixas do Passo 3 de `skills/priorizacao-por-risco`. Só aplicadas quando a escala do perfil
+# é a canônica de quatro níveis: com menos níveis, `AGENTS.md` manda colapsar de baixo para
+# cima, e adivinhar a junção aqui produziria erro em matriz correta.
+ZONAS_POR_COMPOSTO = ((15, 25, "critical"), (10, 14, "high"), (5, 9, "medium"), (1, 4, "low"))
+ESCALA_CANONICA = {"critical", "high", "medium", "low"}
+
+CAMPOS_MODO_DE_FALHA = ("Gatilho", "Raio de impacto", "Forma de detecção", "Mitigação atual", "Lacuna")
+
+CATEGORIAS_QUARENTENA = ("tempo", "dado", "ambiente", "ordem", "data", "visual", "serviço externo")
+
+DIMENSOES_REVISAO = (
+    "Legibilidade", "Confiabilidade", "Valor diagnóstico",
+    "Projeto do teste", "Origem em IA", "Cobertura",
+)
+
+STATUS_REPRODUCAO = (
+    "reproduzido", "oscilação", "específico de ambiente",
+    "dependente de dado", "não reproduzível",
+)
+
+RE_TITULO_MODO_DE_FALHA = re.compile(r"^### (\S+)\s+—")
+RE_CAMPO_MODO_DE_FALHA = re.compile(r"^\s*(" + "|".join(CAMPOS_MODO_DE_FALHA) + r"):\s*(.*)$")
+RE_DATA = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def tabela_sob(texto: str, titulo_contem: str) -> tuple[list[str], list[list[str]]]:
+    """Devolve (cabeçalhos, linhas) da primeira tabela sob um título que contenha o trecho.
+
+    Linha de exemplo do template — a que só tem placeholder entre colchetes — é descartada:
+    o time copia o template e preenche por cima, e sobra sujeita a acusar branco que não é
+    do artefato.
+    """
+    linhas = texto.split("\n")
+    dentro = False
+    cabecalhos: list[str] = []
+    corpo: list[list[str]] = []
+
+    for linha in linhas:
+        if linha.startswith("#"):
+            if dentro and corpo:
+                break
+            dentro = titulo_contem.lower() in linha.lower()
+            continue
+        if not dentro or not RE_LINHA_TABELA.match(linha) or RE_SEPARADOR.match(linha):
+            continue
+        celulas = _celulas(linha)
+        if not cabecalhos:
+            cabecalhos = celulas
+            continue
+        if all(re.fullmatch(r"\[.*\]|", c.strip()) for c in celulas):
+            continue
+        corpo.append(celulas)
+
+    return cabecalhos, corpo
+
+
+def _coluna(cabecalhos: list[str], contem: str) -> int | None:
+    for indice, cabecalho in enumerate(cabecalhos):
+        if contem.lower() in cabecalho.lower():
+            return indice
+    return None
+
+
+def _valor(linha: list[str], indice: int | None) -> str:
+    if indice is None or indice >= len(linha):
+        return ""
+    return linha[indice].strip()
+
+
+def _inteiro_ou_none(valor: str) -> int | None:
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def _dias(valor: str) -> "date | None":
+    achado = RE_DATA.search(valor or "")
+    if not achado:
+        return None
+    try:
+        return date.fromisoformat(achado.group(0))
+    except ValueError:
+        return None
+
+
+def validar_matriz(texto: str, perfil: dict, alvo: str) -> list[tuple[str, str, str]]:
+    """Matriz de risco: a aritmética do composto e a zona que dela decorre.
+
+    É o artefato de apoio com mais coerência mecânica: dois eixos pontuados, um produto, e
+    uma zona derivada do produto. Um composto que não é o produto, ou uma zona que não é a
+    do composto, faz toda a prescrição de cobertura sair errada — e nada avisa.
+    """
+    problemas: list[tuple[str, str, str]] = []
+    cabecalhos, linhas = tabela_sob(texto, "Itens pontuados")
+    if not linhas:
+        problemas.append(("erro", alvo, "sem itens pontuados — nada a validar"))
+        return problemas
+
+    c_id = _coluna(cabecalhos, "ID")
+    c_imp = _coluna(cabecalhos, "Impacto")
+    c_prob = _coluna(cabecalhos, "Probabilidade")
+    c_comp = _coluna(cabecalhos, "Composto")
+    c_zona = _coluna(cabecalhos, "Zona")
+    c_area = _coluna(cabecalhos, "Área de risco")
+
+    aceitas = prioridades_aceitas(perfil) or set()
+    niveis = {str(n).strip().lower() for n in (perfil.get("risk_levels") or [])}
+    checar_faixa = niveis == ESCALA_CANONICA
+
+    criticos: list[str] = []
+    for linha in linhas:
+        identificador = _valor(linha, c_id) or "(sem ID)"
+        etiqueta = f"{alvo} ({identificador})"
+        impacto = _inteiro_ou_none(_valor(linha, c_imp))
+        probabilidade = _inteiro_ou_none(_valor(linha, c_prob))
+        composto = _inteiro_ou_none(_valor(linha, c_comp))
+        zona = _valor(linha, c_zona).lower()
+
+        for nome, valor in (("impacto", impacto), ("probabilidade", probabilidade)):
+            if valor is None:
+                problemas.append(("erro", etiqueta, f"{nome} não pontuado"))
+            elif not 1 <= valor <= 5:
+                problemas.append(("erro", etiqueta, f"{nome} {valor} fora da escala 1-5"))
+
+        if impacto is not None and probabilidade is not None:
+            esperado = impacto * probabilidade
+            if composto is None:
+                problemas.append(("erro", etiqueta, "composto não calculado"))
+            elif composto != esperado:
+                problemas.append(
+                    ("erro", etiqueta, f"composto {composto} não é {impacto} × {probabilidade} = {esperado}")
+                )
+            else:
+                if composto >= 10:
+                    criticos.append(identificador)
+                if checar_faixa and zona:
+                    devida = next((n for piso, teto, n in ZONAS_POR_COMPOSTO if piso <= composto <= teto), None)
+                    aceitaveis = {devida, NIVEIS_PT.get(devida, devida)}
+                    if devida and zona not in aceitaveis:
+                        problemas.append(
+                            ("erro", etiqueta, f"composto {composto} cai em {devida!r}, mas a zona diz {zona!r}")
+                        )
+
+        if zona and aceitas and zona not in aceitas:
+            problemas.append(("aviso", etiqueta, f"zona {zona!r} fora de risk_levels"))
+        if c_area is not None and not _valor(linha, c_area):
+            problemas.append(
+                ("aviso", etiqueta, "sem área de risco citada — o template manda escrever '— (sem área declarada)'")
+            )
+
+    problemas.extend(_validar_modos_de_falha(texto, criticos, alvo))
+
+    _, cobertura = tabela_sob(texto, "Alinhamento de cobertura")
+    cobertos = {c[0].strip() for c in cobertura if c}
+    for identificador in criticos:
+        if identificador not in cobertos:
+            problemas.append(
+                ("aviso", f"{alvo} ({identificador})", "composto ≥ 10 sem linha no alinhamento de cobertura")
+            )
+
+    return problemas
+
+
+def _validar_modos_de_falha(texto: str, criticos: list[str], alvo: str) -> list[tuple[str, str, str]]:
+    """Todo item com composto ≥ 10 tem bloco, e nenhum campo do bloco está em branco.
+
+    A skill é explícita: um modo de falha com a linha `Lacuna` em branco não foi analisado,
+    foi preenchido. E é a `Lacuna` que vira cenário de teste na Fase 1.
+    """
+    problemas: list[tuple[str, str, str]] = []
+    blocos: dict[str, dict[str, str]] = {}
+    atual = None
+
+    for linha in texto.split("\n"):
+        titulo = RE_TITULO_MODO_DE_FALHA.match(linha)
+        if titulo:
+            atual = titulo.group(1)
+            blocos.setdefault(atual, {})
+            continue
+        campo = RE_CAMPO_MODO_DE_FALHA.match(linha)
+        if campo and atual:
+            valor = campo.group(2).strip()
+            blocos[atual][campo.group(1)] = "" if re.fullmatch(r"\[.*\]", valor) else valor
+
+    for identificador in criticos:
+        if identificador not in blocos:
+            problemas.append(
+                ("erro", f"{alvo} ({identificador})", "composto ≥ 10 sem bloco de modo de falha")
+            )
+            continue
+        for campo in CAMPOS_MODO_DE_FALHA:
+            if not blocos[identificador].get(campo):
+                problemas.append(
+                    ("erro", f"{alvo} ({identificador})", f"modo de falha com '{campo}' em branco — não foi analisado")
+                )
+
+    return problemas
+
+
+def validar_quarentena(texto: str, perfil: dict, alvo: str) -> list[tuple[str, str, str]]:
+    """Registro de quarentena: o prazo e a contagem de execuções vêm do perfil.
+
+    São `conventions.quarantine_max_days` e `conventions.stability_runs`, os dois campos que
+    2a externalizou e que nada verificava no artefato entregue.
+    """
+    problemas: list[tuple[str, str, str]] = []
+    convencoes = perfil.get("conventions") if isinstance(perfil.get("conventions"), dict) else {}
+    max_dias = convencoes.get("quarantine_max_days")
+    execucoes_minimas = convencoes.get("stability_runs")
+    max_dias = max_dias if isinstance(max_dias, int) else 14
+    execucoes_minimas = execucoes_minimas if isinstance(execucoes_minimas, int) else 50
+
+    cabecalhos, linhas = tabela_sob(texto, "Testes em quarentena")
+    c_teste = _coluna(cabecalhos, "Teste")
+    c_cat = _coluna(cabecalhos, "Categoria")
+    c_ticket = _coluna(cabecalhos, "Ticket")
+    c_entrada = _coluna(cabecalhos, "Entrada")
+    c_expira = _coluna(cabecalhos, "Expira")
+
+    for linha in linhas:
+        nome = _valor(linha, c_teste) or "(teste sem nome)"
+        etiqueta = f"{alvo} ({nome})"
+        if not _valor(linha, c_ticket):
+            problemas.append(("erro", etiqueta, "em quarentena sem ticket — o template diz que nunca existe"))
+        expira = _dias(_valor(linha, c_expira))
+        if expira is None:
+            problemas.append(("erro", etiqueta, "em quarentena sem data de expiração"))
+        entrada = _dias(_valor(linha, c_entrada))
+        if entrada and expira:
+            prazo = (expira - entrada).days
+            if prazo > max_dias:
+                problemas.append(
+                    ("erro", etiqueta, f"{prazo} dias de quarentena, acima de quarantine_max_days ({max_dias})")
+                )
+        categoria = _valor(linha, c_cat).lower()
+        if categoria and not any(c in categoria for c in CATEGORIAS_QUARENTENA):
+            problemas.append(("aviso", etiqueta, f"categoria de causa raiz {categoria!r} fora do vocabulário"))
+
+    cabecalhos, corrigidos = tabela_sob(texto, "classificados e corrigidos")
+    c_teste = _coluna(cabecalhos, "Teste")
+    c_exec = _coluna(cabecalhos, "Execuções")
+    for linha in corrigidos:
+        nome = _valor(linha, c_teste) or "(teste sem nome)"
+        execucoes = _inteiro_ou_none(_valor(linha, c_exec))
+        if execucoes is not None and execucoes < execucoes_minimas:
+            problemas.append(
+                ("aviso", f"{alvo} ({nome})",
+                 f"{execucoes} execuções repetidas, abaixo de stability_runs ({execucoes_minimas})")
+            )
+
+    return problemas
+
+
+def validar_revisao(texto: str, perfil: dict, alvo: str) -> list[tuple[str, str, str]]:
+    """Relatório de revisão: as seis dimensões existem e nenhuma fica em branco.
+
+    "Dimensão que não se aplica é marcada como não aplicável e justificada. Nunca deixe em
+    branco" — em branco, ninguém sabe se a dimensão foi avaliada e não achou nada, ou se
+    simplesmente não foi olhada.
+    """
+    problemas: list[tuple[str, str, str]] = []
+    cabecalhos, linhas = tabela_sob(texto, "seis dimensões")
+    if not linhas:
+        problemas.append(("erro", alvo, "sem a tabela de cobertura das seis dimensões"))
+        return problemas
+
+    c_dim = _coluna(cabecalhos, "Dimensão")
+    c_sit = _coluna(cabecalhos, "Situação")
+    vistas = {}
+    for linha in linhas:
+        vistas[_valor(linha, c_dim).lower()] = _valor(linha, c_sit)
+
+    for dimensao in DIMENSOES_REVISAO:
+        situacao = vistas.get(dimensao.lower())
+        if situacao is None:
+            problemas.append(("erro", alvo, f"a dimensão {dimensao!r} não aparece na tabela"))
+        elif not situacao:
+            problemas.append(("erro", alvo, f"a dimensão {dimensao!r} está em branco — não dá para saber se foi avaliada"))
+
+    _, evidencia = tabela_sob(texto, "Evidência de execução")
+    repeticoes = [l for l in evidencia if l and "repetição" in l[0].lower()]
+    preenchidas = [l for l in repeticoes if len(l) > 2 and l[2].strip()]
+    if repeticoes and len(preenchidas) < len(repeticoes):
+        problemas.append(
+            ("aviso", alvo, f"{len(repeticoes) - len(preenchidas)} repetição(ões) sem resultado real registrado")
+        )
+
+    return problemas
+
+
+def validar_reproducao(texto: str, perfil: dict, alvo: str) -> list[tuple[str, str, str]]:
+    """Relato de reprodução: dimensão em branco é pergunta pendente, não lacuna aceita.
+
+    O template é explícito: "linha em branco não é lacuna aceita: é a próxima pergunta ao
+    relator". Escrever o que foi perguntado e não respondido é análise; deixar vazio não é.
+    """
+    problemas: list[tuple[str, str, str]] = []
+    cabecalhos, linhas = tabela_sob(texto, "Dimensões extraídas")
+    if not linhas:
+        problemas.append(("erro", alvo, "sem a tabela de dimensões extraídas do relato"))
+        return problemas
+
+    c_dim = _coluna(cabecalhos, "Dimensão")
+    c_val = _coluna(cabecalhos, "Valor")
+    for linha in linhas:
+        dimensao = _valor(linha, c_dim)
+        if dimensao and not _valor(linha, c_val):
+            problemas.append(
+                ("erro", alvo, f"a dimensão {dimensao!r} está em branco — registre o que foi perguntado ao relator")
+            )
+
+    achado = re.search(r"Status da reprodução:\s*(.+)", texto)
+    if not achado:
+        problemas.append(("aviso", alvo, "sem 'Status da reprodução'"))
+    else:
+        status = achado.group(1).strip().strip("[]").lower()
+        if not any(s in status for s in STATUS_REPRODUCAO):
+            problemas.append(("aviso", alvo, f"status {status!r} fora do vocabulário do template"))
+
+    return problemas
+
+
+# --------------------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------------------
+
+
+VALIDADORES_DE_APOIO = {
+    "matriz-risco": validar_matriz,
+    "quarentena": validar_quarentena,
+    "revisao": validar_revisao,
+    "reproducao": validar_reproducao,
+}
 
 
 def report_problems(problemas: list[tuple[str, str, str]]) -> int:
@@ -448,12 +793,23 @@ def report_problems(problemas: list[tuple[str, str, str]]) -> int:
     return erros
 
 
+# Cada artefato é reconhecido por uma seção que só ele tem. A ordem importa: o documento de
+# casos é o único com bloco gherkin, e checá-lo primeiro evita depender do título.
+ASSINATURAS = (
+    ("casos", ("```gherkin",)),
+    ("cenarios", ("## Índice", "Casos sugeridos por cenário")),
+    ("matriz-risco", ("## Itens pontuados", "Matriz de Risco")),
+    ("quarentena", ("## Testes em quarentena", "Registro de Quarentena")),
+    ("revisao", ("Cobertura das seis dimensões", "Revisão de Qualidade de Testes")),
+    ("reproducao", ("Dimensões extraídas do relato", "Status da reprodução")),
+)
+
+
 def classificar(texto: str) -> str:
-    """Diz se o arquivo é de cenários, de casos, ou nenhum dos dois."""
-    if "```gherkin" in texto:
-        return "casos"
-    if "## Índice" in texto or "Casos sugeridos por cenário" in texto:
-        return "cenarios"
+    """Diz qual dos seis artefatos o arquivo é, ou 'desconhecido'."""
+    for tipo, marcas in ASSINATURAS:
+        if any(marca in texto for marca in marcas):
+            return tipo
     return "desconhecido"
 
 
@@ -480,10 +836,13 @@ def collect_problems(caminhos: list[Path], perfil_cli: Path | None) -> list[tupl
         if tipo == "cenarios":
             dados = ler_cenarios(texto)
             problemas.extend(validar_cenarios(dados, perfil, alvo))
-        else:
+            lidos[tipo] = (caminho, dados)
+        elif tipo == "casos":
             dados = ler_casos(texto)
             problemas.extend(validar_casos(dados, perfil, alvo))
-        lidos[tipo] = (caminho, dados)
+            lidos[tipo] = (caminho, dados)
+        else:
+            problemas.extend(VALIDADORES_DE_APOIO[tipo](texto, perfil, alvo))
 
     if "cenarios" in lidos and "casos" in lidos:
         problemas.extend(validar_contrato(lidos["cenarios"][1], lidos["casos"][1], lidos["casos"][0].name))

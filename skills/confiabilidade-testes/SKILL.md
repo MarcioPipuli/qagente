@@ -180,6 +180,21 @@ Antes de aceitar a troca, faça a **checagem de intenção**: o teste continua v
 
 Uma correção que muda **o que** o teste verifica, e não apenas **como** ele encontra o elemento, é sempre revertida.
 
+## Conferir o registro antes de entregar
+
+O validador de artefatos confere o registro contra o **perfil efetivo do projeto**: prazo de
+quarentena dentro de `conventions.quarantine_max_days`, execuções repetidas à altura de
+`conventions.stability_runs`, e as duas regras que o template declara — nunca existe entrada sem
+ticket, nunca existe entrada sem data de expiração.
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <arquivo do registro>
+```
+
+Rode e **mostre a saída na entrega**, como manda o princípio 6 de `AGENTS.md`. Se o clone não
+for localizável, diga que não validou e deixe o comando. É a checagem que pega a quarentena que
+passou do prazo do time enquanto o texto ainda cita o default de 14 dias.
+
 ## Erros comuns
 
 - ❌ **Troca silenciosa de seletor.** Substituir sem registro, sem revisão e sem checagem de intenção. O teste pode ter passado a verificar outro elemento e ninguém saberia.
