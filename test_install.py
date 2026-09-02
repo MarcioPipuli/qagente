@@ -1678,6 +1678,36 @@ class PromessasDoHarnessTest(unittest.TestCase):
                 for template in install.TEMPLATES_DO_TIME:
                     self.assertIn(template, texto, f"não lista {template} entre os sobrescrevíveis")
 
+    def test_os_documentos_de_uso_acompanham_o_que_o_harness_ganhou(self):
+        """A dívida de documentação de uso já se repetiu duas vezes; esta asserção a fecha.
+
+        O padrão é sempre o mesmo: a funcionalidade entra em `main` com teste, README e
+        documentação técnica, e os dois documentos que falam com quem *usa* ficam para trás.
+        Aconteceu com os templates do time e com a separação das fases (pago em `4238590`), e
+        de novo com a skill de configuração, a memória e o validador de artefatos. Cada linha
+        aqui é uma funcionalidade que o usuário só descobre se alguém contar.
+        """
+        manual = (HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8")
+        guia = (HARNESS / "docs" / "GUIA-DE-USO-QAGENTE.md").read_text(encoding="utf-8")
+        # O manual fala com quem nunca usou: cita o que fazer, não o nome da skill.
+        esperado_no_manual = (
+            "configure o QAGente neste projeto",   # a entrevista, pelo que se digita
+            "memoria-projeto.md",                  # a memória, e que o agente não escreve sozinho
+            "não validei",                         # o que fazer quando o validador não roda
+        )
+        for marca in esperado_no_manual:
+            with self.subTest(documento="manual", marca=marca):
+                self.assertIn(marca, manual)
+        # O guia fala com quem já usa: pode nomear a skill e o script.
+        esperado_no_guia = (
+            "configuracao-do-projeto",
+            "memoria-projeto.md",
+            "validate_artefatos.py",
+        )
+        for marca in esperado_no_guia:
+            with self.subTest(documento="guia", marca=marca):
+                self.assertIn(marca, guia)
+
     def test_o_manual_distingue_cenario_de_caso_de_teste(self):
         """A separação das duas fases (item 3) só vale se quem usa souber que são duas entregas.
 

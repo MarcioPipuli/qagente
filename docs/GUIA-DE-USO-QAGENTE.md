@@ -136,6 +136,23 @@ Na prática: você pode colar documento de origem desconhecida sem que ele vire 
 
 ## 3. Escolher e ajustar o perfil
 
+> ### O atalho: peça ao agente
+>
+> As seções 3 e 4 podem ser feitas por conversa, sem abrir arquivo: **"configure o QAGente neste
+> projeto"** aciona `skills/configuracao-do-projeto`.
+>
+> Ela lê o repositório **antes** de perguntar — framework, suíte existente, atributo de seletor,
+> pastas de requisito, CI — e confirma o que achou em vez de perguntar do zero. São dois estágios
+> de até 5 perguntas: o primeiro fecha o perfil, o segundo o contexto. No fim ela roda o validador
+> de perfil e lista o que ficou sem resposta.
+>
+> **"Não sei" é resposta válida:** mantém o default e marca a seção como `> **Não respondido**`,
+> que o agente trata como ausente. Rode de novo quando quiser — ela pergunta só o que ainda está
+> em branco e nunca troca o que você já respondeu sem mostrar antes o que mudaria.
+>
+> O resto desta seção e a seção 4 continuam valendo para quem prefere editar à mão, ou quer
+> entender o que cada campo significa antes de decidir.
+
 ### 3.1 Qual perfil usar
 
 | Sua situação | Perfil | O que muda |
@@ -466,6 +483,38 @@ Pedir "não precisa perguntar, pode ir direto" contraria uma invariante do harne
 **Regra geral: leia a seção de lacunas/observações antes da tabela.** É onde estão as decisões
 que ainda são suas.
 
+### 8.0 O que a máquina já conferiu por você
+
+Antes de gastar sua atenção, saiba o que **não** precisa conferir a olho. O agente roda
+`validate_artefatos.py` no fim das fases e cola a saída na entrega:
+
+```bash
+python <caminho-do-clone-do-qagente>/validate_artefatos.py <cenários> <casos>
+```
+
+Ele cobre os seis artefatos e pega o que é mecânico e escapa da leitura:
+
+| Artefato | O que a máquina garante |
+|---|---|
+| Cenários | totais do resumo batem com o corpo; todo ID do índice tem bloco; nenhum cenário ficou sem caso sugerido |
+| Casos de teste | tags de rastreio, camada e execução em todo caso; totais; título com o prefixo do perfil |
+| **Os dois juntos** | **o contrato entre as fases**: nenhuma tag aponta para cenário inexistente, e a aderência declarada bate com a lista da Fase 1 |
+| Matriz de risco | `Composto` é mesmo impacto × probabilidade, e a zona é a que decorre dele; item ≥ 10 tem modo de falha sem campo em branco |
+| Registro de quarentena | prazo dentro do seu `quarantine_max_days`, execuções à altura do seu `stability_runs`, nunca entrada sem ticket |
+| Relatório de revisão e relato de reprodução | nenhuma célula de análise em branco |
+
+Duas coisas que valem entender:
+
+- **Ele mede contra o SEU perfil**, não contra os exemplos das skills. Um documento que usa
+  "Validar que" num projeto configurado com "Garantir que" reprova — e era exatamente isso que
+  nada pegava antes.
+- **Ele não julga cobertura.** Todos os totais podem bater, o contrato fechar, e o documento ter
+  deixado de fora a regra de negócio que mais importava. Por isso as listas 8.1 e 8.2 abaixo
+  continuam sendo suas: elas são o que a máquina não consegue ver.
+
+Se a entrega disser **"não validei"**, é porque o agente não localizou o clone do QAGente. Não é
+erro no documento — mas rode o comando você mesmo antes de aprovar.
+
 ### 8.1 Cenários (Fase 1)
 
 - [ ] A linha `Origem:` cita ticket/PRD/seção — ou declara que não há documento associado
@@ -611,6 +660,37 @@ execução, e essa exigência não é configurável.
 Sinal de saúde da suíte que vale acompanhar: **mais de 5% dos testes em quarentena não é
 problema de teste, é problema de processo**; e a **média de estabilidade dos seletores** deve
 ficar em 3,5 ou mais.
+
+### 12.1 A memória: o contexto que se preenche sozinho
+
+`.qagente/memoria-projeto.md` é o terceiro arquivo de `.qagente/`, e o único que **o agente
+escreve**. Ele vem vazio, e não é para você preencher.
+
+Conforme você trabalha, o agente aprende coisas que não estavam em documento nenhum — que
+"subclasse" significa algo específico no seu domínio, que a homologação reseta a base no domingo,
+que aquele fluxo que ele achou crítico é interno. No **fim de uma tarefa**, ele propõe as linhas e
+espera você aprovar, uma a uma.
+
+Quatro regras que valem saber, porque mudam como você lê o arquivo:
+
+1. **Aprovação por item, e silêncio não é aprovação.** "Grava a 1 e a 3" é resposta completa. Item
+   recusado não é reproposto na mesma sessão.
+2. **No máximo 5 propostas por tarefa.** Uma parede de propostas treinaria você a aprovar tudo no
+   automático, e aí a aprovação vira carimbo.
+3. **Só entra o que veio de você.** Nada de PRD, ticket, log ou saída de ferramenta — nem o que o
+   agente observou no código, a não ser que ele pergunte e você confirme. A coluna `Origem` só
+   aceita três valores, todos com a mesma propriedade: a origem é uma fala sua. É proposital, e é
+   defesa: um documento com instrução escondida não pode virar "fato do seu produto" para sempre.
+4. **A memória é a camada mais fraca.** Perfil vence em decisão configurável, contexto vence na
+   descrição do produto, memória perde para os dois — e quando ela contradiz o contexto, o agente
+   diz isso e oferece remover a linha.
+
+**A válvula é a promoção.** Quando um fato se prova estável, ele sai da memória e vira linha do
+`contexto-projeto.md`. É o que impede a memória de crescer sem fim (aviso em 60 linhas, teto em
+100) e o que faz o arquivo que dá mais trabalho preencher **ir se preenchendo pelo uso**.
+
+O arquivo é texto comum e fica no Git do projeto — o diff é a auditoria. Linha errada, apague, ou
+peça ao agente para remover.
 
 ---
 

@@ -480,6 +480,26 @@ Origem: PROJ-482
 escrever exatamente esses casos, e vai avisar se escrever algum a mais ou a menos, com o motivo. Se
 faltar um caso ali, é **agora** que sai mais barato dizer.
 
+### Ele confere o documento antes de te entregar
+
+Junto com o resultado, o agente cola a saída de um verificador automático. Ele não julga se você
+cobriu tudo — pega o que é mecânico: total que não bate com o corpo, cenário que ficou sem caso,
+prioridade fora da escala, e (na Fase 2) etiqueta faltando ou caso apontando para um cenário que
+não existe.
+
+**O que você deve ver:**
+
+```
+0 erro(s), 0 aviso(s).
+```
+
+**Se aparecer "não validei"**, é porque ele não achou a pasta do QAGente que você descompactou no
+Passo 3 — não é problema no documento. Diga onde ela está e peça para rodar de novo.
+
+E vale lembrar do limite: **passar no verificador não quer dizer que a análise está completa.**
+Todos os números podem bater e ainda ter faltado a regra de negócio que mais importava. Por isso o
+próximo passo continua sendo seu.
+
 ### O que olhar primeiro
 
 **Leia a parte de "Lacunas" antes da tabela.**
