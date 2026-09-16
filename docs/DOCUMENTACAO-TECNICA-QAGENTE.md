@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **12 skills, 150 evals, 256 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **12 skills, 150 evals, 294 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -79,7 +79,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 - **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
-- **Por que 256 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
+- **Por que 294 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
   testa **promessas do núcleo** (que toda skill mande ler o perfil, que toda chave `paths.*`
   citada exista no instalador, que a `description` só prometa artefato que tem skill e destino).
 
@@ -104,7 +104,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `validate_perfil.py` | Validador do perfil de qualidade; importado pelo instalador | Instalador / Pessoa / **agente** | Instalação e uso |
 | `validate_artefatos.py` | Validador dos 6 artefatos gerados (saída) | Pessoa / **agente** | Uso |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 256 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `test_install.py` | 294 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -131,8 +131,10 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 | `CLAUDE.md` | Ponteiro para `AGENTS.md`, ou nota anexada se já existia | Sim |
 | `.qagente/quality-profile.json` | **Como** trabalhar | Sim (só `--force`) |
 | `.qagente/contexto-projeto.md` | **O que é o produto** | Sim (só `--force`) |
+| `.qagente/memoria-projeto.md` | **O que se aprendeu no uso** — o único arquivo que o agente escreve, sempre com aprovação | Sim (só `--force`) |
 | `.qagente/skills/` | Cópia portátil das skills (só quando há ferramenta ≠ claude) | Sim (só `--force`) |
 | `.qagente/bin/` | `validate_perfil.py` e `validate_artefatos.py`, que o agente chama na entrega | **Não** — sempre atualizados: é código do harness, não conteúdo do time |
+| `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário, na raiz | **Não** — sempre atualizado, pela mesma razão de `.qagente/bin/` |
 | `.github/copilot-instructions.md`, `.github/agents/*.agent.md`, `.cursor/rules/qagente.mdc`, `.windsurf/rules/qagente.md` | Adaptadores | Sim (só `--force`) |
 | Pastas de `paths.*` | Entrada e saídas, com `.gitkeep` | Existentes nunca são recriadas |
 
@@ -1137,7 +1139,7 @@ regex) · qualquer outra coisa é substring sem diferenciar maiúsculas.
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 256 testes
+### 14.3 `test_install.py` — 294 testes
 
 | Grupo de classes | O que prende |
 |---|---|
