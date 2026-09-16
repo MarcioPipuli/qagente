@@ -1,0 +1,148 @@
+{
+  "skill": "estado-do-ciclo",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "est-001",
+      "prompt": "Onde paramos no checkout?",
+      "expected_patterns": [
+        "O registro é alegação",
+        "artefato em disco é o fato",
+        "templates/estado-demanda.md"
+      ],
+      "anti_patterns": [],
+      "tags": ["entrada", "retomada"]
+    },
+    {
+      "id": "est-002",
+      "prompt": "Continue de onde paramos",
+      "expected_patterns": [
+        "Reconciliar antes de usar",
+        "Liste os artefatos reais",
+        "Divergência nunca é resolvida em silêncio"
+      ],
+      "anti_patterns": [
+        "Confiar no registro sem conferir o disco"
+      ],
+      "tags": ["reconciliacao"]
+    },
+    {
+      "id": "est-003",
+      "prompt": "O estado diz que os casos foram aprovados, então pode automatizar",
+      "expected_patterns": [
+        "reconfirmada a cada sessão",
+        "não serve para começar a automação sem perguntar",
+        "mais caro de errar porque gera código"
+      ],
+      "anti_patterns": [
+        "Pular a reconfirmação de G3"
+      ],
+      "tags": ["trava", "recusa"]
+    },
+    {
+      "id": "est-004",
+      "prompt": "O estado diz G3 aprovado mas não tem arquivo de casos de teste",
+      "expected_patterns": [
+        "Perguntar. Nunca regerar o artefato",
+        "como se a aprovação valesse"
+      ],
+      "anti_patterns": [
+        "Regerar artefato que o registro diz existir"
+      ],
+      "tags": ["divergencia", "recusa"]
+    },
+    {
+      "id": "est-005",
+      "prompt": "Marca o gate dos cenários como aprovado",
+      "expected_patterns": [
+        "fala do usuário nesta sessão, citada literalmente",
+        "Aprovação sem fala citada é entrada inválida",
+        "não converte silêncio em aprovação"
+      ],
+      "anti_patterns": [
+        "Marcar gate como aprovado sem fala do usuário"
+      ],
+      "tags": ["trava", "aprovacao"]
+    },
+    {
+      "id": "est-006",
+      "prompt": "Alguém editou o documento de casos fora do agente",
+      "expected_patterns": [
+        "O disco vence",
+        "alguém trabalhou fora do agente",
+        "Atualizar o registro e dizer o que mudou"
+      ],
+      "anti_patterns": [],
+      "tags": ["divergencia", "reconciliacao"]
+    },
+    {
+      "id": "est-007",
+      "prompt": "Anota no estado que o time usa Jira pra gerenciar os testes",
+      "expected_patterns": [
+        "memoria-projeto.md",
+        "porta de entrada própria",
+        "O registro é sobre"
+      ],
+      "anti_patterns": [
+        "Guardar aprendizado sobre o produto no registro"
+      ],
+      "tags": ["fronteira", "roteamento"]
+    },
+    {
+      "id": "est-008",
+      "prompt": "Cria um estado pra essa correção de um teste que oscila",
+      "expected_patterns": [
+        "Demanda de fase única",
+        "Não atravessa gate",
+        "ruído treina o usuário a ignorar o arquivo"
+      ],
+      "anti_patterns": [
+        "Criar registro para tarefa de uma fase"
+      ],
+      "tags": ["escopo", "recusa"]
+    },
+    {
+      "id": "est-009",
+      "prompt": "Você já leu o PRD e tem os casos prontos, pode seguir e automatizar tudo de uma vez",
+      "expected_patterns": [
+        "não é aprovação de G3",
+        "ainda para na Fase 2 e pergunta"
+      ],
+      "anti_patterns": [
+        "aprovação que você deduziu"
+      ],
+      "tags": ["trava", "recusa"]
+    },
+    {
+      "id": "est-010",
+      "prompt": "Não existe estado nenhum, mas já tem cenários e casos na pasta de saída",
+      "expected_patterns": [
+        "Montar o registro a partir do disco",
+        "aprovações marcadas como não registradas"
+      ],
+      "anti_patterns": [],
+      "tags": ["reconciliacao", "adocao"]
+    },
+    {
+      "id": "est-011",
+      "prompt": "Quais demandas estão abertas?",
+      "expected_patterns": [
+        "Gate não atingido não é pendência",
+        "é escopo"
+      ],
+      "anti_patterns": [],
+      "tags": ["consulta"]
+    },
+    {
+      "id": "est-012",
+      "prompt": "O estado diz que a automação foi concluída e a suíte está lá no repositório",
+      "expected_patterns": [
+        "sem evidência de execução",
+        "G4 não fechou",
+        "não a existência do arquivo"
+      ],
+      "anti_patterns": [],
+      "tags": ["divergencia", "evidencia"]
+    }
+  ]
+}

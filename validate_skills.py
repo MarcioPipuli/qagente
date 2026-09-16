@@ -32,7 +32,11 @@ SKILLS_DIR = HARNESS / "skills"
 MAX_LINHAS_ERRO = 650
 MAX_LINHAS_AVISO = 450
 
-CATEGORIAS = {"analise", "escrita", "automacao", "referencia", "configuracao"}
+# `orquestracao` entrou com `estado-do-ciclo`, que não é nenhuma das outras cinco: não analisa
+# requisito, não escreve artefato de teste, não gera automação, não é consultada dentro de outra
+# fase e não configura o projeto. Ela registra em que gate cada demanda está. Forçá-la em
+# `analise` faria a lista mentir sobre o que ela é para economizar esta linha.
+CATEGORIAS = {"analise", "escrita", "automacao", "referencia", "configuracao", "orquestracao"}
 
 # `Use quando` abre os gatilhos; o anti-gatilho evita que duas skills disputem o mesmo pedido.
 ANTI_GATILHOS = ("Não use",)

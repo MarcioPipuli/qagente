@@ -77,10 +77,12 @@ QAGente/
     │   └── templates/
     ├── regressao/                     # Apoio: seleção e execução da suíte de release, com o que ficou de fora
     │   └── templates/
+    ├── estado-do-ciclo/               # Apoio: em que gate cada demanda está; reconcilia com o disco
+    │   └── templates/
     └── configuracao-do-projeto/       # Apoio: entrevista que preenche os dois arquivos de .qagente/
 ```
 
-As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As oito últimas
+As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As nove últimas
 são **skills de apoio**: entram fora da sequência das fases, quando o pedido não é "transforme
 este requisito em teste" — e continuam sujeitas às mesmas regras universais de
 [AGENTS.md](AGENTS.md). Detalhe do roteamento em
