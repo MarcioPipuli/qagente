@@ -12,9 +12,11 @@ Contexto do projeto disponível: [sim — áreas de risco alimentaram a entrada 
 
 ## Casos selecionados
 
-| Caso | Camada | Entrada que puxou | Detalhe da justificativa | Resultado |
-|---|---|---|---|---|
-| | `[API]` / `[INTERFACE]` | [1 mudança / 2 área de risco / 3 histórico / 4 prioridade] | [qual arquivo mudou, qual área, qual defeito anterior, qual nível] | [verde / vermelho] |
+| Caso | Rastreio | Camada | Entrada que puxou | Detalhe da justificativa | Resultado |
+|---|---|---|---|---|---|
+| | `@CT-01` | `[API]` / `[INTERFACE]` | [1 mudança / 2 área de risco / 3 histórico / 4 prioridade] | [qual arquivo mudou, qual área, qual defeito anterior, qual nível] | [verde / vermelho] |
+
+> A prioridade da entrada 4 é **lida** da coluna `Prioridade` do índice de cenários pelo rastreio. Sem documento de cenários, registre em Ressalvas — nunca arbitre uma.
 
 > Nunca deixe a coluna vazia: caso sem entrada declarada não é seleção, é intuição com formatação. Toda linha tem uma das quatro.
 

@@ -1126,6 +1126,32 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
                 with self.subTest(skill=skill, campo=campo):
                     self.assertIn(campo, texto)
 
+    def test_skills_de_selecao_leem_a_classificacao_em_vez_de_refaze_la(self):
+        """`Tipo` e `Prioridade` moram só no índice de cenários — o template diz isso.
+
+        Smoke e regressão filtram por eles, e a tentação é gravar a classificação no caso
+        "para não ter que buscar". Isso cria segunda fonte de verdade que envelhece: o cenário
+        é reclassificado, o caso não, e a seleção passa a usar o valor velho sem avisar. Por
+        isso as duas precisam mandar seguir o rastreio até o cenário.
+        """
+        for skill in ("smoke-test", "regressao"):
+            with self.subTest(skill=skill):
+                texto = (HARNESS / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("índice do documento de cenários", texto)
+                self.assertIn("rastreio", texto.lower())
+                self.assertIn("não fica gravada no caso", texto)
+
+    def test_o_caso_de_teste_nao_repete_tipo_nem_prioridade(self):
+        """O template dos cenários declara 'moram só aqui'. Se o de casos passar a repetir,
+        a decisão de fonte única foi revertida sem ninguém decidir isso."""
+        indice = (HARNESS / "skills" / "cenarios-de-teste" / "templates" / "cenarios.md").read_text(encoding="utf-8")
+        self.assertIn("moram só", indice, "o contrato de fonte única sumiu do template de cenários")
+        for nome in ("casos-de-teste.md", "casos-de-teste-palavras-chave.md"):
+            texto = (HARNESS / "skills" / "casos-de-teste" / "templates" / nome).read_text(encoding="utf-8")
+            with self.subTest(template=nome):
+                for tag in ("@smoke", "@regressao", "@regressão"):
+                    self.assertNotIn(tag, texto, "classificação de suíte não é gravada no caso")
+
     def test_skills_de_ui_concorrentes_se_excluem_mutuamente(self):
         """Duas skills disputam ui.framework — cada uma precisa mandar a outra quando não é a dela."""
         pares = (

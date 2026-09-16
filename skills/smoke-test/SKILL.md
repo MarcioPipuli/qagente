@@ -84,6 +84,13 @@ Teste prático, aplicado caso a caso: **se este caso falhar, faz sentido rodar o
 Quatro regras determinísticas. Aplique sem exceção; a exceção é como a suíte cresce.
 
 - **Só caminho feliz.** Cenário negativo nunca entra. Se a validação de e-mail quebrou, o build continua perfeitamente testável — o defeito é real e vai para a regressão, não para o portão. Negativo no smoke é o sintoma número um de suíte inchada.
+
+  A natureza de cada caso **não é decidida aqui, nem relida do texto por palpite**: ela já foi
+  registrada na coluna `Tipo` do índice do documento de cenários (`Caminho feliz`, `Negativo`,
+  `Regra de negócio`, `Estado`, `Borda`), e o caso aponta para lá pela tag de rastreio
+  (`@CT-01` no formato Gherkin, `Rastreio:` no de palavras-chave). Siga o rastreio e leia o
+  tipo. Só quando o documento de casos veio sem documento de cenários é que a natureza é lida
+  do próprio caso — um `Então` que espera erro, bloqueio ou mensagem de validação é negativo.
 - **Um caso por fluxo crítico, não um por regra.** Os fluxos vêm da tabela de áreas de risco do contexto. Cinco regras de negócio dentro do fluxo de pagamento rendem **um** caso de smoke, que é "o pagamento conclui", e não cinco.
 - **Sem massa elaborada.** Caso que precisa de fixture de 40 registros para começar está testando a fixture, não o build. Quando a massa é inevitável, ela é mínima e criada pelo próprio caso — ver `skills/dados-de-teste`.
 - **Sem dependência entre casos.** Vale a regra universal de `AGENTS.md`: nenhum caso do smoke pode depender do estado deixado por outro. Um smoke em que o caso 4 só passa porque o 3 rodou antes falha em paralelo e mente em série.
@@ -174,7 +181,8 @@ e registre a lacuna de cobertura enquanto ele estiver fora.
 
 ## Skills relacionadas
 
-- **`regressao`** — o passo seguinte, e o que o veredito libera. GO aqui é pré-condição de lá; NO-GO bloqueia. A classificação de cada caso como smoke, regressão, ambos ou nenhum é decidida em conjunto pelas duas.
+- **`regressao`** — o passo seguinte, e o que o veredito libera. GO aqui é pré-condição de lá; NO-GO bloqueia. Um caso pode estar nas duas suítes, em nenhuma, ou só numa: a pertinência é decidida por cada skill no momento da seleção, contra os critérios dela, e não fica gravada no caso.
+- **`cenarios-de-teste`** — dona da coluna `Tipo` do índice, que diz se o caso é caminho feliz. Esta skill lê de lá pelo rastreio; não reclassifica, pelo mesmo motivo que não reprioriza.
 - **`casos-de-teste`** — de onde vêm os casos que esta skill seleciona. Ela não escreve caso novo: se o fluxo crítico não tem caso, isso é lacuna a registrar e a Fase 2 é quem preenche.
 - **`confiabilidade-testes`** — dona do caso instável que saiu da suíte, e das correções de espera fixa e serviço externo quando o smoke está dentro do teto mas lento.
 - **`reproducao-bugs`** — para onde vai o defeito reproduzível que o smoke pegou.

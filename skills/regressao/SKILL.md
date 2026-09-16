@@ -69,6 +69,12 @@ entra na suíte carrega qual delas o puxou — é isso que separa uma seleção 
 3. **Histórico de defeito.** Módulo que já quebrou volta a ser coberto. A origem são os testes de regressão que `skills/reproducao-bugs` deixou junto de cada relato — eles existem exatamente para isto, e a regressão é o momento em que são cobrados.
 4. **Prioridade herdada.** A coluna que `skills/priorizacao-por-risco` e a Fase 1 já preencheram. Os dois níveis mais altos de `risk_levels` entram por default.
 
+A prioridade da entrada 4 mora na coluna `Prioridade` do índice do documento de cenários, ao
+lado de `Tipo` e `Técnica` — e mora **só lá**, de propósito. O caso não a repete: aponta para o
+cenário pela tag de rastreio (`@CT-01` no formato Gherkin, `Rastreio:` no de palavras-chave), e
+é por esse caminho que esta skill a lê. Documento de casos sem documento de cenários é o único
+caso em que ela não está disponível — registre isso no relatório, em vez de arbitrar uma.
+
 > **Esta skill não redecide prioridade.** Pelo mesmo motivo que a Fase 2 não redecide
 > granularidade: a decisão já foi tomada com mais informação e mais tempo do que a véspera de
 > uma release tem. Se durante a seleção aparecer um caso cuja prioridade parece errada, isso é
@@ -149,7 +155,7 @@ Contar oscilação como defeito polui a métrica e faz o time perseguir o proble
 
 ## Skills relacionadas
 
-- **`smoke-test`** — o portão que precede esta skill. GO de lá é pré-condição daqui, na mesma build e no mesmo ambiente. A classificação de cada caso como smoke, regressão, ambos ou nenhum é decidida em conjunto pelas duas.
+- **`smoke-test`** — o portão que precede esta skill. GO de lá é pré-condição daqui, na mesma build e no mesmo ambiente. Um caso pode estar nas duas suítes, em nenhuma, ou só numa: a pertinência é decidida por cada skill no momento da seleção, contra os critérios dela, e não fica gravada no caso. As duas leem do mesmo lugar — o índice do documento de cenários — e nenhuma escreve nele.
 - **`priorizacao-por-risco`** — dona da matriz de risco que alimenta a entrada 4 e da tabela de áreas de risco quando o contexto do projeto precisa ser construído ou recalibrado após um incidente.
 - **`reproducao-bugs`** — para onde vai todo defeito que a regressão encontrar, e de onde vêm os testes de regressão que a entrada 3 cobra.
 - **`confiabilidade-testes`** — dona das falhas que se revelarem instabilidade do teste, que saem da contagem de defeitos da release.

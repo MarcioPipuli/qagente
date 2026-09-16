@@ -20,9 +20,11 @@ Contexto do projeto disponível: [sim — fluxos críticos vieram da tabela de �
 
 ## Casos da suíte
 
-| Caso | Camada | Fluxo crítico coberto | O que fica inválido se falhar | Resultado |
-|---|---|---|---|---|
-| | `[API]` / `[INTERFACE]` | | | [verde / vermelho] |
+| Caso | Rastreio | Tipo (do índice de cenários) | Camada | Fluxo crítico coberto | O que fica inválido se falhar | Resultado |
+|---|---|---|---|---|---|---|
+| | `@CT-01` | Caminho feliz | `[API]` / `[INTERFACE]` | | | [verde / vermelho] |
+
+> A coluna `Tipo` é **lida** do índice do documento de cenários pelo rastreio, nunca decidida aqui. Valor diferente de `Caminho feliz` não entra no smoke.
 
 > Caso cuja coluna "o que fica inválido" for "nada em especial" não é smoke — é regressão, e sai da suíte.
 
