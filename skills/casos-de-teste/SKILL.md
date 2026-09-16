@@ -339,8 +339,9 @@ com condicional, `MAS` para o lado negativo em vez de `E`.
 ## Conferir o documento antes de entregar
 
 Depois da revisão acima, rode o validador estático — ele pega o que é mecânico e escapa da leitura:
-tag obrigatória ausente, total que não bate, título fora do prefixo do perfil, e a **aderência ao
-contrato** contra o documento de cenários de verdade, não contra o número que você escreveu.
+tag obrigatória ausente, total que não bate, título fora do prefixo do perfil, **caso com zero ou
+mais de um `Quando`** (uma ação por caso é Definition of Done, nos dois formatos), e a **aderência
+ao contrato** contra o documento de cenários de verdade, não contra o número que você escreveu.
 
 ```bash
 python .qagente/bin/validate_artefatos.py <arquivo de cenários> <arquivo de casos>

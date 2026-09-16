@@ -83,6 +83,10 @@ RE_TOTAL_CASOS = re.compile(r"\*\*Total de casos:\*\*\s*(\d+)")
 RE_ADERENCIA = re.compile(r"\*\*Aderência ao contrato:\*\*\s*(\d+)\s*casos? sugeridos?,\s*(\d+)\s*escritos?")
 RE_TAGS = re.compile(r"^\s*(@[\w-]+(?:\s+@[\w-]+)*)\s*$")
 RE_CASO = re.compile(r"^\s*(Esquema do Cenário|Cenário):\s*(.*)$")
+# A ação do caso, nos dois formatos: `Quando`/`When` no Gherkin, `*QUANDO*`/`QUANDO` nos campos
+# rotulados. Ancorada no início da linha e sensível a caixa de propósito: "quando" no meio de
+# uma frase de Description é prosa, não passo, e contá-lo reprovaria documento certo.
+RE_QUANDO_PASSO = re.compile(r"^\s*(?:\*(?:QUANDO|WHEN)\*|(?:Quando|QUANDO|When|WHEN)\b)")
 RE_LANGUAGE = re.compile(r"^\s*#\s*language:\s*(\S+)")
 
 # --------------------------------------------------------------------------------------
@@ -114,11 +118,13 @@ NOMES_DA_ANCORA = {
         "rastreio": "sem tag de rastreio ao cenário de origem",
         "camada": ("esperada uma tag de camada (@api/@interface)", "encontradas"),
         "execucao": ("esperada uma tag de execução", "encontradas"),
+        "quando": "`Quando`",
     },
     FORMATO_PALAVRAS_CHAVE: {
         "rastreio": "sem campo 'Rastreio:' ao cenário de origem",
         "camada": ("esperada uma marca [API]/[INTERFACE] no caso", "encontradas"),
         "execucao": ("esperado um campo 'Tipo de Execução:'", "encontrados"),
+        "quando": "`*QUANDO*`",
     },
 }
 
@@ -480,9 +486,14 @@ def ler_casos_palavras_chave(texto: str) -> dict:
     """Lê o documento de casos escrito em campos rotulados, com as palavras-chave nos passos.
 
     Cada `##` é um caso; `[API]`/`[INTERFACE]`, `Rastreio:` e `Tipo de Execução:` são as
-    âncoras dos metadados, procuradas em qualquer lugar do bloco do caso. A gramática dos
-    passos (DADO/QUANDO/ENTÃO) não é lida aqui: ela é julgamento de escrita, e continua sendo
-    trabalho da skill `gherkin-palavras-chave`, como no formato Gherkin.
+    âncoras dos metadados, procuradas em qualquer lugar do bloco do caso.
+
+    A gramática dos passos (DADO/QUANDO/ENTÃO) continua sendo julgamento de escrita, trabalho
+    da skill `gherkin-palavras-chave`, como no formato Gherkin. O que É lido aqui é a
+    **contagem** de `QUANDO` por caso — e a fronteira é esta: se um passo está bem escrito é
+    gramática; quantas ações o caso tem é estrutura. "Uma única ação por caso" está na
+    Definition of Done do AGENTS.md, e invariante do DoD que o validador não confere é
+    invariante que só existe no papel.
     """
     dados: dict = {
         "casos": [],
@@ -492,6 +503,7 @@ def ler_casos_palavras_chave(texto: str) -> dict:
         "total_declarado": None,
         "aderencia": None,
         "exemplos_por_caso": {},
+        "quando_por_caso": {},
         "tem_origem": "Origem:" in texto,
         "formato": FORMATO_PALAVRAS_CHAVE,
     }
@@ -513,8 +525,9 @@ def ler_casos_palavras_chave(texto: str) -> dict:
     if titulo_atual is not None:
         blocos.append((titulo_atual, corpo))
 
-    for titulo, linhas_do_caso in blocos:
+    for indice, (titulo, linhas_do_caso) in enumerate(blocos):
         dados["casos"].append((titulo, _tags_do_bloco(titulo, linhas_do_caso), "Caso"))
+        dados["quando_por_caso"][indice] = sum(1 for l in linhas_do_caso if RE_QUANDO_PASSO.match(l))
 
     _ler_rodape(texto, dados)
     return dados
@@ -573,6 +586,7 @@ def ler_casos_gherkin(texto: str) -> dict:
         "total_declarado": None,
         "aderencia": None,      # (sugeridos, escritos)
         "exemplos_por_caso": {},
+        "quando_por_caso": {},
         "tem_origem": "Origem:" in texto,
     }
 
@@ -602,7 +616,11 @@ def ler_casos_gherkin(texto: str) -> dict:
                 caso_atual = (caso.group(2).strip(), tuple(tags_pendentes), caso.group(1))
                 dados["casos"].append(caso_atual)
                 dados["exemplos_por_caso"][len(dados["casos"]) - 1] = 0
+                dados["quando_por_caso"][len(dados["casos"]) - 1] = 0
                 tags_pendentes = []
+                continue
+            if caso_atual and RE_QUANDO_PASSO.match(linha):
+                dados["quando_por_caso"][len(dados["casos"]) - 1] += 1
                 continue
             if caso_atual and RE_LINHA_TABELA.match(linha) and not RE_SEPARADOR.match(linha):
                 indice = len(dados["casos"]) - 1
@@ -769,6 +787,18 @@ def validar_casos(dados: dict, perfil: dict, alvo: str) -> list[tuple[str, str, 
         if tipo == "Esquema do Cenário" and dados["exemplos_por_caso"].get(indice - 1, 0) < 3:
             problemas.append(
                 ("erro", etiqueta, "Esquema do Cenário sem tabela de Exemplos com ao menos duas linhas de dados")
+            )
+        # Uma ação por caso — Definition of Done do AGENTS.md. Caso com dois `Quando` não diz
+        # qual ação falhou quando reprova; caso sem nenhum não exercita nada. As duas mensagens
+        # dizem o que fazer, porque o erro em si ("N Quando") não ensina.
+        quandos = dados.get("quando_por_caso", {}).get(indice - 1, 0)
+        palavra = ancora["quando"]
+        if quandos == 0:
+            problemas.append(("erro", etiqueta, f"sem {palavra} — todo caso tem exatamente uma ação"))
+        elif quandos > 1:
+            problemas.append(
+                ("erro", etiqueta, f"{quandos} {palavra} — um caso, uma ação; divida em {quandos} casos "
+                                   "ou mova as ações preparatórias para o Dado")
             )
 
     declarado = dados["total_declarado"]

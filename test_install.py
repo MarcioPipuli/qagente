@@ -2965,6 +2965,71 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
         )
         self.assertEqual(resultado.returncode, 0, resultado.stdout)
 
+    # ---- uma ação por caso ----
+    #
+    # "Uma única ação por caso" está na Definition of Done do AGENTS.md e no passo 7 de
+    # `casos-de-teste`, e não era conferida. Invariante do DoD que o validador não confere é
+    # invariante que só existe no papel.
+
+    def test_dois_quando_no_mesmo_caso_e_erro_no_gherkin(self):
+        texto = CASOS_OK.replace(
+            "    Quando ele pedir a recuperação de senha",
+            "    Quando ele pedir a recuperação de senha\n    Quando ele confirmar o e-mail",
+        )
+        saida = self.problemas(("x.casos.md", texto))
+        self.assertIn("(caso 1)", saida)
+        self.assertIn("2 `Quando`", saida)
+        self.assertIn("um caso, uma ação", saida)
+
+    def test_dois_quando_no_mesmo_caso_e_erro_nas_palavras_chave(self):
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace(
+            "*QUANDO* ele pede a recuperação de senha",
+            "*QUANDO* ele pede a recuperação de senha\n*QUANDO* ele confirma o e-mail",
+        )
+        saida = self.problemas(("x.casos.md", texto))
+        self.assertIn("(caso 1)", saida)
+        self.assertIn("2 `*QUANDO*`", saida, "a mensagem fala a língua do formato")
+
+    def test_caso_sem_quando_e_erro(self):
+        """Caso sem ação não exercita nada — é pré-condição com resultado esperado."""
+        texto = CASOS_OK.replace("    Quando ele pedir a recuperação de senha\n", "")
+        saida = self.problemas(("x.casos.md", texto))
+        self.assertIn("(caso 1)", saida)
+        self.assertIn("sem `Quando`", saida)
+        self.assertIn("exatamente uma ação", saida)
+
+    def test_quando_no_meio_de_prosa_nao_conta(self):
+        """"quando" dentro de uma Description é prosa. Contá-lo reprovaria documento certo,
+        e validador que reprova documento certo deixa de ser rodado."""
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace(
+            "Summary:\n",
+            "Summary:\nValida o comportamento\nquando o campo está vazio e também\nQUANDO comparado ao fluxo antigo.\n",
+            1,
+        )
+        saida = self.problemas(("x.casos.md", texto))
+        # "quando" minúsculo no começo de linha é prosa e não conta; "QUANDO" maiúsculo no
+        # começo de linha É passo no formato de palavras-chave, e conta — por isso o segundo
+        # reprova, e é o comportamento certo: passo fora do lugar continua sendo passo.
+        self.assertIn("2 `*QUANDO*`", saida)
+
+    def test_quando_minusculo_em_prosa_nao_conta(self):
+        texto = CASOS_PALAVRAS_CHAVE_OK.replace(
+            "Summary:\n", "Summary:\nValida o comportamento\nquando o campo está vazio.\n", 1
+        )
+        self.assertIn("quando o campo", texto, "o fixture mudou e o teste passaria por vacuidade")
+        resultado = self.rodar(("x.cenarios.md", CENARIOS_OK), ("x.casos.md", texto))
+        self.assertEqual(resultado.returncode, 0, resultado.stdout)
+
+    def test_o_esquema_do_cenario_tambem_tem_um_quando_so(self):
+        """Exemplos multiplicam os dados, não as ações: o Esquema continua com um Quando."""
+        texto = CASOS_OK.replace(
+            "    Quando a API for chamada com o token",
+            "    Quando a API for chamada com o token\n    Quando a resposta for lida",
+        )
+        saida = self.problemas(("x.casos.md", texto))
+        self.assertIn("(caso 3)", saida)
+        self.assertIn("2 `Quando`", saida)
+
     def test_o_formato_e_detectado_no_documento_nao_lido_do_perfil(self):
         """O perfil diz o que o agente escreve; o validador confere o que recebeu.
 
