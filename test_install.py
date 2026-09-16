@@ -618,6 +618,59 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
         self.install_ok("--tool", "windsurf", "--profile", "default", script=self.script)
         self.assertExists(".windsurf/rules/qagente.md")
 
+    def test_manual_ausente_no_harness_nao_derruba_a_instalacao(self):
+        """O manual é conveniência; sem ele a instalação segue e avisa."""
+        (self.harness / "PRIMEIROS-PASSOS-QAGENTE.md").unlink()
+        stdout = self.install_ok("--tool", "claude", "--profile", "default", script=self.script)
+        self.assertIn("não encontrado no harness, pulado", stdout)
+        self.assertMissing("PRIMEIROS-PASSOS-QAGENTE.md")
+        self.assertExists(".qagente/quality-profile.json")
+
+
+class ManualDoUsuarioTest(InstallerTestCase):
+    """O manual é copiado para a raiz do projeto — ver install_user_guide().
+
+    Quem recebe a instalação pronta não clonou o harness: o arquivo que responde
+    "instalei, e agora?" precisa estar no projeto, não no repositório de origem.
+    """
+
+    def test_instalacao_copia_o_manual_para_a_raiz(self):
+        self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertExists("PRIMEIROS-PASSOS-QAGENTE.md")
+        self.assertEqual(
+            (self.project / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8"),
+            (HARNESS / "PRIMEIROS-PASSOS-QAGENTE.md").read_text(encoding="utf-8"),
+        )
+
+    def test_o_manual_vai_em_qualquer_ferramenta(self):
+        """Não é conteúdo de adaptador: Copilot e Windsurf também precisam dele."""
+        for tool in ("copilot", "cursor", "windsurf"):
+            with self.subTest(tool=tool):
+                self.install_ok("--tool", tool, "--profile", "default")
+                self.assertExists("PRIMEIROS-PASSOS-QAGENTE.md")
+
+    def test_manual_defasado_e_substituido_sem_force(self):
+        """Mesma regra de install_bin(): é conteúdo do harness, não do time.
+
+        Manual que descreve comando já renomeado custa mais que manual ausente, porque é
+        seguido com confiança. Preservar vale para perfil, contexto, memória e templates.
+        """
+        self.install_ok("--tool", "claude", "--profile", "default")
+        destino = self.project / "PRIMEIROS-PASSOS-QAGENTE.md"
+        destino.write_text("manual antigo", encoding="utf-8")
+        self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertNotEqual(destino.read_text(encoding="utf-8"), "manual antigo")
+
+    def test_dry_run_nao_escreve_o_manual(self):
+        stdout = self.install_ok("--tool", "claude", "--profile", "default", "--dry-run")
+        self.assertIn("[dry-run] copiar manual", stdout)
+        self.assertMissing("PRIMEIROS-PASSOS-QAGENTE.md")
+
+    def test_os_proximos_passos_apontam_para_o_manual(self):
+        """Instalar o arquivo sem citá-lo deixa a pessoa no mesmo lugar de antes."""
+        stdout = self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertIn("PRIMEIROS-PASSOS-QAGENTE.md", stdout.split("Concluído.")[-1])
+
 
 # --------------------------------------------------------------------------------------
 # Validador de perfil

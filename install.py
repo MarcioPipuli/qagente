@@ -60,6 +60,11 @@ BIN_SRC = (
     HARNESS_DIR / "validate_artefatos.py",
 )
 
+# Manual do usuário, copiado para a raiz do projeto instalado — ver install_user_guide().
+# Fica na raiz, e não em `.qagente/`, porque é o arquivo que a pessoa procura antes de saber
+# que `.qagente/` existe.
+USER_GUIDE_SRC = HARNESS_DIR / "PRIMEIROS-PASSOS-QAGENTE.md"
+
 MARKER_START = "<!-- QAGente:start -->"
 MARKER_END = "<!-- QAGente:end -->"
 
@@ -479,6 +484,31 @@ def install_bin(project_root: Path, *, dry_run: bool) -> None:
         log(f"  {src.name} -> {destination}")
 
 
+def install_user_guide(project_root: Path, *, dry_run: bool) -> None:
+    """Copia o manual do usuário para a raiz do projeto instalado.
+
+    O manual existe no harness desde sempre, mas só quem clonou o repositório o enxergava —
+    quem recebia a instalação pronta ficava com skills, perfil e regras no projeto e nenhuma
+    instrução de como usar nada daquilo. O arquivo que responde "instalei, e agora?" ficava
+    justamente no lugar onde essa pessoa não vai olhar.
+
+    Sempre sobrescrito, sem depender de --force, pela mesma razão de install_bin(): é conteúdo
+    do harness, não do time. Um manual defasado descreve comando que já mudou de nome — e
+    manual errado custa mais que manual ausente, porque é seguido com confiança. A regra de
+    preservar vale para os arquivos que o time edita: perfil, contexto, memória e templates.
+    """
+    log("\n== Manual do usuário ==")
+    if not USER_GUIDE_SRC.is_file():
+        log(f"  aviso: não encontrado no harness, pulado: {USER_GUIDE_SRC.name}")
+        return
+    destination = project_root / USER_GUIDE_SRC.name
+    if dry_run:
+        log(f"  [dry-run] copiar manual: {USER_GUIDE_SRC} -> {destination}")
+        return
+    shutil.copy2(USER_GUIDE_SRC, destination)
+    log(f"  {USER_GUIDE_SRC.name} -> {destination}")
+
+
 def install_adapter(project_root: Path, tool: str, *, force: bool, dry_run: bool) -> None:
     adapter_dir = ADAPTERS_SRC / tool
     if not adapter_dir.exists():
@@ -631,6 +661,7 @@ def main() -> None:
         install_memoria(project_root, force=args.force, dry_run=args.dry_run)
         install_templates(project_root, force=args.force, dry_run=args.dry_run)
         install_bin(project_root, dry_run=args.dry_run)
+        install_user_guide(project_root, dry_run=args.dry_run)
         if any(tool != "claude" for tool in tools):
             install_portable_skills(project_root, force=args.force, dry_run=args.dry_run)
         for tool in tools:
@@ -640,6 +671,7 @@ def main() -> None:
 
     log("\nConcluído. Próximos passos:")
     if not args.is_global:
+        log(f"  - Comece por {USER_GUIDE_SRC.name}, na raiz do projeto: é o passo a passo do zero ao primeiro teste.")
         log("  - Preencha .qagente/contexto-projeto.md: sem ele o agente prioriza por palpite.")
     log('  - Experimente: "Analisa esse PRD e me diz o que precisamos testar."')
     log("  - Veja AGENTS.md para os princípios completos do agente.")
