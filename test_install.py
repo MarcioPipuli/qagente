@@ -54,8 +54,10 @@ SKILL_NAMES = {
     "confiabilidade-testes",
     "dados-de-teste",
     "priorizacao-por-risco",
+    "regressao",
     "reproducao-bugs",
     "revisao-qualidade-testes",
+    "smoke-test",
     # Configuração: preenche os dois arquivos de `.qagente/`, e não escreve em `paths.*`.
     "configuracao-do-projeto",
 }
@@ -773,6 +775,25 @@ class ValidateProfileTest(unittest.TestCase):
         self.assertIn("conventions.gherkin_language", self.campos("aviso", conventions={"gherkin_language": "portugues"}))
 
     # ---- convenções numéricas ----
+
+    def test_toda_convencao_numerica_e_uma_chave_conhecida(self):
+        """As duas listas se soltam em silêncio, e o sintoma é pior que a causa.
+
+        `CONVENTION_NUMBERS` valida faixa; `CONVENTION_KEYS` diz o que é reconhecido. Chave
+        registrada só na primeira faz o perfil **correto** colher "chave desconhecida — será
+        ignorada": o time lê que o campo não vale nada, e no modo --strict o aviso reprova
+        um perfil que está certo.
+        """
+        for chave, _, _, _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                self.assertIn(chave, install.CONVENTION_KEYS)
+
+    def test_convencao_numerica_no_valor_esperado_nao_gera_aviso(self):
+        """O caminho feliz de cada convenção: valor dentro da faixa não produz achado nenhum."""
+        for chave, _, (piso, teto), _ in install.CONVENTION_NUMBERS:
+            with self.subTest(chave=chave):
+                problemas = self.problemas(conventions={chave: (piso + teto) // 2})
+                self.assertEqual([p for p in problemas if f"conventions.{chave}" in p[1]], [])
 
     def test_convencao_numerica_com_tipo_errado_e_erro(self):
         """Texto e booleano passariam por comparação e produziriam um limiar sem sentido."""

@@ -73,10 +73,14 @@ QAGente/
     │   └── templates/
     ├── dados-de-teste/                # Apoio: fábricas, isolamento, limpeza e anonimização da massa
     │   └── templates/
+    ├── smoke-test/                    # Apoio: portão de build/ambiente → veredito GO/NO-GO
+    │   └── templates/
+    ├── regressao/                     # Apoio: seleção e execução da suíte de release, com o que ficou de fora
+    │   └── templates/
     └── configuracao-do-projeto/       # Apoio: entrevista que preenche os dois arquivos de .qagente/
 ```
 
-As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As seis últimas
+As seis primeiras skills são o fluxo (as fases mais a referência gramatical). As oito últimas
 são **skills de apoio**: entram fora da sequência das fases, quando o pedido não é "transforme
 este requisito em teste" — e continuam sujeitas às mesmas regras universais de
 [AGENTS.md](AGENTS.md). Detalhe do roteamento em
@@ -135,7 +139,7 @@ de cada time. Ele governa o instalador **e** o comportamento das skills:
 |---|---|
 | `language`, `artifact_format` | Idioma e formato dos artefatos gerados. O formato aceita `markdown-gherkin` (default) e `markdown-palavras-chave` — este para o time que escreve os passos com as palavras-chave mas registra os casos em campos rotulados (Jira/Xray/Zephyr) |
 | `paths.*` | Onde o agente lê a entrada e grava cada fase; quais pastas o instalador cria |
-| `paths.risk_matrix`, `paths.reviews` | Opcionais: saída das skills de apoio. Só criadas se declaradas — sem elas, a skill cai no fallback de [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas) |
+| `paths.risk_matrix`, `paths.reviews`, `paths.smoke_results`, `paths.regression_results` | Opcionais: saída das skills de apoio. Só criadas se declaradas — sem elas, a skill cai no fallback de [AGENTS.md](AGENTS.md#entradas-e-saídas-convenção-de-pastas) |
 | `risk_levels`, `risk_method` | Escala e método de priorização dos cenários |
 | `conventions.gherkin_language` | Idioma das palavras-chave do Gherkin |
 | `conventions.scenario_title_prefix` | Prefixo dos títulos de cenário (`Validar que` por default) |

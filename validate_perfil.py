@@ -49,7 +49,7 @@ DEFAULT_IO_PATHS = {
 # DEFAULT_IO_PATHS de propósito: o instalador não cria pasta para artefato que não
 # corresponde a uma fase (ver AGENTS.md, "Entradas e saídas"). Quem declara a chave
 # ganha a pasta; quem não declara usa o fallback documentado em cada skill.
-OPTIONAL_IO_PATHS = ("risk_matrix", "reviews")
+OPTIONAL_IO_PATHS = ("risk_matrix", "reviews", "smoke_results", "regression_results")
 
 REQUIRED_KEYS = ("profile_version", "profile_name", "language", "workflow", "paths")
 
@@ -68,6 +68,7 @@ CONVENTION_KEYS = (
     "scenario_outline_threshold",
     "stability_runs",
     "quarantine_max_days",
+    "smoke_max_minutes",
 )
 
 # Convenções numéricas: (chave, mínimo aceitável, faixa esperada, razão do aviso fora dela).
@@ -77,6 +78,7 @@ CONVENTION_NUMBERS = (
     ("scenario_outline_threshold", 2, (2, 10), "acima disso o Esquema do Cenário quase nunca é usado"),
     ("stability_runs", 1, (10, 500), "poucas execuções não distinguem correção de sorte"),
     ("quarantine_max_days", 1, (1, 30), "quarentena longa vira permanente, que é o que a regra evita"),
+    ("smoke_max_minutes", 1, (2, 30), "smoke longo deixa de ser rodado antes do deploy, que é o único motivo dele existir"),
 )
 
 ENV_VAR_KEYS = ("base_url_env", "user_env", "password_env")

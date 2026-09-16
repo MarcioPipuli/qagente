@@ -1,0 +1,152 @@
+{
+  "skill": "smoke-test",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "smk-001",
+      "prompt": "Monta um smoke test pra gente rodar antes do deploy",
+      "expected_patterns": [
+        "parar de testar",
+        "áreas de risco",
+        "o que fica inválido se falhar",
+        "templates/relatorio-smoke.md"
+      ],
+      "anti_patterns": [],
+      "tags": ["entrada", "selecao"]
+    },
+    {
+      "id": "smk-002",
+      "prompt": "Nosso smoke está levando 40 minutos. O que a gente faz?",
+      "expected_patterns": [
+        "a suíte virou regressão",
+        "cortar casos",
+        "conventions.smoke_max_minutes"
+      ],
+      "anti_patterns": [
+        "aumentando o teto"
+      ],
+      "tags": ["teto", "manutencao"]
+    },
+    {
+      "id": "smk-003",
+      "prompt": "Coloca os testes de validação de campo obrigatório no smoke também",
+      "expected_patterns": [
+        "Só caminho feliz",
+        "continua perfeitamente testável OR continua testável",
+        "Negativo no smoke"
+      ],
+      "anti_patterns": [
+        "Smoke com cenário negativo"
+      ],
+      "tags": ["selecao", "recusa"]
+    },
+    {
+      "id": "smk-004",
+      "prompt": "O smoke reprovou mas o prazo está apertado. Pode seguir pra regressão?",
+      "expected_patterns": [
+        "NO-GO",
+        "regressão continua bloqueada OR não começa",
+        "até o veredito virar GO"
+      ],
+      "anti_patterns": [],
+      "tags": ["portao", "recusa"]
+    },
+    {
+      "id": "smk-005",
+      "prompt": "Quais casos devem entrar no smoke?",
+      "expected_patterns": [
+        "tabela de áreas de risco",
+        "Um caso por fluxo crítico",
+        "se este caso falhar, faz sentido rodar os outros"
+      ],
+      "anti_patterns": [
+        "Selecionar por intuição"
+      ],
+      "tags": ["selecao"]
+    },
+    {
+      "id": "smk-006",
+      "prompt": "Tem um teste no smoke que falha uma vez a cada cinco execuções",
+      "expected_patterns": [
+        "confiabilidade-testes",
+        "destrói o sinal",
+        "registre a lacuna OR registre a lacuna de cobertura"
+      ],
+      "anti_patterns": [
+        "repita a execução até passar"
+      ],
+      "tags": ["instabilidade", "roteamento"]
+    },
+    {
+      "id": "smk-007",
+      "prompt": "Roda o smoke e me diz se passou",
+      "expected_patterns": [
+        "saída real",
+        "princípio 6",
+        "build e ambiente identificados"
+      ],
+      "anti_patterns": [
+        "Declarar verde sem mostrar a saída"
+      ],
+      "tags": ["evidencia"]
+    },
+    {
+      "id": "smk-008",
+      "prompt": "A gente não preencheu o contexto-projeto. Monta o smoke assim mesmo",
+      "expected_patterns": [
+        "marcada como palpite OR proposta como palpite",
+        "peça o preenchimento",
+        "vira o palpite do agente"
+      ],
+      "anti_patterns": [],
+      "tags": ["contexto", "lacuna"]
+    },
+    {
+      "id": "smk-009",
+      "prompt": "Por que não podemos simplesmente rodar a suíte inteira como smoke?",
+      "expected_patterns": [
+        "regressão rápida",
+        "quando a suíte crescer",
+        "o nome importa"
+      ],
+      "anti_patterns": [
+        "Chamar \"rodar tudo\" de smoke"
+      ],
+      "tags": ["conceito"]
+    },
+    {
+      "id": "smk-010",
+      "prompt": "O smoke ficou vermelho. É bug ou é o ambiente?",
+      "expected_patterns": [
+        "três leituras",
+        "Ambiente quebrado",
+        "reproducao-bugs",
+        "não conta como defeito do produto"
+      ],
+      "anti_patterns": [],
+      "tags": ["diagnostico"]
+    },
+    {
+      "id": "smk-011",
+      "prompt": "Posso encadear os casos do smoke pra ficar mais rápido? O caso 2 aproveita o login do caso 1",
+      "expected_patterns": [
+        "Sem dependência entre casos",
+        "falha em paralelo e mente em série OR estado deixado por outro"
+      ],
+      "anti_patterns": [],
+      "tags": ["independencia", "recusa"]
+    },
+    {
+      "id": "smk-012",
+      "prompt": "Nosso smoke roda em staging e libera o deploy pra produção",
+      "expected_patterns": [
+        "vale para o ambiente onde rodou",
+        "Ambiente não identificado invalida o veredito OR o relatório diz qual foi"
+      ],
+      "anti_patterns": [
+        "valida um ambiente e libera outro"
+      ],
+      "tags": ["ambiente"]
+    }
+  ]
+}

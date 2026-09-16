@@ -1,0 +1,158 @@
+{
+  "skill": "regressao",
+  "version": "1.0",
+  "evals": [
+    {
+      "id": "reg-001",
+      "prompt": "O que a gente roda de regressão nessa release?",
+      "expected_patterns": [
+        "quatro entradas",
+        "O que mudou na release",
+        "Áreas de risco do contexto",
+        "templates/relatorio-regressao.md"
+      ],
+      "anti_patterns": [],
+      "tags": ["entrada", "selecao"]
+    },
+    {
+      "id": "reg-002",
+      "prompt": "Roda tudo, é mais seguro",
+      "expected_patterns": [
+        "Funciona até não caber",
+        "abandonado sem decisão OR abandonado no primeiro prazo apertado",
+        "a seleção continua sendo declarada"
+      ],
+      "anti_patterns": [
+        "\"Rodar tudo\" como estratégia"
+      ],
+      "tags": ["conceito", "recusa"]
+    },
+    {
+      "id": "reg-003",
+      "prompt": "Por que esse caso entrou na seleção?",
+      "expected_patterns": [
+        "qual delas o puxou",
+        "separa uma seleção de uma lista",
+        "Entrada que puxou"
+      ],
+      "anti_patterns": [
+        "intuição com formatação"
+      ],
+      "tags": ["justificativa", "rastreabilidade"]
+    },
+    {
+      "id": "reg-004",
+      "prompt": "Não deu tempo de rodar o smoke. Começa a regressão direto",
+      "expected_patterns": [
+        "veredito GO",
+        "falhas em cascata",
+        "a janela já foi consumida OR gasta a janela inteira"
+      ],
+      "anti_patterns": [
+        "smoke vermelho ou não executado"
+      ],
+      "tags": ["portao", "recusa"]
+    },
+    {
+      "id": "reg-005",
+      "prompt": "A regressão achou um bug no cálculo do frete. Corrige aí que a release é hoje",
+      "expected_patterns": [
+        "não altera código de aplicação",
+        "reproducao-bugs",
+        "mesmo quando a correção parece óbvia OR sem exceção de prazo"
+      ],
+      "anti_patterns": [
+        "Corrigir o código de aplicação"
+      ],
+      "tags": ["fronteira", "recusa"]
+    },
+    {
+      "id": "reg-006",
+      "prompt": "Monta a regressão só pelo que apareceu no diff",
+      "expected_patterns": [
+        "mesmo sem mudança nesta release",
+        "efeito colateral",
+        "o que é caro quebrar"
+      ],
+      "anti_patterns": [
+        "Selecionar só pelo diff"
+      ],
+      "tags": ["selecao"]
+    },
+    {
+      "id": "reg-007",
+      "prompt": "Esses casos de prioridade baixa podem ficar de fora, né?",
+      "expected_patterns": [
+        "risco assumido",
+        "o que estamos aceitando não saber",
+        "escopo e omissão"
+      ],
+      "anti_patterns": [
+        "Omitir o que ficou de fora"
+      ],
+      "tags": ["escopo"]
+    },
+    {
+      "id": "reg-008",
+      "prompt": "Regressão passou, pode liberar",
+      "expected_patterns": [
+        "saída real",
+        "princípio 6"
+      ],
+      "anti_patterns": [
+        "Declarar a regressão concluída sem a saída real"
+      ],
+      "tags": ["evidencia"]
+    },
+    {
+      "id": "reg-009",
+      "prompt": "Não temos contexto-projeto preenchido. Como seleciono?",
+      "expected_patterns": [
+        "cega para impacto",
+        "reduzida ao diff",
+        "o que mudaria com ele preenchido"
+      ],
+      "anti_patterns": [],
+      "tags": ["contexto", "lacuna"]
+    },
+    {
+      "id": "reg-010",
+      "prompt": "Aproveitando a regressão, quero repriorizar os cenários que estão com prioridade errada",
+      "expected_patterns": [
+        "não redecide prioridade",
+        "o lugar dela é a Fase 1",
+        "registre como achado OR vira achado"
+      ],
+      "anti_patterns": [
+        "Redecidir prioridade durante a seleção"
+      ],
+      "tags": ["fronteira", "roteamento"]
+    },
+    {
+      "id": "reg-011",
+      "prompt": "Três casos falharam mas passam quando rodo de novo. Conta como defeito da release?",
+      "expected_patterns": [
+        "confiabilidade-testes",
+        "não entra na contagem de defeitos",
+        "perseguir o problema errado"
+      ],
+      "anti_patterns": [
+        "Contar teste instável como defeito"
+      ],
+      "tags": ["instabilidade", "metrica"]
+    },
+    {
+      "id": "reg-012",
+      "prompt": "A gente sempre escolhe na véspera o que rodar, funciona bem",
+      "expected_patterns": [
+        "ninguém consegue reconstruir depois OR critério registrado",
+        "auditada quando o incidente acontecer",
+        "a lição do incidente se perde"
+      ],
+      "anti_patterns": [
+        "Selecionar na véspera"
+      ],
+      "tags": ["processo"]
+    }
+  ]
+}

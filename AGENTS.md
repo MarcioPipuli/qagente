@@ -19,7 +19,9 @@ O perfil não pode remover rastreabilidade, proteção de segredos, independênc
 
 Os níveis de `risk_levels` são identificadores canônicos em inglês (`critical`, `high`, `medium`, `low`): é assim que o perfil os declara e que as skills os citam. Nos artefatos entregues ao usuário, escreva-os no idioma de `language` — em pt-BR, `Crítica` / `Alta` / `Média` / `Baixa` —, preservando a ordem e a quantidade de níveis do perfil. Nunca use um nível que o perfil não declara: se a escala tiver menos níveis do que o exemplo de uma skill, colapse de baixo para cima e diga qual junção foi feita.
 
-As convenções numéricas do perfil valem cada uma na sua skill, e nenhuma delas é um número universal: `conventions.scenario_outline_threshold` (padrão 3) decide quando variações viram `Esquema do Cenário` em `skills/casos-de-teste`; `conventions.stability_runs` (padrão 50) e `conventions.quarantine_max_days` (padrão 14) governam a verificação e a quarentena em `skills/confiabilidade-testes`. Ausente do perfil, vale o padrão, e o número escrito no artefato é sempre o efetivo — nunca o exemplo da skill.
+As convenções numéricas do perfil valem cada uma na sua skill, e nenhuma delas é um número universal: `conventions.scenario_outline_threshold` (padrão 3) decide quando variações viram `Esquema do Cenário` em `skills/casos-de-teste`; `conventions.stability_runs` (padrão 50) e `conventions.quarantine_max_days` (padrão 14) governam a verificação e a quarentena em `skills/confiabilidade-testes`; `conventions.smoke_max_minutes` (padrão 10) é o teto de duração da suíte em `skills/smoke-test`. Ausente do perfil, vale o padrão, e o número escrito no artefato é sempre o efetivo — nunca o exemplo da skill.
+
+O teto do smoke é o único desses números cujo estouro **não** se corrige mudando o número: a suíte que passou do teto virou regressão, e a correção é cortar casos. Aumentá-lo para caber o escopo atual desliga a trava que ele existe para ser. Elevá-lo é decisão de política do time, registrada no perfil com o motivo — nunca ajuste durante uma execução.
 
 **Repetição de execução não é um número só, são três decisões diferentes.** `stability_runs` é **prova de correção**: quantas execuções verdes seguidas fazem uma correção de teste instável contar como verificada. A reprodução de um defeito usa a própria contagem (10 execuções, em `skills/reproducao-bugs`), porque ali se prova **determinismo da reprodução**, não ausência de oscilação. E a revisão de suíte roda 3 vezes (`skills/revisao-qualidade-testes`) para **amostrar** oscilação, não para provar nada. Mudar `stability_runs` não muda as outras duas; alinhá-las é decisão explícita do time, não consequência automática.
 
@@ -265,7 +267,7 @@ Saída: spec executável no framework escolhido, com seletores estáveis (atribu
 
 ## Skills de apoio (fora da sequência das fases)
 
-Seis skills não são fases: elas entram por uma porta diferente, quando o pedido do usuário não é "transforme este requisito em teste". Todas continuam sujeitas às regras universais deste documento — inclusive a aprovação explícita antes de gerar código de automação.
+Oito skills não são fases: elas entram por uma porta diferente, quando o pedido do usuário não é "transforme este requisito em teste". Todas continuam sujeitas às regras universais deste documento — inclusive a aprovação explícita antes de gerar código de automação.
 
 | Skill | Entra quando | Relação com as fases |
 |---|---|---|
@@ -275,8 +277,17 @@ Seis skills não são fases: elas entram por uma porta diferente, quando o pedid
 | `skills/revisao-qualidade-testes` | O pedido é avaliar testes que **já existem** — revisão de pull request, auditoria de suíte, testabilidade | Roda **depois** das Fases 3a/3b, inclusive sobre o que este próprio agente gerou |
 | `skills/confiabilidade-testes` | Um teste oscila, ou a suíte perdeu a confiança do time | Corrige o que as Fases 3a/3b produziram; classificar a causa raiz vem antes de corrigir |
 | `skills/dados-de-teste` | O problema é a massa: testes que se atrapalham, dado não determinístico, limpeza, anonimização | Camada de suporte às Fases 3a/3b; materializa o princípio 4 deste documento |
+| `skills/smoke-test` | É preciso decidir se um build/ambiente está apto a receber a bateria completa | Portão **antes** da regressão, sobre o que as Fases 3a/3b produziram; emite veredito GO/NO-GO |
+| `skills/regressao` | É preciso decidir o que rodar antes de liberar uma release, e justificar a seleção | Consome a prioridade da Fase 1 e os testes das Fases 3a/3b; exige smoke GO na mesma build |
 
 Duas fronteiras valem para todas: nenhuma delas altera código de aplicação (problema de testabilidade é **achado a reportar**), e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da execução.
+
+**Smoke e regressão são degraus, não sinônimos.** O smoke responde "dá para testar?" e a
+regressão responde "dá para liberar?". Um smoke vermelho bloqueia a regressão, porque regressão
+sobre build reprovado produz dezenas de falhas em cascata com a mesma causa raiz e consome a
+janela inteira na triagem. A seleção do smoke é por dependência — o que invalida o resto se
+falhar —, e a da regressão é por impacto de mudança e risco. Nenhuma das duas redecide a
+prioridade que a Fase 1 já definiu.
 
 ## Entradas e saídas (convenção de pastas)
 
@@ -292,6 +303,8 @@ As skills de apoio produzem artefatos que o instalador não cria, porque não co
 
 - `paths.risk_matrix`, senão `paths.scenarios` — matriz de risco de `skills/priorizacao-por-risco`.
 - `paths.reviews`, senão `paths.test_cases` — relatórios de `skills/revisao-qualidade-testes` e de `skills/confiabilidade-testes`.
+- `paths.smoke_results`, senão `paths.reviews`, senão `paths.test_cases` — veredito GO/NO-GO de `skills/smoke-test`.
+- `paths.regression_results`, senão `paths.reviews`, senão `paths.test_cases` — relatório de seleção e execução de `skills/regressao`.
 - `paths.test_cases` — relato de reprodução de `skills/reproducao-bugs`; o teste de regressão em si vai para `paths.api_tests` ou `paths.ui_tests`, conforme a camada.
 - `paths.api_tests` / `paths.ui_tests` — fábricas e massa de `skills/dados-de-teste`, junto dos testes que as consomem.
 

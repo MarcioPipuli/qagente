@@ -30,6 +30,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 # projeto instalado, onde não existe `install.py` para chamar. Aqui ela é importada: toda
 # instalação continua validando o perfil antes de copiar qualquer coisa.
 from validate_perfil import (  # noqa: F401  (reexportados: outros módulos e os testes importam daqui)
+    CONVENTION_KEYS,
     CONVENTION_NUMBERS,
     DEFAULT_IO_PATHS,
     OPTIONAL_IO_PATHS,

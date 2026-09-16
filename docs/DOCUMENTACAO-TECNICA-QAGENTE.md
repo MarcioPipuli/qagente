@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **12 skills, 150 evals, 294 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **14 skills, 174 evals, 294 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -24,7 +24,7 @@
 5. [`agent.md` — o cartão de identidade e o roteador](#5-agentmd--o-cartão-de-identidade-e-o-roteador)
 6. [`AGENTS.md` — o núcleo de regras](#6-agentsmd--o-núcleo-de-regras)
 7. [Anatomia de uma SKILL.md](#7-anatomia-de-uma-skillmd)
-8. [Catálogo das 12 skills](#8-catálogo-das-12-skills)
+8. [Catálogo das 14 skills](#8-catálogo-das-14-skills)
 9. [Roteamento: como o agente escolhe a skill](#9-roteamento-como-o-agente-escolhe-a-skill)
 10. [`quality-profile.json` — referência de campos e validação](#10-quality-profilejson--referência-de-campos-e-validação)
 11. [`contexto-projeto.md` — o que é o produto](#11-contexto-projetomd--o-que-é-o-produto)
@@ -125,7 +125,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 
 | Caminho | Conteúdo | Preservado em reinstalação? |
 |---|---|---|
-| `.claude/skills/<nome>/` | As 12 skills | Sim (só `--force` sobrescreve) |
+| `.claude/skills/<nome>/` | As 14 skills | Sim (só `--force` sobrescreve) |
 | `.claude/agents/qa-especialista.md` | Cópia de `agent.md` | Sim (só `--force`) |
 | `AGENTS.md` | Bloco `<!-- QAGente:start -->…<!-- QAGente:end -->` mesclado | O bloco é **atualizado**; o resto do arquivo nunca é tocado |
 | `CLAUDE.md` | Ponteiro para `AGENTS.md`, ou nota anexada se já existia | Sim |
@@ -166,7 +166,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 └───────────────────────────────────────────────────────────────────────────┘
 ┌─ Camada 5 — Entradas e saídas ────────────────────────────────────────────┐
 │  paths.input → paths.scenarios → paths.test_cases → paths.api_tests|ui_tests│
-│  opcionais: paths.risk_matrix · paths.reviews                              │
+│  opcionais: risk_matrix · reviews · smoke_results · regression_results     │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -183,7 +183,7 @@ O princípio que sustenta o desenho está em `CONTRIBUTING.md` e vale citar lite
 
 ### 4.1 Precedência para decisões configuráveis
 
-Declarada em `AGENTS.md` e repetida na seção `## Configuração` de **todas** as 12 skills
+Declarada em `AGENTS.md` e repetida na seção `## Configuração` de **todas** as 14 skills
 (o validador reprova a skill que não a traz):
 
 ```
@@ -270,7 +270,7 @@ metadata:
 | Campo | Efeito real |
 |---|---|
 | `name` | Nome de invocação (`@qa-especialista`) |
-| `description` | **É o roteador.** É por este texto que a ferramenta decide delegar automaticamente. Traz os gatilhos das 12 skills e os anti-gatilhos (não use para: código de produção, features, carga/performance, segurança/pentest) |
+| `description` | **É o roteador.** É por este texto que a ferramenta decide delegar automaticamente. Traz os gatilhos das 14 skills e os anti-gatilhos (não use para: código de produção, features, carga/performance, segurança/pentest) |
 | `model: inherit` | Usa o mesmo modelo da sessão principal — não fixa um modelo |
 | `tools` | Superfície de ferramentas: leitura (`Read`, `Grep`, `Glob`), escrita (`Write`, `Edit`) e execução (`Bash`, necessária para rodar `robot`/`cypress`/`playwright`/`git bisect`). Note a ausência de ferramenta de rede — o agente não busca na web por conta própria |
 
@@ -368,6 +368,8 @@ Saídas das skills de apoio (que o instalador **não** cria, porque não são fa
 |---|---|---|
 | `priorizacao-por-risco` | `paths.risk_matrix` | `paths.scenarios` |
 | `revisao-qualidade-testes`, `confiabilidade-testes` | `paths.reviews` | `paths.test_cases` |
+| `smoke-test` | `paths.smoke_results` | `paths.reviews`, senão `paths.test_cases` |
+| `regressao` | `paths.regression_results` | `paths.reviews`, senão `paths.test_cases` |
 | `reproducao-bugs` (relato) | `paths.test_cases` | — |
 | `reproducao-bugs` (teste de regressão) | `paths.api_tests` / `paths.ui_tests` | — |
 | `dados-de-teste` | `paths.api_tests` / `paths.ui_tests` | — |
@@ -440,7 +442,7 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 
 ---
 
-## 8. Catálogo das 12 skills
+## 8. Catálogo das 14 skills
 
 ### 8.1 Visão geral
 
@@ -457,6 +459,8 @@ precisa ser citado (aviso — "o agente nunca vai encontrá-lo"). Os templates t
 | `revisao-qualidade-testes` | analise | Apoio — **depois** da Fase 3 | MIT | `paths.reviews` |
 | `confiabilidade-testes` | automacao | Apoio — corrige o que a Fase 3 produziu | MIT | `paths.reviews` |
 | `dados-de-teste` | automacao | Apoio — camada sob as Fases 3a/3b | MIT | junto dos testes |
+| `smoke-test` | automacao | Apoio — **portão** antes da regressão | CC-BY-4.0 | `paths.smoke_results` |
+| `regressao` | automacao | Apoio — seleção e execução da suíte de release | CC-BY-4.0 | `paths.regression_results` |
 | `configuracao-do-projeto` | configuracao | Apoio — **antes de tudo**: preenche `.qagente/` | CC-BY-4.0 | — (o artefato é a própria configuração) |
 
 ### 8.2 Detalhe por skill
@@ -766,12 +770,15 @@ e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da exec
 | `paths.ui_tests` | caminho | Saída da Fase 3b | Fase 3b, massa, regressão |
 | `paths.risk_matrix` | caminho | **Opcional** — matriz de risco | `priorizacao-por-risco` |
 | `paths.reviews` | caminho | **Opcional** — relatórios de revisão/flaky | Revisão, confiabilidade |
+| `paths.smoke_results` | caminho | **Opcional** — veredito GO/NO-GO do smoke | `smoke-test` |
+| `paths.regression_results` | caminho | **Opcional** — relatório de seleção e execução | `regressao` |
 | `conventions.gherkin_language` | `pt`, `en`, … | Idioma das palavras-chave do Gherkin | Fase 2 |
 | `conventions.scenario_title_prefix` | texto | Prefixo dos títulos ("Validar que") | Fase 2 |
 | `conventions.test_id_pattern` | texto | Padrão de ID (`TC-{DOMAIN}-{NUMBER}`) | Fases 1 e 2 |
 | `conventions.scenario_outline_threshold` | inteiro ≥ 2 | Limiar de itens iguais para `Esquema do Cenário` (`3`) | Fase 2 |
 | `conventions.stability_runs` | inteiro ≥ 1 | Execuções verdes que verificam uma correção (`50`) | `confiabilidade-testes` |
 | `conventions.quarantine_max_days` | inteiro ≥ 1 | Prazo máximo de quarentena, em dias (`14`) | `confiabilidade-testes` |
+| `conventions.smoke_max_minutes` | inteiro ≥ 1 | Teto de duração da suíte de smoke, em minutos (`10`) | `smoke-test` |
 | `api.enabled` | bool | Se a automação de API existe | Fase 3a + instalador |
 | `api.framework` | texto | Qual skill de API responde | Fase 3a |
 | `api.base_url_env` / `api.user_env` / `api.password_env` | texto | **Nomes** das variáveis de ambiente (nunca os valores) | Fase 3a |
@@ -783,7 +790,8 @@ e nenhuma declara algo corrigido ou verificado sem mostrar a saída real da exec
 
 **Diferença importante entre as chaves de `paths`**: as cinco de `DEFAULT_IO_PATHS`
 (`input`, `scenarios`, `test_cases`, `api_tests`, `ui_tests`) **ganham pasta criada pelo
-instalador**. As duas de `OPTIONAL_IO_PATHS` (`risk_matrix`, `reviews`) são reconhecidas e
+instalador**. As quatro de `OPTIONAL_IO_PATHS` (`risk_matrix`, `reviews`, `smoke_results`,
+`regression_results`) são reconhecidas e
 validadas como caminho, mas **só ganham pasta se forem declaradas** — o instalador não cria
 diretório para artefato que não corresponde a uma fase.
 
