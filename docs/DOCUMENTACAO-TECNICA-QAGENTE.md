@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **15 skills, 186 evals, 324 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **15 skills, 186 evals, 325 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -79,7 +79,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 - **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
-- **Por que 324 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
+- **Por que 325 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
   testa **promessas do núcleo** (que toda skill mande ler o perfil, que toda chave `paths.*`
   citada exista no instalador, que a `description` só prometa artefato que tem skill e destino).
 
@@ -104,7 +104,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `validate_perfil.py` | Validador do perfil de qualidade; importado pelo instalador | Instalador / Pessoa / **agente** | Instalação e uso |
 | `validate_artefatos.py` | Validador dos 6 artefatos gerados (saída) | Pessoa / **agente** | Uso |
 | `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 324 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `test_install.py` | 325 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -1144,12 +1144,22 @@ ensinar a evitá-lo**. Então o avaliador decide por contexto:
 Gramática dos padrões: `A OR B` (basta uma alternativa casar) · `.*` em qualquer parte (vira
 regex) · qualquer outra coisa é substring sem diferenciar maiúsculas.
 
+**Duas armadilhas ao escrever a skill, não o eval** — as duas apareceram na escrita das três
+skills mais recentes, e a correção certa foi no texto da skill, não no padrão:
+
+- **O motor casa por linha.** Uma frase que o eval espera inteira e que a skill quebrou em duas
+  linhas (para caber em 100 colunas) nunca casa. Reflua a frase para que o trecho esperado
+  fique numa linha só.
+- **Negrito no meio quebra a substring.** `**não** conta como defeito` não contém `não conta
+  como defeito` — os asteriscos estão dentro. Ponha o negrito em volta da frase inteira:
+  `**não conta como defeito**` contém, e lê melhor.
+
 **Por que estático**: a checagem é contra o texto da skill, não contra a resposta de um modelo.
 É determinística, roda em CI e não custa chamada de API. Um eval verde **não prova que o agente
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 324 testes
+### 14.3 `test_install.py` — 325 testes
 
 | Grupo de classes | O que prende |
 |---|---|

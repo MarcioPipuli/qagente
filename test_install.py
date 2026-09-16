@@ -2230,6 +2230,34 @@ class PromessasDoHarnessTest(unittest.TestCase):
             with self.subTest(chave=chave):
                 self.assertIn(f"conventions.{chave}", corpus)
 
+    def test_a_contagem_do_cabecalho_da_doc_tecnica_e_a_real(self):
+        """`15 skills, 186 evals, 324 testes` no topo da doc técnica — conferido, não digitado.
+
+        O número derrapou 30 testes sozinho antes deste teste existir (dizia 256, eram 286), e
+        mudou sete vezes numa única sessão de trabalho, todas à mão. Número defasado em
+        documento de referência é pior que número ausente: é conferido contra a saída real e
+        faz duvidar da saída. Conta com o `TestLoader`, sem executar — é o mesmo N que o
+        `Ran N tests` reporta.
+        """
+        texto = (HARNESS / "docs" / "DOCUMENTACAO-TECNICA-QAGENTE.md").read_text(encoding="utf-8")
+        cabecalho = re.search(r"\*\*(\d+) skills, (\d+) evals, (\d+) testes\*\*", texto)
+        self.assertIsNotNone(cabecalho, "o cabeçalho da doc técnica perdeu a linha de contagem")
+        skills_doc, evals_doc, testes_doc = (int(g) for g in cabecalho.groups())
+
+        skills_reais = len([p for p in (HARNESS / "skills").iterdir() if (p / "SKILL.md").is_file()])
+        evals_reais = sum(
+            len(json.loads(p.read_text(encoding="utf-8"))["evals"])
+            for p in (HARNESS / "evals").glob("*-evals.json")
+        )
+        testes_reais = unittest.TestLoader().loadTestsFromName("test_install").countTestCases()
+
+        with self.subTest(contagem="skills"):
+            self.assertEqual(skills_doc, skills_reais)
+        with self.subTest(contagem="evals"):
+            self.assertEqual(evals_doc, evals_reais)
+        with self.subTest(contagem="testes"):
+            self.assertEqual(testes_doc, testes_reais)
+
     def test_o_manual_e_o_guia_ensinam_os_templates_do_time(self):
         """Mecanismo entregue que o usuário não descobre é mecanismo que não existe.
 
