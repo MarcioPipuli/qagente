@@ -971,6 +971,33 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
             with self.subTest(arquivo=path.name):
                 self.assertNotIn(".github/skills", path.read_text(encoding="utf-8"))
 
+    def test_todo_adaptador_manda_ler_os_tres_arquivos_de_qagente(self):
+        """Fora do Claude Code o adaptador é a única regra sempre carregada.
+
+        `install_memoria()` grava `.qagente/memoria-projeto.md` em toda instalação, e
+        `agent.md` manda lê-lo. Se o adaptador omite o caminho, o agente nunca descobre
+        que o arquivo existe — a memória é instalada e nunca lida, em silêncio.
+        """
+        for path in self.adapter_files():
+            texto = path.read_text(encoding="utf-8")
+            for arquivo in (
+                ".qagente/quality-profile.json",
+                ".qagente/contexto-projeto.md",
+                ".qagente/memoria-projeto.md",
+            ):
+                with self.subTest(arquivo=path.name, cita=arquivo):
+                    self.assertIn(arquivo, texto)
+
+    def test_todo_adaptador_diz_que_a_memoria_exige_aprovacao(self):
+        """A memória é o único dos três que o agente escreve.
+
+        Citar o caminho sem citar a trava convida o agente a gravar o que deduziu — que é
+        exatamente o que a seção "Memória do projeto" de AGENTS.md proíbe.
+        """
+        for path in self.adapter_files():
+            with self.subTest(arquivo=path.name):
+                self.assertIn("aprovação", path.read_text(encoding="utf-8"))
+
     def test_toda_skill_manda_ler_o_perfil(self):
         """Sem isto o perfil configura o instalador mas não muda o comportamento do agente."""
         for path in self.skill_files():
