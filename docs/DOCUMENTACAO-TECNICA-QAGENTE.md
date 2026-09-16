@@ -1345,7 +1345,7 @@ agente para gerar Gherkin inválido.
 cp profiles/fullstack.json meu-time.json
 # editar
 python install.py --validate-profile ./meu-time.json
-python install.py --target /caminho/projeto --profile ./meu-time.json --dry-run
+python install.py --target /caminho/projeto --tool claude --profile ./meu-time.json --dry-run
 ```
 
 ### 18.4 Quando o bloco mesclado envelhece

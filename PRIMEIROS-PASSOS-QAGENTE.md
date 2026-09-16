@@ -137,10 +137,23 @@ Anote ou deixe copiado.
 Este comando **não altera nada**. Ele só mostra o que aconteceria. Serve para você ver o que vai
 entrar no projeto antes de decidir.
 
-Digite (troque o caminho pelo do seu projeto) e aperte `Enter`:
+Antes, uma escolha — **qual IA você usa?** O instalador não adivinha, e precisa saber, porque
+cada ferramenta lê os arquivos de um lugar diferente. Troque `claude` no comando abaixo pelo seu:
+
+| Você usa | Escreva |
+|---|---|
+| Claude Code | `--tool claude` |
+| Cursor | `--tool cursor` |
+| GitHub Copilot | `--tool copilot` |
+| Windsurf | `--tool windsurf` |
+
+> Usa mais de uma? `--tools claude,cursor` instala para as duas.
+> Se esquecer, o instalador para e mostra essa mesma lista — ele não escolhe por você.
+
+Digite (troque o caminho pelo do seu projeto, e `claude` pela sua ferramenta) e aperte `Enter`:
 
 ```
-python install.py --target "C:\Users\SeuNome\Documents\meu-projeto" --profile default --dry-run
+python install.py --target "C:\Users\SeuNome\Documents\meu-projeto" --tool claude --profile default --dry-run
 ```
 
 > 💡 Para colar no PowerShell, clique com o **botão direito** dentro da janela.
@@ -157,7 +170,8 @@ Concluído. Próximos passos:
 
 ## Passo 7 — Instalar de verdade
 
-Mesmo comando, **sem** o `--dry-run` no final, e com `--tool claude`:
+Exatamente o mesmo comando do Passo 6, **sem** o `--dry-run` no final — inclusive com a mesma
+ferramenta que você escolheu lá. Se trocar aqui, você instala uma coisa diferente da que conferiu:
 
 ```
 python install.py --target "C:\Users\SeuNome\Documents\meu-projeto" --tool claude --profile default
@@ -649,6 +663,8 @@ Nesse passo, é Dado ou Quando?
 | O que aconteceu | O que fazer |
 |---|---|
 | `python não é reconhecido...` | Python não instalado ou sem "Add to PATH". Refaça o Passo 1 |
+| `Erro: declare a ferramenta alvo com --tool` | Faltou dizer qual IA você usa. O próprio erro lista as quatro; acrescente `--tool claude` (ou `copilot`, `cursor`, `windsurf`) ao comando |
+| Instalei, mas minha IA não vê o agente | Provavelmente instalou para a ferramenta errada. Rode de novo com o `--tool` certo — veja no Passo 7 qual é o seu |
 | `Erro: diretório alvo não existe` | O caminho do projeto está errado. Refaça o Passo 5 e mantenha as aspas |
 | `Erro: perfil inválido` | Erro de digitação no arquivo do Passo 8, geralmente vírgula. Rode o Passo 10 para ver qual campo |
 | Não acho as pastas `.qagente` / `.claude` | Estão ocultas. Explorador → **Exibir → Mostrar → Itens ocultos** |

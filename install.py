@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Instalador do harness QAGente (agent.md + AGENTS.md/CLAUDE.md + skills/) em um projeto Claude Code.
+"""Instalador do harness QAGente (agent.md + AGENTS.md/CLAUDE.md + skills/) num projeto.
+
+A ferramenta alvo é **obrigatória** e não tem padrão: `--tool claude|copilot|cursor|windsurf`,
+ou `--tools` para várias. Um padrão aqui decidiria em silêncio onde os arquivos caem, e a
+instalação para a ferramenta errada não falha — ela termina dizendo "Concluído".
 
 Uso:
-    python install.py                               Instala no diretório atual (.)
-    python install.py --target /caminho/projeto     Instala em um projeto específico
-    python install.py --global                      Instala em ~/.claude (disponível em todos os projetos)
-    python install.py --force                       Sobrescreve skills/agente já instalados
-    python install.py --symlink                     Usa link simbólico em vez de cópia (skills/agente)
-    python install.py --dry-run                     Mostra o que seria feito, sem alterar nada
-    python install.py --tool copilot                Instala o adaptador de uma ferramenta
+    python install.py --tool claude                 Instala no diretório atual (.)
+    python install.py --target /caminho --tool cursor   Instala em um projeto específico
+    python install.py --global --tool claude        Instala em ~/.claude (todos os projetos)
+    python install.py --tool claude --force         Sobrescreve skills/agente já instalados
+    python install.py --tool claude --symlink       Usa link simbólico em vez de cópia
+    python install.py --tool claude --dry-run       Mostra o que seria feito, sem alterar nada
     python install.py --tools claude,cursor         Instala várias ferramentas de uma vez
-    python install.py --profile backend-api         Usa um perfil de profiles/ ou um caminho JSON
-    python install.py --validate-profile <perfil>   Só valida o perfil e sai, sem instalar
+    python install.py --tool claude --profile backend-api   Perfil de profiles/ ou caminho JSON
+    python install.py --validate-profile <perfil>   Só valida o perfil e sai (não pede --tool)
 
 Idempotente: pode ser executado várias vezes. Skills e a definição do agente são
 sobrescritas apenas com --force; as regras (AGENTS.md/CLAUDE.md) são mescladas de
@@ -103,8 +106,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--tool",
         choices=TOOLS,
-        default="claude",
-        help="Ferramenta alvo (padrão: claude). Ignorado quando --tools é usado.",
+        default=None,
+        help="Ferramenta alvo. Obrigatório, sem padrão — use --tools para várias.",
     )
     parser.add_argument(
         "--tools",
@@ -152,6 +155,30 @@ def parse_args() -> argparse.Namespace:
 
 
 def selected_tools(args: argparse.Namespace) -> list[str]:
+    """Resolve a ferramenta alvo. Exatamente um de --tool/--tools é obrigatório.
+
+    Não existe default, de propósito. Qualquer default aqui é uma decisão tomada em silêncio
+    por quem não estava lá: instalar para Claude Code num projeto que usa Cursor grava
+    `.claude/skills/`, `.claude/agents/` e `CLAUDE.md`, não grava adaptador nenhum, imprime
+    "Concluído" e está errado. A instalação errada não é barulhenta — é essa a razão.
+
+    Escolher `claude` ou `cursor` como default seria escolher de quem é o silêncio. Exigir a
+    declaração dissolve a pergunta: o instalador não adivinha, e quem sabe responde.
+    """
+    if not args.tools and not args.tool:
+        log("Erro: declare a ferramenta alvo com --tool (ou --tools, para várias).")
+        log("")
+        log("  --tool claude    skills em .claude/skills/, agente em .claude/agents/, regras em CLAUDE.md")
+        log("  --tool cursor    skills em .qagente/skills/, regra em .cursor/rules/qagente.mdc")
+        log("  --tool copilot   skills em .qagente/skills/, regras em .github/")
+        log("  --tool windsurf  skills em .qagente/skills/, regra em .windsurf/rules/qagente.md")
+        log("")
+        log(f"  Exemplo: python install.py --target {args.target} --tool claude --profile {args.profile}")
+        log("  Várias de uma vez: --tools claude,cursor")
+        sys.exit(2)
+    if args.tools and args.tool:
+        log("Erro: use --tool ou --tools, não os dois. --tools já aceita uma ferramenta só.")
+        sys.exit(2)
     if not args.tools:
         return [args.tool]
     values = [value.strip().lower() for value in args.tools.split(",") if value.strip()]

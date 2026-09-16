@@ -39,7 +39,7 @@
 ### Passo 1 — Veja o que vai acontecer antes de acontecer
 
 ```bash
-python install.py --target /caminho/do/projeto --profile default --dry-run
+python install.py --target /caminho/do/projeto --tool claude --profile default --dry-run
 ```
 
 `--dry-run` lista cada arquivo que seria criado e cada pasta que seria feita, **sem tocar no
@@ -174,7 +174,7 @@ título "Validar que", IDs `TC-{DOMAIN}-{NUMBER}` e seletor `data-testid`.
 cp profiles/fullstack.json meu-time.json
 # edite os campos
 python install.py --validate-profile ./meu-time.json
-python install.py --target . --profile ./meu-time.json --force
+python install.py --target . --tool claude --profile ./meu-time.json --force
 ```
 
 Os campos que mais compensam ajustar no começo:
@@ -199,7 +199,7 @@ variável fora do padrão" são exatamente os erros de digitação que passariam
 1. **O perfil existente vence.** Rodar `--profile frontend-web` num projeto que já tem
    `backend-api` instalado **preserva o `backend-api`** e cria as pastas dele. Se você quer
    mesmo trocar, use `--force`.
-2. **`--global` não instala as regras.** `python install.py --global` coloca skills e agente em
+2. **`--global` não instala as regras.** `python install.py --global --tool claude` coloca skills e agente em
    `~/.claude`, mas `AGENTS.md`, perfil, contexto e pastas são por projeto. Sem rodar a
    instalação normal dentro do projeto, boa parte do comportamento não existe.
 
@@ -771,7 +771,7 @@ conteúdo. O que muda é o mecanismo de carregamento, não o comportamento esper
 
 ```bash
 # Ver o que aconteceria
-python install.py --target . --profile default --dry-run
+python install.py --target . --tool claude --profile default --dry-run
 
 # Instalar (Claude Code)
 python install.py --target . --tool claude --profile default
@@ -780,14 +780,14 @@ python install.py --target . --tool claude --profile default
 python install.py --target . --tools claude,copilot,cursor,windsurf --profile fullstack
 
 # Atualizar skills/agente/perfil/contexto já instalados
-python install.py --target . --force
+python install.py --target . --tool claude --force
 
 # Validar um perfil sem instalar nada
 python install.py --validate-profile fullstack
 python install.py --validate-profile ./meu-time.json
 
 # Instalação global (só skills e agente; regras continuam por projeto)
-python install.py --global
+python install.py --global --tool claude
 ```
 
 ### Pedidos que sempre funcionam

@@ -183,7 +183,22 @@ Documentação → Cenários → Casos de Teste → [aprovação do usuário] �
 
 Cenário e caso não são a mesma coisa: o cenário diz **o quê** testar, em alto nível e priorizado por risco; o caso diz **como**, em passos executáveis. São duas skills que se completam sem depender uma da outra — dá para parar nos cenários (validação de cobertura com o negócio) ou entrar direto nos casos, trazendo os cenários prontos. A função principal do agente é entregar as duas (as duas primeiras setas). A Automação é opcional e só começa depois que o usuário aprovar explicitamente os Casos de Teste — o agente nunca avança sozinho para automação, mesmo quando o pedido original já a menciona. Cada seta é uma skill. O detalhamento completo de princípios (rastreabilidade, cobertura por risco, independência/determinismo de testes, gestão de dados/segredos, Definition of Done) está em [AGENTS.md](AGENTS.md).
 
-## Como instalar em um projeto com Claude Code
+## Como instalar em um projeto
+
+**Declarar a ferramenta é obrigatório.** Não há padrão: `--tool claude|copilot|cursor|windsurf`,
+ou `--tools` para várias de uma vez. Um padrão decidiria em silêncio onde os arquivos caem, e
+instalar para a ferramenta errada não falha — termina dizendo "Concluído", com as skills num
+diretório que a sua ferramenta não lê e sem o adaptador dela. Omitir a flag recusa a instalação
+e mostra as quatro opções com o destino de cada uma.
+
+| `--tool` | Skills em | Regras em |
+|---|---|---|
+| `claude` | `.claude/skills/` (+ agente em `.claude/agents/`) | `AGENTS.md` e `CLAUDE.md` |
+| `cursor` | `.qagente/skills/` | `.cursor/rules/qagente.mdc` |
+| `copilot` | `.qagente/skills/` | `.github/copilot-instructions.md` e `.github/agents/` |
+| `windsurf` | `.qagente/skills/` | `.windsurf/rules/qagente.md` |
+
+`AGENTS.md` é instalado em todas: é o núcleo das regras, e os adaptadores apontam para ele.
 
 ### Opção A — Instalador automático (recomendado)
 
@@ -193,13 +208,13 @@ python install.py --target /caminho/do/projeto --tool claude --profile default
 
 # Instala globalmente (~/.claude, disponível em todos os projetos — regras de AGENTS.md/CLAUDE.md
 # não se aplicam ao modo global, pois são específicas de cada projeto)
-python install.py --global
+python install.py --global --tool claude
 
 # Veja o que seria feito sem alterar nada
-python install.py --target /caminho/do/projeto --dry-run
+python install.py --target /caminho/do/projeto --tool claude --dry-run
 
 # Reinstalar sobrescrevendo as skills e o agente já copiados anteriormente
-python install.py --target /caminho/do/projeto --force
+python install.py --target /caminho/do/projeto --tool claude --force
 ```
 
 Para instalar em outras ferramentas:

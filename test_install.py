@@ -351,26 +351,26 @@ class OutrasFerramentasTest(InstallerTestCase):
 
 class EntradasInvalidasTest(InstallerTestCase):
     def test_perfil_inexistente(self):
-        result = self.run_install("--target", str(self.project), "--profile", "nao-existe")
+        result = self.run_install("--target", str(self.project), "--tool", "claude", "--profile", "nao-existe")
         self.assertEqual(result.returncode, 1)
         self.assertIn("perfil não encontrado", result.stdout)
         self.assertMissing("AGENTS.md")
 
     def test_perfil_com_json_quebrado(self):
         path = self.write_profile("quebrado", "{ isso não é json ")
-        result = self.run_install("--target", str(self.project), "--profile", str(path))
+        result = self.run_install("--target", str(self.project), "--tool", "claude", "--profile", str(path))
         self.assertEqual(result.returncode, 1)
         self.assertIn("perfil inválido", result.stdout)
 
     def test_perfil_sem_campos_obrigatorios(self):
         path = self.write_profile("incompleto", {"profile_version": "1.0"})
-        result = self.run_install("--target", str(self.project), "--profile", str(path))
+        result = self.run_install("--target", str(self.project), "--tool", "claude", "--profile", str(path))
         self.assertEqual(result.returncode, 1)
         self.assertIn("campos obrigatórios", result.stdout)
 
     def test_perfil_que_nao_e_objeto_json(self):
         path = self.write_profile("lista", "[1, 2, 3]")
-        result = self.run_install("--target", str(self.project), "--profile", str(path))
+        result = self.run_install("--target", str(self.project), "--tool", "claude", "--profile", str(path))
         self.assertEqual(result.returncode, 1)
 
     def test_ferramenta_invalida(self):
@@ -379,8 +379,46 @@ class EntradasInvalidasTest(InstallerTestCase):
         self.assertIn("vscode", result.stdout)
         self.assertMissing("AGENTS.md")
 
+    def test_sem_ferramenta_declarada_recusa_e_nao_escreve_nada(self):
+        """Não há default de propósito — ver `selected_tools`.
+
+        Um default decide em silêncio onde os arquivos caem: quem usa Cursor e omite a flag
+        receberia `.claude/skills/`, `.claude/agents/`, `CLAUDE.md` e nenhum adaptador — e a
+        saída diria "Concluído". A instalação para a ferramenta errada não é barulhenta.
+        """
+        result = self.run_install("--target", str(self.project), "--profile", "default")
+        self.assertEqual(result.returncode, 2)
+        self.assertMissing("AGENTS.md")
+        self.assertMissing(".claude")
+        self.assertMissing(".qagente")
+
+    def test_o_erro_sem_ferramenta_ensina_as_quatro_e_onde_cada_uma_grava(self):
+        """Recusar sem ensinar empurra a pessoa para --help e para a escolha no escuro.
+
+        O que ela precisa para decidir não é a lista de nomes: é onde os arquivos caem em
+        cada um, que é a diferença que ela vai ver no projeto depois.
+        """
+        saida = self.run_install("--target", str(self.project)).stdout
+        for tool in install.TOOLS:
+            with self.subTest(tool=tool):
+                self.assertIn(f"--tool {tool}", saida)
+        self.assertIn(".claude/skills/", saida)
+        self.assertIn(".qagente/skills/", saida)
+        self.assertIn("--tools claude,cursor", saida)
+
+    def test_tool_e_tools_juntos_sao_recusados(self):
+        """Aceitar os dois obrigaria a inventar uma precedência que ninguém consegue adivinhar."""
+        result = self.run_install("--target", str(self.project), "--tool", "claude", "--tools", "cursor")
+        self.assertEqual(result.returncode, 2)
+        self.assertMissing("AGENTS.md")
+
+    def test_validar_perfil_nao_exige_ferramenta(self):
+        """`--validate-profile` sai antes de instalar: não há destino, logo não há o que declarar."""
+        result = self.run_install("--validate-profile", "default")
+        self.assertEqual(result.returncode, 0, result.stdout)
+
     def test_diretorio_alvo_inexistente(self):
-        result = self.run_install("--target", str(self.parent / "nao-existe"))
+        result = self.run_install("--target", str(self.parent / "nao-existe"), "--tool", "claude")
         self.assertEqual(result.returncode, 1)
 
     def test_global_recusa_ferramentas_que_nao_sejam_claude(self):
@@ -854,7 +892,7 @@ class ValidateProfileCliTest(InstallerTestCase):
 
     def test_instalacao_e_interrompida_por_perfil_com_erro(self):
         caminho = self.write_profile("bloqueia", make_profile(risk_levels=["Alta", "alta"]))
-        resultado = self.run_install("--target", str(self.project), "--profile", str(caminho))
+        resultado = self.run_install("--target", str(self.project), "--tool", "claude", "--profile", str(caminho))
         self.assertEqual(resultado.returncode, 1)
         self.assertIn("Instalação interrompida", resultado.stdout)
         self.assertMissing("AGENTS.md")
@@ -888,20 +926,20 @@ class ValidadoresInstaladosTest(InstallerTestCase):
         )
 
     def test_instalacao_copia_os_dois_validadores(self):
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         for nome in self.VALIDADORES:
             self.assertExists(f".qagente/bin/{nome}")
 
     def test_dry_run_nao_cria_os_validadores(self):
-        self.install_ok("--profile", "default", "--dry-run")
+        self.install_ok("--tool", "claude", "--profile", "default", "--dry-run")
         self.assertMissing(".qagente/bin")
 
     def test_validadores_sao_atualizados_sem_force(self):
         """Código do harness, não conteúdo do time: um validador defasado falha em silêncio."""
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         alvo = self.project / ".qagente" / "bin" / "validate_perfil.py"
         alvo.write_text("# versão antiga\n", encoding="utf-8")
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         self.assertEqual(
             alvo.read_text(encoding="utf-8"),
             (HARNESS / "validate_perfil.py").read_text(encoding="utf-8"),
@@ -909,14 +947,14 @@ class ValidadoresInstaladosTest(InstallerTestCase):
 
     def test_validador_de_perfil_instalado_roda_sem_argumento(self):
         """É a forma que a skill de configuração manda usar: sem caminho, do projeto."""
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         resultado = self.rodar_no_projeto(".qagente/bin/validate_perfil.py")
         self.assertEqual(resultado.returncode, 0, resultado.stdout + resultado.stderr)
         self.assertIn("quality-profile.json", resultado.stdout)
         self.assertIn("0 erro(s)", resultado.stdout)
 
     def test_validador_de_perfil_instalado_acha_o_perfil_de_uma_subpasta(self):
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         subpasta = self.project / "saida" / "cenarios"
         resultado = subprocess.run(
             [sys.executable, str(self.project / ".qagente" / "bin" / "validate_perfil.py")],
@@ -931,7 +969,7 @@ class ValidadoresInstaladosTest(InstallerTestCase):
         self.assertIn("quality-profile.json", resultado.stdout)
 
     def test_validador_de_perfil_instalado_reprova_perfil_com_erro(self):
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         perfil = self.project / ".qagente" / "quality-profile.json"
         dados = json.loads(perfil.read_text(encoding="utf-8"))
         dados["api"] = {"enabled": "sim"}
@@ -942,7 +980,7 @@ class ValidadoresInstaladosTest(InstallerTestCase):
 
     def test_validador_de_artefatos_instalado_usa_o_perfil_do_projeto(self):
         """Sem `profiles/` ao lado, ele ainda mede contra o perfil efetivo — não contra defaults."""
-        self.install_ok("--profile", "default")
+        self.install_ok("--tool", "claude", "--profile", "default")
         artefato = self.project / "saida" / "cenarios" / "x.cenarios.md"
         artefato.write_text(CENARIOS_OK, encoding="utf-8")
         resultado = self.rodar_no_projeto(
@@ -1850,7 +1888,7 @@ class TemplatesDoTimeTest(unittest.TestCase):
 
         O modo global não tem projeto: `.qagente/` é por projeto, como o perfil e o contexto.
         """
-        saida = self._rodar("--global", "--dry-run")
+        saida = self._rodar("--global", "--tool", "claude", "--dry-run")
         self.assertNotIn("Templates do time", saida)
 
 
