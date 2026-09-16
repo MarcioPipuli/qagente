@@ -202,6 +202,32 @@ e mostra as quatro opções com o destino de cada uma.
 
 `AGENTS.md` é instalado em todas: é o núcleo das regras, e os adaptadores apontam para ele.
 
+### Servidores MCP
+
+O harness declara seus servidores MCP em `mcp/servers.json`, uma vez, e o instalador os escreve
+no arquivo que **cada ferramenta** lê. Hoje é o servidor remoto da Atlassian, que dá ao agente
+leitura de páginas do Confluence e tickets do Jira direto da fonte, em vez de texto colado.
+
+| `--tool` | Arquivo de MCP | Chave raiz | Escopo |
+|---|---|---|---|
+| `claude` | `.mcp.json` | `mcpServers` | projeto |
+| `cursor` | `.cursor/mcp.json` | `mcpServers` | projeto |
+| `copilot` | `.vscode/mcp.json` | **`servers`** | projeto |
+| `windsurf` | `~/.codeium/windsurf/mcp_config.json` | `mcpServers` | **global** |
+
+O Windsurf só tem configuração global, e instalação de projeto não escreve na pasta pessoal do
+usuário: para ele o instalador **imprime** o bloco e diz onde colar.
+
+Três garantias, todas cobertas por teste:
+
+- **MCP que o time já tem nunca é apagado.** A mesclagem só acrescenta o que falta. Um servidor
+  de nome igual ao que o harness declara é preservado — `--force` atualiza só esse, e nunca toca
+  nos demais.
+- **Nenhum token é gravado.** A autenticação da Atlassian é OAuth no navegador, na primeira vez
+  que a ferramenta chamar o servidor.
+- **JSON existente ilegível é pulado, não sobrescrito.** Arquivo que não dá para ler pode estar
+  sendo editado, e perder a configuração do time é pior que não instalar a nossa.
+
 ### Opção A — Instalador automático (recomendado)
 
 ```bash

@@ -668,6 +668,121 @@ class HarnessComArquivosSoltosTest(InstallerTestCase):
         self.assertExists(".qagente/quality-profile.json")
 
 
+class ServidoresMcpTest(InstallerTestCase):
+    """O harness declara os servidores MCP uma vez e cada ferramenta lê de um lugar diferente.
+
+    O servidor é o mesmo para todas — endpoint HTTP com OAuth, não algo de uma ferramenta só.
+    O que muda é o arquivo e, no caso do Copilot, a chave raiz.
+    """
+
+    def ler(self, relativo: str) -> dict:
+        return json.loads((self.project / relativo).read_text(encoding="utf-8"))
+
+    def test_cada_ferramenta_recebe_o_arquivo_no_lugar_que_ela_le(self):
+        self.install_ok("--tools", "claude,cursor,copilot", "--profile", "default")
+        for relativo in (".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json"):
+            with self.subTest(arquivo=relativo):
+                self.assertExists(relativo)
+
+    def test_copilot_usa_a_chave_servers_e_os_outros_mcpservers(self):
+        """Chave errada produz um JSON válido que a ferramenta ignora em silêncio.
+
+        É a falha que não aparece: o arquivo existe, a instalação disse "Concluído", e o
+        servidor simplesmente nunca é carregado.
+        """
+        self.install_ok("--tools", "claude,cursor,copilot", "--profile", "default")
+        self.assertIn("servers", self.ler(".vscode/mcp.json"))
+        self.assertNotIn("mcpServers", self.ler(".vscode/mcp.json"))
+        for relativo in (".mcp.json", ".cursor/mcp.json"):
+            with self.subTest(arquivo=relativo):
+                self.assertIn("mcpServers", self.ler(relativo))
+
+    def test_windsurf_nao_escreve_no_projeto_nem_na_home(self):
+        """A configuração do Windsurf é global. Instalação de projeto não escreve na home
+        do usuário — imprime o bloco e diz onde colar."""
+        stdout = self.install_ok("--tool", "windsurf", "--profile", "default")
+        self.assertIn("~/.codeium/windsurf/mcp_config.json", stdout)
+        self.assertIn("configuração é global", stdout)
+        for relativo in (".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json"):
+            with self.subTest(arquivo=relativo):
+                self.assertMissing(relativo)
+
+    def test_nenhum_arquivo_gerado_contem_token(self):
+        """A autenticação é OAuth no navegador. Credencial em arquivo versionado violaria o
+        princípio 5 do AGENTS.md para economizar um clique."""
+        self.install_ok("--tools", "claude,cursor,copilot", "--profile", "default")
+        for relativo in (".mcp.json", ".cursor/mcp.json", ".vscode/mcp.json"):
+            texto = (self.project / relativo).read_text(encoding="utf-8").lower()
+            with self.subTest(arquivo=relativo):
+                for marca in ("token", "senha", "password", "secret", "api_key", "apikey"):
+                    self.assertNotIn(marca, texto)
+
+    def test_mcp_existente_do_time_nao_e_apagado(self):
+        """O ponto inteiro de não usar install_entry aqui: copiar por cima apagaria o do time."""
+        alvo = self.project / ".mcp.json"
+        alvo.write_text(
+            json.dumps({"mcpServers": {"banco-interno": {"type": "http", "url": "https://interno"}}}),
+            encoding="utf-8",
+        )
+        self.install_ok("--tool", "claude", "--profile", "default")
+        servidores = self.ler(".mcp.json")["mcpServers"]
+        self.assertIn("banco-interno", servidores)
+        self.assertEqual(servidores["banco-interno"]["url"], "https://interno")
+        self.assertIn("atlassian", servidores)
+
+    def test_servidor_homonimo_do_time_so_muda_com_force(self):
+        """O time pode apontar `atlassian` para um servidor próprio. Sem --force, vence o dele."""
+        escolha = {"mcpServers": {"atlassian": {"type": "http", "url": "https://escolha-do-time"}}}
+        alvo = self.project / ".mcp.json"
+        alvo.write_text(json.dumps(escolha), encoding="utf-8")
+
+        self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertEqual(self.ler(".mcp.json")["mcpServers"]["atlassian"]["url"], "https://escolha-do-time")
+
+        self.install_ok("--tool", "claude", "--profile", "default", "--force")
+        self.assertNotEqual(self.ler(".mcp.json")["mcpServers"]["atlassian"]["url"], "https://escolha-do-time")
+
+    def test_json_ilegivel_e_pulado_e_nao_sobrescrito(self):
+        """Arquivo que não dá para ler pode estar sendo editado. Perder o MCP do time é pior
+        que não instalar o nosso."""
+        alvo = self.project / ".mcp.json"
+        alvo.write_text("{ isso não é json", encoding="utf-8")
+        stdout = self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertIn("não sobrescrito", stdout)
+        self.assertEqual(alvo.read_text(encoding="utf-8"), "{ isso não é json")
+
+    def test_reinstalar_nao_duplica(self):
+        self.install_ok("--tool", "claude", "--profile", "default")
+        primeiro = self.ler(".mcp.json")
+        stdout = self.install_ok("--tool", "claude", "--profile", "default")
+        self.assertIn("já presente", stdout)
+        self.assertEqual(self.ler(".mcp.json"), primeiro)
+
+    def test_dry_run_nao_escreve_mcp(self):
+        stdout = self.install_ok("--tool", "claude", "--profile", "default", "--dry-run")
+        self.assertIn("[dry-run] mesclar MCP", stdout)
+        self.assertMissing(".mcp.json")
+
+    def test_a_url_declarada_e_a_oficial_e_nao_tem_versao_v1(self):
+        """v2 é o endpoint recomendado; v1 só transiciona automaticamente em 2027."""
+        declarado = json.loads((HARNESS / "mcp" / "servers.json").read_text(encoding="utf-8"))
+        url = declarado["mcpServers"]["atlassian"]["url"]
+        self.assertEqual(url, "https://mcp.atlassian.com/v2/mcp")
+        self.assertEqual(declarado["mcpServers"]["atlassian"]["type"], "http")
+
+    def test_toda_ferramenta_tem_destino_ou_tratamento_proprio(self):
+        """Ferramenta nova sem destino mapeado cairia num KeyError no meio da instalação."""
+        cobertas = set(install.MCP_DESTINOS) | {"windsurf"}
+        self.assertEqual(cobertas, set(install.TOOLS))
+
+    def test_a_skill_que_le_requisito_sabe_usar_o_mcp(self):
+        """Mecanismo entregue que nenhuma skill conhece é mecanismo que não existe."""
+        texto = (HARNESS / "skills" / "cenarios-de-teste" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Confluence", texto)
+        self.assertIn("OAuth", texto)
+        self.assertIn("nunca gere cenários a partir do título da página", texto)
+
+
 class ManualDoUsuarioTest(InstallerTestCase):
     """O manual é copiado para a raiz do projeto — ver install_user_guide().
 

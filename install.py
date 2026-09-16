@@ -64,6 +64,25 @@ BIN_SRC = (
     HARNESS_DIR / "validate_artefatos.py",
 )
 
+# Servidores MCP que o harness declara, em um lugar só. Cada ferramenta lê MCP de um arquivo
+# diferente, e uma delas usa outra chave raiz — ver MCP_DESTINOS e install_mcp(). O servidor é
+# o mesmo para todas: é um endpoint HTTP, não algo específico de uma ferramenta.
+MCP_SRC = HARNESS_DIR / "mcp" / "servers.json"
+
+# (caminho relativo ao projeto, chave raiz esperada pela ferramenta).
+# `copilot` usa `servers`; as outras usam `mcpServers`. Gravar a chave errada produz um arquivo
+# válido que a ferramenta ignora em silêncio — a falha que este harness persegue.
+# `windsurf` não aparece aqui de propósito: a configuração dele é global
+# (`~/.codeium/windsurf/mcp_config.json`), e instalação de projeto não escreve na home do
+# usuário. Para ele o instalador imprime o bloco e diz onde colar — ver install_mcp().
+MCP_DESTINOS = {
+    "claude": (PurePosixPath(".mcp.json"), "mcpServers"),
+    "cursor": (PurePosixPath(".cursor/mcp.json"), "mcpServers"),
+    "copilot": (PurePosixPath(".vscode/mcp.json"), "servers"),
+}
+
+MCP_WINDSURF_CONFIG = "~/.codeium/windsurf/mcp_config.json"
+
 # Manual do usuário, copiado para a raiz do projeto instalado — ver install_user_guide().
 # Fica na raiz, e não em `.qagente/`, porque é o arquivo que a pessoa procura antes de saber
 # que `.qagente/` existe.
@@ -512,6 +531,100 @@ def install_bin(project_root: Path, *, dry_run: bool) -> None:
         log(f"  {src.name} -> {destination}")
 
 
+def carregar_mcp_declarado() -> dict | None:
+    """Lê os servidores que o harness declara. `None` quando não há o que instalar."""
+    if not MCP_SRC.is_file():
+        return None
+    try:
+        dados = json.loads(MCP_SRC.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"  aviso: declaração de MCP inválida, pulada ({exc})")
+        return None
+    servidores = dados.get("mcpServers")
+    if not isinstance(servidores, dict) or not servidores:
+        return None
+    return servidores
+
+
+def merge_mcp_json(destination: Path, servidores: dict, chave: str, *, force: bool, dry_run: bool) -> str:
+    """Mescla os servidores do harness no arquivo MCP da ferramenta.
+
+    Não é `install_entry`, e a diferença é o ponto inteiro desta função: o time pode já ter
+    MCPs configurados, e copiar por cima apagaria os deles. Só acrescenta o que falta; `--force`
+    atualiza as chaves que o harness declara e **nunca** toca nas outras.
+
+    Nenhum token é gravado. A autenticação do Atlassian é OAuth no navegador, na primeira vez
+    que a ferramenta chama o servidor — escrever credencial em arquivo versionado seria violar
+    o princípio 5 de `AGENTS.md` para economizar um clique.
+
+    JSON existente ilegível é pulado, nunca sobrescrito: um arquivo que não dá para ler pode
+    estar sendo editado, e perder a configuração de MCP do time é pior que não instalar a nossa.
+    """
+    if dry_run:
+        return "dry-run"
+
+    novo = {chave: dict(servidores)}
+    if not destination.exists():
+        ensure_dir(destination.parent, dry_run=False)
+        destination.write_text(json.dumps(novo, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return "instalado"
+
+    try:
+        existente = json.loads(destination.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return "pulado (JSON existente ilegível — não sobrescrito)"
+    if not isinstance(existente, dict):
+        return "pulado (JSON existente ilegível — não sobrescrito)"
+
+    atuais = existente.get(chave)
+    if atuais is None:
+        existente[chave] = dict(servidores)
+    elif not isinstance(atuais, dict):
+        return f"pulado ('{chave}' existente não é um objeto — não sobrescrito)"
+    else:
+        mudou = False
+        for nome, spec in servidores.items():
+            if nome not in atuais:
+                atuais[nome] = spec
+                mudou = True
+            elif atuais[nome] != spec and force:
+                atuais[nome] = spec
+                mudou = True
+        if not mudou:
+            return "pulado (já presente)"
+
+    destination.write_text(json.dumps(existente, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return "atualizado"
+
+
+def install_mcp(project_root: Path, tools: list[str], *, force: bool, dry_run: bool) -> None:
+    """Declara os servidores MCP do harness no arquivo de cada ferramenta selecionada.
+
+    O servidor é o mesmo para todas — um endpoint HTTP com OAuth, não algo de uma ferramenta
+    só. O que muda é onde cada uma lê a configuração, e com que chave raiz. Mesma divisão que
+    o harness já usa para as regras: o núcleo declara uma vez, o destino traduz.
+    """
+    servidores = carregar_mcp_declarado()
+    if servidores is None:
+        return
+    log("\n== Servidores MCP ==")
+    nomes = ", ".join(sorted(servidores))
+    for tool in tools:
+        if tool == "windsurf":
+            # Configuração global: instalação de projeto não escreve na home do usuário.
+            log(f"  windsurf: configuração é global, não de projeto — acrescente em {MCP_WINDSURF_CONFIG}:")
+            log("    " + json.dumps({"mcpServers": servidores}, ensure_ascii=False, indent=2).replace("\n", "\n    "))
+            continue
+        destino_rel, chave = MCP_DESTINOS[tool]
+        destination = project_root / Path(destino_rel)
+        if dry_run:
+            log(f"  [dry-run] mesclar MCP ({nomes}) em {destination}")
+            continue
+        status = merge_mcp_json(destination, servidores, chave, force=force, dry_run=False)
+        log(f"  {tool}: {status} -> {destination}")
+    log("  Nenhum token é gravado: a autenticação do Atlassian é OAuth, na primeira vez que a ferramenta usar o servidor.")
+
+
 def install_user_guide(project_root: Path, *, dry_run: bool) -> None:
     """Copia o manual do usuário para a raiz do projeto instalado.
 
@@ -690,6 +803,7 @@ def main() -> None:
         install_templates(project_root, force=args.force, dry_run=args.dry_run)
         install_bin(project_root, dry_run=args.dry_run)
         install_user_guide(project_root, dry_run=args.dry_run)
+        install_mcp(project_root, tools, force=args.force, dry_run=args.dry_run)
         if any(tool != "claude" for tool in tools):
             install_portable_skills(project_root, force=args.force, dry_run=args.dry_run)
         for tool in tools:
