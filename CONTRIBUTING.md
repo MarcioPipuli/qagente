@@ -1,7 +1,7 @@
 # Contribuindo com o QAGente
 
 Este documento é para quem **mantém o harness**. O comportamento do agente é definido em
-[AGENTS.md](AGENTS.md) e [agent.md](agent.md); aqui ficam só as regras de trabalho no
+[AGENTS.md](AGENTS.md) e [agentes/qa-especialista.md](agentes/qa-especialista.md); aqui ficam só as regras de trabalho no
 repositório.
 
 ## Invariantes de arquitetura
@@ -12,7 +12,7 @@ Estas decisões não são preferência de estilo — mudá-las muda o que o QAGe
   para qualquer time e qualquer ferramenta. O que varia por time vai para o perfil, não para
   uma cópia do núcleo.
 - **Perfil declarativo em vez de agente por time.** Uma necessidade nova de configuração vira
-  campo em `profiles/*.json` lido pelas skills, não um novo `agent.md`.
+  campo em `profiles/*.json` lido pelas skills, não um novo `agentes/qa-especialista.md`.
 - **Adaptador é formato, não conteúdo.** `adapters/copilot`, `adapters/cursor` e
   `adapters/windsurf` reembalam as mesmas regras no formato que cada ferramenta lê. Não
   duplique instrução específica de ferramenta sem necessidade real, e não deixe um adaptador
@@ -35,14 +35,14 @@ Rode os quatro antes e depois de qualquer alteração. É o mesmo que o CI roda
 (`.github/workflows/tests.yml`), em Linux e Windows, nos Python 3.9 e 3.13:
 
 ```bash
-python -m py_compile install.py validate_perfil.py
-python validate_skills.py --strict
-python run_evals.py
-python -m unittest test_install
+python -m py_compile install.py bin/validate_perfil.py bin/validate_artefatos.py
+python ferramentas/validate_skills.py --strict
+python ferramentas/run_evals.py
+python -m unittest ferramentas.test_install
 ```
 
 Regra de conteúdo que o validador cobre e vale repetir: toda skill precisa ser roteada por
-`agent.md` ou por `AGENTS.md`. Uma skill que ninguém aponta é uma skill que o agente nunca
+`agentes/qa-especialista.md` ou por `AGENTS.md`. Uma skill que ninguém aponta é uma skill que o agente nunca
 carrega — e um gatilho anunciado na `description` sem skill nem `paths.*` correspondente é a
 falha simétrica: promete artefato que o harness não produz.
 

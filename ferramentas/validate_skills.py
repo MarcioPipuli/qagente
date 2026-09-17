@@ -15,8 +15,8 @@ As seções de formato (`<objetivo>`, perguntas de descoberta, `## Pronto quando
 seção vazia só para satisfazer o validador é pior que a ausência dela.
 
 Uso:
-    python validate_skills.py            # erros falham, avisos são reportados
-    python validate_skills.py --strict   # avisos também falham
+    python ferramentas/validate_skills.py            # erros falham, avisos são reportados
+    python ferramentas/validate_skills.py --strict   # avisos também falham
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ import re
 import sys
 from pathlib import Path
 
-HARNESS = Path(__file__).resolve().parent
+# Este script mora em `ferramentas/`; o harness é o diretório acima.
+HARNESS = Path(__file__).resolve().parent.parent
 SKILLS_DIR = HARNESS / "skills"
 
 MAX_LINHAS_ERRO = 650
@@ -56,7 +57,7 @@ SECOES_DISPENSADAS = {"referencia": ("## Perguntas de descoberta",)}
 # Arquivos onde uma referência `skills/<nome>` é instrução para o agente e precisa resolver.
 # Documentos de manutenção do harness (CONTRIBUTING.md) ficam de fora: falam com quem mantém
 # o projeto, não com o agente.
-ARQUIVOS_COM_REFERENCIAS = ("agent.md", "AGENTS.md", "README.md")
+ARQUIVOS_COM_REFERENCIAS = ("agentes/qa-especialista.md", "AGENTS.md", "README.md")
 
 # Exige crase ou parêntese de link: em português "skills/agente" também aparece como
 # prosa ("as skills/agente já copiados"), e isso não é um caminho.
@@ -212,7 +213,7 @@ def validate_repo(skills_existentes: set[str]) -> list[tuple[str, str, str]]:
 
     readme = (HARNESS / "README.md").read_text(encoding="utf-8") if (HARNESS / "README.md").is_file() else ""
     roteamento = ""
-    for arquivo in ("agent.md", "AGENTS.md"):
+    for arquivo in ("agentes/qa-especialista.md", "AGENTS.md"):
         if (HARNESS / arquivo).is_file():
             roteamento += (HARNESS / arquivo).read_text(encoding="utf-8")
 
@@ -220,7 +221,7 @@ def validate_repo(skills_existentes: set[str]) -> list[tuple[str, str, str]]:
         if readme and nome not in readme:
             problemas.append(("aviso", "README.md", f"não menciona a skill {nome}"))
         if roteamento and nome not in roteamento:
-            problemas.append(("erro", "agent.md/AGENTS.md", f"skill {nome} existe mas nada a roteia"))
+            problemas.append(("erro", "qa-especialista.md/AGENTS.md", f"skill {nome} existe mas nada a roteia"))
     return problemas
 
 

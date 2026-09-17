@@ -2,7 +2,7 @@
 """Valida os artefatos que o agente produz — os documentos de cenários e de casos de teste.
 
 O terceiro validador do harness, e o primeiro que olha para a **saída**. `validate_perfil.py`
-valida a configuração do time; `validate_skills.py` valida o que o agente lê como instrução;
+valida a configuração do time; `ferramentas/validate_skills.py` valida o que o agente lê como instrução;
 este valida o que ele escreveu. A lacuna que ele fecha foi apontada por três itens
 independentes: o gate prende a regra no texto da skill, e nada prova que o artefato entregue
 respeita o valor efetivo do perfil em vez do default citado no exemplo da skill.
@@ -20,10 +20,10 @@ convenção que o perfil governa e que o idioma do artefato pode legitimamente v
 
 Uso (no projeto instalado o instalador deixa este arquivo em `.qagente/bin/`, que é o caminho
 que as skills citam):
-    python validate_artefatos.py saida/cenarios/x.cenarios.md
-    python validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
-    python validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json
-    python validate_artefatos.py <arquivos> --strict   # avisos também falham
+    python bin/validate_artefatos.py saida/cenarios/x.cenarios.md
+    python bin/validate_artefatos.py saida/cenarios/x.cenarios.md saida/casos-de-teste/x.casos.md
+    python bin/validate_artefatos.py <arquivos> --profile .qagente/quality-profile.json
+    python bin/validate_artefatos.py <arquivos> --strict   # avisos também falham
 
 Passando os dois documentos na mesma chamada, as checagens de contrato entre as fases também
 rodam: toda tag de rastreio aponta para um cenário que existe, e a aderência declarada bate
@@ -40,10 +40,11 @@ import unicodedata
 from datetime import date
 from pathlib import Path
 
-# No clone do harness este arquivo fica na raiz, com `profiles/` ao lado. Instalado pelo
-# `install.py`, ele fica em `.qagente/bin/`, onde o vizinho é o perfil do próprio projeto.
+# Mesma geometria dos dois lados: no clone do harness este arquivo fica em `bin/`, com
+# `../profiles/` embarcado; instalado pelo `install.py`, fica em `.qagente/bin/`, onde o
+# vizinho `../quality-profile.json` é o perfil do próprio projeto.
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_PROFILE = BASE_DIR / "profiles" / "default.json"
+DEFAULT_PROFILE = BASE_DIR.parent / "profiles" / "default.json"
 PERFIL_VIZINHO = BASE_DIR.parent / "quality-profile.json"
 
 # Níveis canônicos são declarados em inglês no perfil e escritos no idioma de `language`

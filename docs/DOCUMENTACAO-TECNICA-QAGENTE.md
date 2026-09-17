@@ -11,7 +11,7 @@
 > Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
-> **15 skills, 186 evals, 325 testes**, `validate_skills.py --strict` em 0 erros / 0 avisos.
+> **15 skills, 186 evals, 325 testes**, `ferramentas/validate_skills.py --strict` em 0 erros / 0 avisos.
 
 ---
 
@@ -21,7 +21,7 @@
 2. [Mapa dos arquivos e quem lê cada um](#2-mapa-dos-arquivos-e-quem-lê-cada-um)
 3. [Arquitetura em camadas](#3-arquitetura-em-camadas)
 4. [A cadeia de precedência e as cinco invariantes](#4-a-cadeia-de-precedência-e-as-cinco-invariantes)
-5. [`agent.md` — o cartão de identidade e o roteador](#5-agentmd--o-cartão-de-identidade-e-o-roteador)
+5. [`agentes/qa-especialista.md` — o cartão de identidade e o roteador](#5-agentesqa-especialistamd--o-cartão-de-identidade-e-o-roteador)
 6. [`AGENTS.md` — o núcleo de regras](#6-agentsmd--o-núcleo-de-regras)
 7. [Anatomia de uma SKILL.md](#7-anatomia-de-uma-skillmd)
 8. [Catálogo das 15 skills](#8-catálogo-das-15-skills)
@@ -50,11 +50,11 @@ Consequência prática, e é a chave para entender todo o resto:
 
 | Camada | Natureza | Quando executa |
 |---|---|---|
-| `agent.md`, `AGENTS.md`, `skills/*/SKILL.md`, `contexto/`, `adapters/` | **Instrução em Markdown** | Lido pelo modelo, em tempo de conversa |
+| `agentes/qa-especialista.md`, `AGENTS.md`, `skills/*/SKILL.md`, `contexto/`, `adapters/` | **Instrução em Markdown** | Lido pelo modelo, em tempo de conversa |
 | `profiles/*.json`, `.qagente/quality-profile.json` | **Dado declarativo** | Lido pelo instalador **e** pelo modelo |
 | `install.py` | Código Python | Só na instalação |
-| `validate_perfil.py`, `validate_artefatos.py` | Código Python | Na instalação **e** no uso — copiados para `.qagente/bin/` do projeto |
-| `validate_skills.py`, `run_evals.py`, `test_install.py` | Código Python | Só na manutenção do harness / CI |
+| `bin/validate_perfil.py`, `bin/validate_artefatos.py` | Código Python | Na instalação **e** no uso — copiados para `.qagente/bin/` do projeto |
+| `ferramentas/validate_skills.py`, `ferramentas/run_evals.py`, `ferramentas/test_install.py` | Código Python | Só na manutenção do harness / CI |
 
 Nenhuma linha de Python roda enquanto o agente trabalha. O "comportamento do agente" é
 inteiramente o efeito de texto bem posicionado: o que está no arquivo certo, no formato certo,
@@ -73,10 +73,10 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
   verificável sem julgamento: totais, contrato entre as fases, tags obrigatórias, campos do
   perfil. Cobertura semântica ficaria a cargo de heurística, e heurística que erra faz o
   usuário parar de rodar o validador — o que custa mais do que a checagem valia.
-- **Por que existe um validador de skills** (`validate_skills.py`): um `name` errado no
+- **Por que existe um validador de skills** (`ferramentas/validate_skills.py`): um `name` errado no
   frontmatter não quebra nada visivelmente — faz o agente procurar arquivo no lugar errado, em
   silêncio. O validador é o compilador que essa "linguagem" não tem.
-- **Por que existem evals estáticos** (`run_evals.py`): apagar a regra contra `cy.wait(3000)` da
+- **Por que existem evals estáticos** (`ferramentas/run_evals.py`): apagar a regra contra `cy.wait(3000)` da
   skill de Cypress não quebra teste nenhum. Os evals prendem o *conteúdo* que cada skill precisa
   continuar ensinando.
 - **Por que 325 testes para um instalador de ~700 linhas**: parte deles não testa o instalador,
@@ -91,7 +91,7 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 
 | Arquivo / pasta | Papel | Lido por | Quando |
 |---|---|---|---|
-| `agent.md` | Definição do subagente `qa-especialista`: identidade, missão, tabela de roteamento | Ferramenta de IA (como `.claude/agents/qa-especialista.md`) | Ao decidir delegar / ao ser invocado |
+| `agentes/qa-especialista.md` | Definição do subagente `qa-especialista`: identidade, missão, tabela de roteamento | Ferramenta de IA (como `.claude/agents/qa-especialista.md`) | Ao decidir delegar / ao ser invocado |
 | `AGENTS.md` | Núcleo de regras: princípios, fases, DoD, fronteiras, convenção de pastas | Ferramenta de IA (mesclado no `AGENTS.md` do projeto) | Antes de qualquer tarefa não trivial |
 | `CLAUDE.md` | Ponteiro de uma linha: `AGENTS.md` | Claude Code | Sempre |
 | `skills/<nome>/SKILL.md` | Procedimento especializado de uma fase ou apoio | Ferramenta de IA | Quando o pedido casa com a `description` |
@@ -100,11 +100,11 @@ Isso explica três decisões de projeto que de outra forma parecem exageradas:
 | `profiles/*.json` | 5 perfis prontos | Instalador (copia e valida) | Instalação |
 | `adapters/<tool>/*` | Reembalagem do núcleo no formato de cada ferramenta | Instalador (copia) → depois a ferramenta | Instalação / conversa |
 | `install.py` | Instalador + validador de perfil | Pessoa / CI | Instalação |
-| `validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
-| `validate_perfil.py` | Validador do perfil de qualidade; importado pelo instalador | Instalador / Pessoa / **agente** | Instalação e uso |
-| `validate_artefatos.py` | Validador dos 6 artefatos gerados (saída) | Pessoa / **agente** | Uso |
-| `run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
-| `test_install.py` | 325 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
+| `ferramentas/validate_skills.py` | Validador estrutural das skills | Pessoa / CI | Manutenção |
+| `bin/validate_perfil.py` | Validador do perfil de qualidade; importado pelo instalador | Instalador / Pessoa / **agente** | Instalação e uso |
+| `bin/validate_artefatos.py` | Validador dos 6 artefatos gerados (saída) | Pessoa / **agente** | Uso |
+| `ferramentas/run_evals.py` + `evals/*.json` | Evals estáticos de conteúdo | Pessoa / CI | Manutenção |
+| `ferramentas/test_install.py` | 325 testes (unittest, sem dependências) | Pessoa / CI | Manutenção |
 | `.github/workflows/tests.yml` | CI: 2 SOs × 2 Pythons | GitHub Actions | Push / PR |
 | `CONTRIBUTING.md` | Regras para quem mantém o harness | Pessoa | Manutenção |
 | `PRIMEIROS-PASSOS-QAGENTE.md` | Manual do usuário (15 passos) | Pessoa | Primeiro uso |
@@ -126,7 +126,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 | Caminho | Conteúdo | Preservado em reinstalação? |
 |---|---|---|
 | `.claude/skills/<nome>/` | As 15 skills | Sim (só `--force` sobrescreve) |
-| `.claude/agents/qa-especialista.md` | Cópia de `agent.md` | Sim (só `--force`) |
+| `.claude/agents/qa-especialista.md` | Cópia de `agentes/qa-especialista.md` | Sim (só `--force`) |
 | `AGENTS.md` | Bloco `<!-- QAGente:start -->…<!-- QAGente:end -->` mesclado | O bloco é **atualizado**; o resto do arquivo nunca é tocado |
 | `CLAUDE.md` | Ponteiro para `AGENTS.md`, ou nota anexada se já existia | Sim |
 | `.qagente/quality-profile.json` | **Como** trabalhar | Sim (só `--force`) |
@@ -150,7 +150,7 @@ documentos de referência, que só se abrem depois, vão para `docs/`.
 └───────────────────────────────────────────────────────────────────────────┘
                  ▲ o adaptador traduz o núcleo para o formato de cada uma
 ┌─ Camada 1 — Identidade e roteamento ──────────────────────────────────────┐
-│  agent.md  →  .claude/agents/qa-especialista.md                            │
+│  agentes/qa-especialista.md  →  .claude/agents/qa-especialista.md                            │
 │  Quem é o agente · qual skill responde a qual pedido · regras inegociáveis │
 └───────────────────────────────────────────────────────────────────────────┘
 ┌─ Camada 2 — Núcleo de regras (universal, não configurável) ───────────────┐
@@ -252,7 +252,7 @@ produz o aviso *"é invariante de AGENTS.md e não pode ser desligada; o false s
 
 ---
 
-## 5. `agent.md` — o cartão de identidade e o roteador
+## 5. `agentes/qa-especialista.md` — o cartão de identidade e o roteador
 
 Instalado como `.claude/agents/qa-especialista.md`. Estrutura:
 
@@ -397,7 +397,7 @@ Saídas das skills de apoio (que o instalador **não** cria, porque não são fa
 ## 7. Anatomia de uma SKILL.md
 
 Formato herdado do `agent-skills` da Tech Leads Club. Toda skill tem exatamente esta forma, e o
-`validate_skills.py` reprova quem foge dela.
+`ferramentas/validate_skills.py` reprova quem foge dela.
 
 ```yaml
 ---
@@ -718,7 +718,7 @@ A `description` de cada skill segue a gramática
 `Use quando` (sem gatilho explícito) e sem `Não use` (sem anti-gatilho — "duas skills podem
 disputar o mesmo pedido"). Como o CI roda `--strict`, na prática ambos são obrigatórios.
 
-### 9.2 A lista de decisão do `agent.md`
+### 9.2 A lista de decisão do `agentes/qa-especialista.md`
 
 | Situação do pedido | Skill |
 |---|---|
@@ -891,7 +891,7 @@ Python 3 puro, sem dependências externas. ~700 linhas.
 | `--profile <nome\|caminho.json>` | Perfil de `profiles/` ou arquivo JSON |
 | `--validate-profile <nome\|caminho>` | Valida e sai (0 = sem erros, 1 = com erros) |
 | `--force` | Sobrescreve skills, agente, perfil e contexto já instalados |
-| `--symlink` | Link simbólico em vez de cópia (skills e `agent.md`); cai para cópia com aviso se falhar |
+| `--symlink` | Link simbólico em vez de cópia (skills e `agentes/qa-especialista.md`); cai para cópia com aviso se falhar |
 | `--dry-run` | Mostra tudo que faria, **sem tocar no disco** |
 
 ### 12.2 Ordem de execução de `main()`
@@ -1063,13 +1063,13 @@ Quatro comandos, obrigatórios antes e depois de qualquer alteração (`CONTRIBU
 exatamente o que o CI roda:
 
 ```bash
-python -m py_compile install.py validate_perfil.py validate_skills.py validate_artefatos.py run_evals.py test_install.py
-python validate_skills.py --strict
-python run_evals.py
-python -m unittest test_install
+python -m py_compile install.py bin/validate_perfil.py bin/validate_artefatos.py ferramentas/validate_skills.py ferramentas/run_evals.py ferramentas/test_install.py
+python ferramentas/validate_skills.py --strict
+python ferramentas/run_evals.py
+python -m unittest ferramentas.test_install
 ```
 
-### 14.1 `validate_skills.py` — a forma da skill
+### 14.1 `ferramentas/validate_skills.py` — a forma da skill
 
 Por skill:
 
@@ -1098,9 +1098,9 @@ No nível do repositório:
 
 | Checagem | Severidade |
 |---|---|
-| `agent.md`, `AGENTS.md`, `README.md` existem | erro |
+| `agentes/qa-especialista.md`, `AGENTS.md`, `README.md` existem | erro |
 | Referência `skills/<nome>` nesses arquivos resolve | erro |
-| Toda skill é **roteada** por `agent.md` ou `AGENTS.md` | **erro** — "uma skill que ninguém aponta é uma skill que o agente nunca carrega" |
+| Toda skill é **roteada** por `agentes/qa-especialista.md` ou `AGENTS.md` | **erro** — "uma skill que ninguém aponta é uma skill que o agente nunca carrega" |
 | Toda skill é mencionada no `README.md` | aviso (e o CI é `--strict`, então reprova) |
 
 Detalhe de implementação que evita falso positivo: o regex de referência exige crase ou
@@ -1108,7 +1108,7 @@ parêntese de link antes de `skills/<nome>`, porque em português "skills/agente
 como prosa ("as skills/agente já copiados"), e isso não é um caminho. Há teste para isso
 (`test_nao_confunde_prosa_com_referencia_de_caminho`).
 
-### 14.2 `run_evals.py` — o conteúdo da skill
+### 14.2 `ferramentas/run_evals.py` — o conteúdo da skill
 
 Uma spec por skill em `evals/<skill>-evals.json`, mínimo de **8 casos** (`MIN_CASOS = 8`; na
 prática, 9 a 12 — **120 no total**). Cada caso:
@@ -1159,7 +1159,7 @@ skills mais recentes, e a correção certa foi no texto da skill, não no padrã
 acertou** — prova que a skill continua ensinando o que o caso exige. Modo `--live` não existe
 de propósito: exigiria dependência de rede e de modelo.
 
-### 14.3 `test_install.py` — 325 testes
+### 14.3 `ferramentas/test_install.py` — 325 testes
 
 | Grupo de classes | O que prende |
 |---|---|
@@ -1182,7 +1182,7 @@ entrega:
 - `test_a_description_so_promete_artefato_com_skill_e_destino` — um gatilho anunciado na
   `description` sem skill **e** sem `paths.*` correspondente reprova;
 - `test_toda_chave_de_paths_citada_no_nucleo_e_conhecida_pelo_instalador` — varre `AGENTS.md`,
-  `agent.md` e **todos** os `SKILL.md`; qualquer `paths.<algo>` inventado por uma skill quebra a
+  `agentes/qa-especialista.md` e **todos** os `SKILL.md`; qualquer `paths.<algo>` inventado por uma skill quebra a
   suíte se não estiver em `DEFAULT_IO_PATHS` ou `OPTIONAL_IO_PATHS`;
 - `test_o_nucleo_define_o_idioma_da_escala_de_risco` e `test_o_principio_de_risco_nao_fixa_a_escala` —
   a escala é do time (perfil), a convenção de tradução é do núcleo.
@@ -1216,7 +1216,7 @@ Alcance: vale igual para página web lida, resposta de API capturada, relatório
 **saída de outro agente**. Critério de dúvida: tratar como requisito a testar e perguntar.
 
 Cobertura em teste: `EntradaNaoConfiavelTest` verifica que a regra aparece no núcleo, nos
-invariantes, no resumo do `agent.md`, na skill que lê documentos e nos quatro adaptadores.
+invariantes, no resumo do `agentes/qa-especialista.md`, na skill que lê documentos e nos quatro adaptadores.
 
 ### 15.2 Segredos
 
@@ -1247,7 +1247,7 @@ testar."* Projeto instalado com `--profile fullstack`.
 ```
 1. ROTEAMENTO
    A description do agente casa ("analisar uma especificação/PRD … e levantar cenários").
-   A lista de decisão do agent.md aponta → skills/cenarios-de-teste
+   A lista de decisão do agentes/qa-especialista.md aponta → skills/cenarios-de-teste
 
 2. LEITURA DE CONFIGURAÇÃO (sempre nesta ordem)
    .qagente/quality-profile.json  → language=pt-BR · risk_levels=[critical,high,medium,low]
@@ -1328,7 +1328,7 @@ Não é só escrever o `SKILL.md`. O gate cobra:
    existe para barrar categoria inventada por descuido, não por decisão: `configuracao` entrou
    com `configuracao-do-projeto` e `orquestracao` com `estado-do-ciclo`, cada uma porque a skill
    genuinamente não era nenhuma das anteriores;
-2. **roteamento** por `agent.md` ou `AGENTS.md` — ausência é **erro fatal** no validador;
+2. **roteamento** por `agentes/qa-especialista.md` ou `AGENTS.md` — ausência é **erro fatal** no validador;
 3. menção no `README.md` — aviso, e o CI roda `--strict`, então reprova;
 4. as quatro seções de formato + `## Configuração` + citação dos dois arquivos de `.qagente/`;
 5. spec de evals com no mínimo 8 casos (na prática 9–12);
@@ -1397,7 +1397,7 @@ Duas lições que o caso deixa:
 | Skills | 11 (6 do fluxo + 5 de apoio) |
 | Casos de eval | 120 (mínimo de 8 por skill; distribuição 9–12) |
 | Testes | 148 (`unittest`, biblioteca padrão) |
-| `validate_skills.py --strict` | 0 erros / 0 avisos |
+| `ferramentas/validate_skills.py --strict` | 0 erros / 0 avisos |
 | Perfis embarcados | 5 |
 | Ferramentas suportadas | 4 (claude, copilot, cursor, windsurf) |
 | Dependências externas | nenhuma (Python 3 puro) |
@@ -1407,7 +1407,7 @@ Duas lições que o caso deixa:
 
 | Parte | Licença | Motivo |
 |---|---|---|
-| Código (`install.py`, `test_install.py`, validadores) | MIT | — |
+| Código (`install.py`, `ferramentas/test_install.py`, validadores) | MIT | — |
 | 6 skills do fluxo (`SKILL.md`) | CC-BY-4.0 | Espelha o arranjo do projeto de origem das convenções |
 | 5 skills de apoio | MIT | São **adaptações** de material MIT; manter a licença de origem é o que preserva a atribuição exigida |
 

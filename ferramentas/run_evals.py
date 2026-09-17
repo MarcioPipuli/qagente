@@ -46,7 +46,8 @@ import re
 import sys
 from pathlib import Path
 
-HARNESS = Path(__file__).resolve().parent
+# Este script mora em `ferramentas/`; o harness é o diretório acima.
+HARNESS = Path(__file__).resolve().parent.parent
 SKILLS_DIR = HARNESS / "skills"
 EVALS_DIR = HARNESS / "evals"
 

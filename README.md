@@ -25,9 +25,10 @@ Harness de um agente especialista em Qualidade de Software (QA/SDET), extraído 
 
 ```
 QAGente/
-├── agent.md              # Definição do subagente "qa-especialista" (identidade, missão, roteamento)
-├── AGENTS.md              # Regras de comportamento (rastreabilidade, risco, independência de testes, DoD)
+├── AGENTS.md               # Regras de comportamento (rastreabilidade, risco, independência de testes, DoD)
 ├── CLAUDE.md               # Ponteiro para AGENTS.md (mesmo padrão usado pelo agent-skills-main)
+├── agentes/
+│   └── qa-especialista.md  # Definição do subagente (identidade, missão, roteamento) → .claude/agents/
 ├── contexto/               # Template de contexto do projeto (fatos do produto)
 ├── memoria/                # Template da memória do projeto (o que o agente aprende no uso)
 ├── templates-do-time/      # README do diretório onde o time sobrescreve o layout dos artefatos
@@ -38,13 +39,15 @@ QAGente/
 │   ├── frontend-playwright.json
 │   └── fullstack.json
 ├── adapters/               # Instruções para cada ferramenta de IA
-├── install.py              # Instalador automático (copia/mescla o harness em um projeto)
-├── validate_perfil.py      # Validador do perfil de qualidade (usado pelo instalador e copiado para o projeto)
-├── validate_skills.py      # Validador estrutural das skills (frontmatter, templates, referências)
-├── validate_artefatos.py   # Validador dos 6 artefatos gerados (totais, tags, contrato, aritmética da matriz)
-├── run_evals.py            # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
-├── evals/                  # Uma spec por skill, 8+ casos cada
-├── test_install.py         # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
+├── install.py              # Instalador automático (copia/mescla o harness em um projeto) — é o que você roda
+├── bin/                    # Validadores copiados para .qagente/bin/ do projeto (mesmo nome dos dois lados)
+│   ├── validate_perfil.py      # Validador do perfil de qualidade (usado pelo instalador e chamado pelo agente)
+│   └── validate_artefatos.py   # Validador dos 6 artefatos gerados (totais, tags, contrato, aritmética da matriz)
+├── ferramentas/            # Só para quem mantém o harness — o usuário não precisa abrir
+│   ├── validate_skills.py  # Validador estrutural das skills (frontmatter, templates, referências)
+│   ├── run_evals.py        # Evals estáticos: o que cada skill precisa ensinar e desaconselhar
+│   └── test_install.py     # Testes do instalador, do validador e dos evals (unittest, sem dependências externas)
+├── evals/                  # Uma spec por skill, 8+ casos cada (lidas por ferramentas/run_evals.py)
 ├── .github/workflows/      # CI: valida, roda os evals e a suíte no Linux e no Windows
 ├── CONTRIBUTING.md         # Regras para quem mantém o harness (invariantes, validação, instalação real)
 ├── PRIMEIROS-PASSOS-QAGENTE.md      # Manual do usuário: 15 passos, da instalação ao primeiro teste
@@ -259,12 +262,12 @@ Instalações em projeto criam `.qagente/quality-profile.json`. As regras comuns
 Não usa dependências externas (só a biblioteca padrão do Python 3). O instalador:
 
 - copia `skills/*` para `<projeto>/.claude/skills/` (idempotente — roda de novo sem duplicar; usa `--force` para atualizar skills já instaladas);
-- copia `agent.md` para `<projeto>/.claude/agents/qa-especialista.md`;
+- copia `agentes/qa-especialista.md` para `<projeto>/.claude/agents/qa-especialista.md`;
 - **mescla** (não sobrescreve) o conteúdo de `AGENTS.md` no `AGENTS.md` do projeto alvo, dentro de um bloco marcado (`<!-- QAGente:start/end -->`) que é atualizado, não duplicado, em reinstalações;
 - cria `CLAUDE.md` (ponteiro para `AGENTS.md`) se não existir, ou apenas adiciona uma nota referenciando `AGENTS.md` se o projeto já tiver seu próprio `CLAUDE.md`;
 - copia o perfil escolhido para `<projeto>/.qagente/quality-profile.json` (um perfil já existente é preservado, salvo com `--force`);
 - cria `<projeto>/.qagente/templates-do-time/` com um README (diretório do time: `--force` atualiza só o README e nunca apaga um template que o time colocou lá). Esse diretório se chamava `.qagente/templates/`; em projeto instalado antes da renomeação, o instalador **move** o diretório com o conteúdo intacto na primeira reinstalação, e avisa na saída. Se os dois nomes existirem, não junta nada e diz para juntar à mão;
-- copia `validate_perfil.py` e `validate_artefatos.py` para `<projeto>/.qagente/bin/` — são os dois validadores que o **agente** chama na hora da entrega, e sem eles no projeto o comando citado pelas skills apontaria para um arquivo que não existe ali. Sempre atualizados na reinstalação: é código do harness, não conteúdo do time;
+- copia `bin/validate_perfil.py` e `bin/validate_artefatos.py` para `<projeto>/.qagente/bin/` — são os dois validadores que o **agente** chama na hora da entrega, e sem eles no projeto o comando citado pelas skills apontaria para um arquivo que não existe ali. Sempre atualizados na reinstalação: é código do harness, não conteúdo do time;
 - cria as pastas de entrada/saída declaradas em `paths` **pelo perfil efetivo do projeto** — ou seja, se um perfil anterior foi preservado, são as pastas dele que são criadas, não as do perfil passado em `--profile`.
 
 Caminhos absolutos ou que escapem da raiz do projeto (`../`) são recusados com aviso, e `--dry-run` mostra os caminhos efetivos antes de qualquer alteração.
@@ -276,7 +279,7 @@ Use `--symlink` em vez de cópia se preferir manter os arquivos vinculados a est
 ```bash
 python install.py --validate-profile fullstack
 python install.py --validate-profile ./meu-time.json
-python validate_perfil.py ./meu-time.json
+python bin/validate_perfil.py ./meu-time.json
 
 # no projeto instalado, sem argumento: valida o perfil do próprio projeto
 python .qagente/bin/validate_perfil.py
@@ -295,8 +298,8 @@ Sai com código 1 se houver erros. A mesma validação roda a cada instalação.
 ### Validação das skills
 
 ```bash
-python validate_skills.py
-python validate_skills.py --strict
+python ferramentas/validate_skills.py
+python ferramentas/validate_skills.py --strict
 ```
 
 Enquanto `--validate-profile` valida a configuração do time, este valida o conteúdo que o
@@ -305,7 +308,7 @@ lista (`analise`, `escrita`, `automacao`, `referencia`, `configuracao`), as quat
 (`<objetivo>`, `## Perguntas de descoberta`, `## Pronto quando`, `## Skills relacionadas`),
 presença da seção `## Configuração` e da leitura do perfil, template citado que existe e
 template em disco que é citado, referência `skills/<nome>` que resolve, teto de linhas, e
-toda skill roteada por `agent.md` ou `AGENTS.md`.
+toda skill roteada por `agentes/qa-especialista.md` ou `AGENTS.md`.
 
 Usa os mesmos dois níveis do validador de perfil. Um erro em texto de skill não quebra o
 instalador — faz o agente procurar arquivo no lugar errado, em silêncio, que é pior.
@@ -375,8 +378,8 @@ reconhecido e pulado, em vez de reprovar tudo.
 ### Evals das skills
 
 ```bash
-python run_evals.py
-python run_evals.py --skill cypress-ui-automation --verbose
+python ferramentas/run_evals.py
+python ferramentas/run_evals.py --skill cypress-ui-automation --verbose
 ```
 
 Enquanto o validador cuida da forma da skill, os evals cuidam do conteúdo. Cada caso em
@@ -400,7 +403,7 @@ não existe de propósito: exigiria dependência de rede e de modelo.
 ### Testes do instalador
 
 ```bash
-python -m unittest test_install -v
+python -m unittest ferramentas.test_install -v
 ```
 
 Só usa `unittest` da biblioteca padrão. Os testes de integração executam o `install.py` real
@@ -418,7 +421,7 @@ validação completa —, veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 1. Copie `AGENTS.md` e `CLAUDE.md` para a raiz do projeto (ou mescle o conteúdo de `AGENTS.md` no `CLAUDE.md`/`AGENTS.md` já existente do projeto).
 2. Copie o conteúdo de `skills/` para `.claude/skills/` do projeto (ou `~/.claude/skills/` para instalação global).
-3. Copie `agent.md` para `.claude/agents/qa-especialista.md` para disponibilizá-lo como subagente invocável (`@qa-especialista` ou delegação automática pela `description`).
+3. Copie `agentes/qa-especialista.md` para `.claude/agents/qa-especialista.md` para disponibilizá-lo como subagente invocável (`@qa-especialista` ou delegação automática pela `description`).
 
 ## Como usar
 
@@ -434,7 +437,7 @@ validação completa —, veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 | Parte | Licença |
 |---|---|
-| Código (`install.py`, `test_install.py`) | [MIT](LICENSE) |
+| Código (`install.py`, `ferramentas/test_install.py`) | [MIT](LICENSE) |
 | Conteúdo das skills do fluxo (`SKILL.md`) | CC-BY-4.0, declarado no frontmatter de cada arquivo |
 | Conteúdo das 5 skills de apoio | MIT, declarado no frontmatter — são adaptações de material MIT (ver abaixo) |
 

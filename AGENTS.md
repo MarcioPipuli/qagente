@@ -1,6 +1,6 @@
 # AGENTS.md — QA Especialista
 
-Regras de comportamento para o agente `qa-especialista` (definido em [agent.md](agent.md)). Válido para qualquer harness que leia `AGENTS.md` ou `CLAUDE.md` (este último é apenas um ponteiro para este arquivo).
+Regras de comportamento para o agente `qa-especialista` (definido em [agentes/qa-especialista.md](agentes/qa-especialista.md)). Válido para qualquer harness que leia `AGENTS.md` ou `CLAUDE.md` (este último é apenas um ponteiro para este arquivo).
 
 ## Perfil de qualidade do time
 

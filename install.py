@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Instalador do harness QAGente (agent.md + AGENTS.md/CLAUDE.md + skills/) num projeto.
+"""Instalador do harness QAGente (agentes/qa-especialista.md + AGENTS.md/CLAUDE.md + skills/) num projeto.
 
 A ferramenta alvo é **obrigatória** e não tem padrão: `--tool claude|copilot|cursor|windsurf`,
 ou `--tools` para várias. Um padrão aqui decidiria em silêncio onde os arquivos caem, e a
@@ -29,10 +29,11 @@ import shutil
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-# A validação do perfil mora em `validate_perfil.py` porque o agente também precisa dela no
+# A validação do perfil mora em `bin/validate_perfil.py` porque o agente também precisa dela no
 # projeto instalado, onde não existe `install.py` para chamar. Aqui ela é importada: toda
-# instalação continua validando o perfil antes de copiar qualquer coisa.
-from validate_perfil import (  # noqa: F401  (reexportados: outros módulos e os testes importam daqui)
+# instalação continua validando o perfil antes de copiar qualquer coisa. `bin/` resolve porque
+# o diretório deste script está no `sys.path` — tanto rodando `python install.py` quanto nos testes.
+from bin.validate_perfil import (  # noqa: F401  (reexportados: outros módulos e os testes importam daqui)
     CONVENTION_KEYS,
     CONVENTION_NUMBERS,
     DEFAULT_IO_PATHS,
@@ -45,7 +46,7 @@ from validate_perfil import (  # noqa: F401  (reexportados: outros módulos e os
 
 HARNESS_DIR = Path(__file__).resolve().parent
 SKILLS_SRC = HARNESS_DIR / "skills"
-AGENT_SRC = HARNESS_DIR / "agent.md"
+AGENT_SRC = HARNESS_DIR / "agentes" / "qa-especialista.md"
 AGENTS_MD_SRC = HARNESS_DIR / "AGENTS.md"
 PROFILES_SRC = HARNESS_DIR / "profiles"
 ADAPTERS_SRC = HARNESS_DIR / "adapters"
@@ -57,11 +58,12 @@ MEMORIA_SRC = HARNESS_DIR / "memoria" / "memoria-projeto.md"
 TEMPLATES_DIRNAME = "templates-do-time"
 TEMPLATES_README_SRC = HARNESS_DIR / TEMPLATES_DIRNAME / "README.md"
 
-# Validadores que o agente chama durante o uso, copiados para `.qagente/bin/` do projeto.
-# Sem eles instalados, a skill manda rodar um arquivo que não existe ali — ver install_bin().
+# Validadores que o agente chama durante o uso, copiados de `bin/` para `.qagente/bin/` do projeto
+# (mesmo nome dos dois lados). Sem eles instalados, a skill manda rodar um arquivo que não
+# existe ali — ver install_bin().
 BIN_SRC = (
-    HARNESS_DIR / "validate_perfil.py",
-    HARNESS_DIR / "validate_artefatos.py",
+    HARNESS_DIR / "bin" / "validate_perfil.py",
+    HARNESS_DIR / "bin" / "validate_artefatos.py",
 )
 
 # Servidores MCP que o harness declara, em um lugar só. Cada ferramenta lê MCP de um arquivo
@@ -158,7 +160,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--symlink",
         action="store_true",
-        help="Usa link simbólico em vez de cópia para skills/ e agent.md (requer privilégio no Windows).",
+        help="Usa link simbólico em vez de cópia para skills/ e agentes/qa-especialista.md (requer privilégio no Windows).",
     )
     parser.add_argument(
         "--force",
@@ -304,7 +306,7 @@ def ensure_dir(path: Path, dry_run: bool) -> None:
 
 
 def install_entry(src: Path, dst: Path, *, is_dir: bool, symlink: bool, force: bool, dry_run: bool) -> str:
-    """Instala um arquivo ou diretório único (skill ou agent.md). Retorna o status."""
+    """Instala um arquivo ou diretório único (skill ou agentes/qa-especialista.md). Retorna o status."""
     if dst.exists() or dst.is_symlink():
         if not force:
             return "pulado (já existe — use --force para sobrescrever)"

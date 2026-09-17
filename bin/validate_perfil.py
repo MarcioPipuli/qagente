@@ -12,9 +12,9 @@ procurando um arquivo que não existe ali. Agora o instalador copia este arquivo
 `.qagente/bin/`, e a skill cita um caminho que existe.
 
 Uso:
-    python validate_perfil.py                       Valida o perfil do projeto (.qagente/)
-    python validate_perfil.py <caminho.json>        Valida um arquivo específico
-    python validate_perfil.py <nome>                Valida um perfil embarcado (profiles/)
+    python bin/validate_perfil.py                   Valida o perfil do projeto (.qagente/)
+    python bin/validate_perfil.py <caminho.json>    Valida um arquivo específico
+    python bin/validate_perfil.py <nome>            Valida um perfil embarcado (profiles/)
 
 Severidade: 'erro' impede a instalação — o valor não significa mais o que a skill diz;
 'aviso' é reportado e o default entra no lugar. Sai com 1 se houver erro.
@@ -28,10 +28,11 @@ import re
 import sys
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-# No clone do harness este arquivo fica na raiz, com `profiles/` ao lado. Instalado, ele fica
-# em `.qagente/bin/`, e o vizinho que importa é `../quality-profile.json`.
+# Mesma geometria dos dois lados: no clone do harness este arquivo fica em `bin/`, com
+# `../profiles/` embarcado; instalado, fica em `.qagente/bin/`, e o vizinho que importa é
+# `../quality-profile.json`.
 BASE_DIR = Path(__file__).resolve().parent
-PROFILES_DIR = BASE_DIR / "profiles"
+PROFILES_DIR = BASE_DIR.parent / "profiles"
 PERFIL_DO_PROJETO = "quality-profile.json"
 
 SUPPORTED_PROFILE_VERSIONS = ("1.0",)

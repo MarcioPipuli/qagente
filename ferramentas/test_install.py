@@ -3,8 +3,8 @@
 
 Sem dependências externas — só `unittest` da biblioteca padrão.
 
-    python -m unittest test_install -v
-    python test_install.py
+    python -m unittest ferramentas.test_install -v
+    python ferramentas/test_install.py
 
 Os testes de integração executam o `install.py` real como subprocesso, sempre dentro de um
 diretório temporário. Nenhum teste escreve no harness do QAGente nem em `~/.claude`.
@@ -25,7 +25,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-HARNESS = Path(__file__).resolve().parent
+# Este arquivo mora em `ferramentas/`; o harness é o diretório acima.
+FERRAMENTAS = Path(__file__).resolve().parent
+HARNESS = FERRAMENTAS.parent
 INSTALL = HARNESS / "install.py"
 
 # Documentação de uso, relativa à raiz do repositório. O manual fica na raiz por ser o ponto
@@ -36,11 +38,13 @@ DOCUMENTOS_DE_USO = (
     "docs/DOCUMENTACAO-TECNICA-QAGENTE.md",
 )
 
+# `install.py` fica na raiz; os validadores instalados, em `bin/`; os de manutenção, aqui em `ferramentas/`.
 sys.path.insert(0, str(HARNESS))
+sys.path.insert(0, str(FERRAMENTAS))
 import install  # noqa: E402
 import validate_skills  # noqa: E402
 import run_evals  # noqa: E402
-import validate_artefatos  # noqa: E402
+from bin import validate_artefatos  # noqa: E402
 
 SKILL_NAMES = {
     # Fluxo: as fases mais a skill de referência gramatical.
@@ -1058,7 +1062,7 @@ class ValidadoresInstaladosTest(InstallerTestCase):
         self.install_ok("--tool", "claude", "--profile", "default")
         self.assertEqual(
             alvo.read_text(encoding="utf-8"),
-            (HARNESS / "validate_perfil.py").read_text(encoding="utf-8"),
+            (HARNESS / "bin" / "validate_perfil.py").read_text(encoding="utf-8"),
         )
 
     def test_validador_de_perfil_instalado_roda_sem_argumento(self):
@@ -1203,7 +1207,7 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
         """Fora do Claude Code o adaptador é a única regra sempre carregada.
 
         `install_memoria()` grava `.qagente/memoria-projeto.md` em toda instalação, e
-        `agent.md` manda lê-lo. Se o adaptador omite o caminho, o agente nunca descobre
+        `agentes/qa-especialista.md` manda lê-lo. Se o adaptador omite o caminho, o agente nunca descobre
         que o arquivo existe — a memória é instalada e nunca lida, em silêncio.
         """
         for path in self.adapter_files():
@@ -1307,7 +1311,7 @@ class ReferenciasDeCaminhoTest(unittest.TestCase):
         de fase), não nas ilustrativas — "o runner do Cypress" como exemplo de evidência de
         execução continua correto e não deve ser generalizado.
         """
-        linhas = (HARNESS / "agent.md").read_text(encoding="utf-8").splitlines()
+        linhas = (HARNESS / "agentes" / "qa-especialista.md").read_text(encoding="utf-8").splitlines()
 
         # A description guia o roteamento no Claude Code, então PODE nomear as ferramentas —
         # desde que as apresente como default do perfil, não como única opção.
@@ -1363,8 +1367,8 @@ class EntradaNaoConfiavelTest(unittest.TestCase):
         self.assertIn("não confiável", linha)
 
     def test_o_resumo_do_agente_repete_a_regra(self):
-        """`agent.md` é o único arquivo carregado quando o harness não lê AGENTS.md."""
-        texto = (HARNESS / "agent.md").read_text(encoding="utf-8")
+        """`agentes/qa-especialista.md` é o único arquivo carregado quando o harness não lê AGENTS.md."""
+        texto = (HARNESS / "agentes" / "qa-especialista.md").read_text(encoding="utf-8")
         self.assertIn("dado, nunca instrução", texto)
 
     def test_a_skill_que_le_documentos_manda_registrar_em_vez_de_executar(self):
@@ -1756,7 +1760,7 @@ class ContextoDoProjetoTest(unittest.TestCase):
 
     def test_o_nucleo_e_os_adaptadores_citam_o_contexto(self):
         """Em Copilot, Cursor e Windsurf o adaptador é o texto sempre carregado."""
-        alvos = [HARNESS / "AGENTS.md", HARNESS / "agent.md"]
+        alvos = [HARNESS / "AGENTS.md", HARNESS / "agentes" / "qa-especialista.md"]
         alvos += [p for p in (HARNESS / "adapters").rglob("*.md*") if p.is_file()]
         for path in alvos:
             with self.subTest(arquivo=path.name):
@@ -2083,7 +2087,7 @@ class PromessasDoHarnessTest(unittest.TestCase):
     """
 
     def descricao(self) -> str:
-        linhas = (HARNESS / "agent.md").read_text(encoding="utf-8").splitlines()
+        linhas = (HARNESS / "agentes" / "qa-especialista.md").read_text(encoding="utf-8").splitlines()
         return next(l for l in linhas if l.startswith("description:"))
 
     def test_as_saidas_do_default_sao_nomeadas_por_conteudo_nao_por_ferramenta(self):
@@ -2192,7 +2196,7 @@ class PromessasDoHarnessTest(unittest.TestCase):
         Vale para a próxima skill que trouxer uma chave: ou ela entra em DEFAULT_IO_PATHS
         (o instalador cria a pasta), ou em OPTIONAL_IO_PATHS (só cria se o time declarar).
         """
-        fontes = [HARNESS / "AGENTS.md", HARNESS / "agent.md"] + sorted((HARNESS / "skills").glob("*/SKILL.md"))
+        fontes = [HARNESS / "AGENTS.md", HARNESS / "agentes" / "qa-especialista.md"] + sorted((HARNESS / "skills").glob("*/SKILL.md"))
         conhecidas = set(install.DEFAULT_IO_PATHS) | set(install.OPTIONAL_IO_PATHS)
         for path in fontes:
             citadas = set(re.findall(r"paths\.([a-z][a-z_]*)", path.read_text(encoding="utf-8")))
@@ -2526,8 +2530,8 @@ class EntrevistaDeConfiguracaoTest(InstallerTestCase):
         self.assertIn("não escreve em `paths.*`", self.skill())
 
     def test_o_cartao_do_agente_conta_as_skills_que_existem(self):
-        """A contagem no `agent.md` é prosa: nada a recalcula quando uma skill entra."""
-        cartao = (HARNESS / "agent.md").read_text(encoding="utf-8")
+        """A contagem no `agentes/qa-especialista.md` é prosa: nada a recalcula quando uma skill entra."""
+        cartao = (HARNESS / "agentes" / "qa-especialista.md").read_text(encoding="utf-8")
         self.assertIn(f"{len(SKILL_NAMES)} skills especializadas", cartao)
 
     def test_o_manual_do_usuario_oferece_o_caminho_por_conversa(self):
@@ -2674,9 +2678,9 @@ class MemoriaDoProjetoTest(InstallerTestCase):
         self.assertIn("a memória perde", nucleo)
 
     def test_o_cartao_do_agente_manda_ler_a_memoria(self):
-        """A ordem de leitura precisa estar nos dois: o `agent.md` é o que a ferramenta carrega
+        """A ordem de leitura precisa estar nos dois: o `agentes/qa-especialista.md` é o que a ferramenta carrega
         primeiro, e um agente que nunca abre a memória a mantém sem nunca usá-la."""
-        self.assertIn("memoria-projeto.md", (HARNESS / "agent.md").read_text(encoding="utf-8"))
+        self.assertIn("memoria-projeto.md", (HARNESS / "agentes" / "qa-especialista.md").read_text(encoding="utf-8"))
 
     def test_a_entrevista_le_a_memoria_antes_de_perguntar(self):
         """Sem isto, a entrevista pergunta o que a memória já aprendeu — o atrito que ela
@@ -2845,7 +2849,7 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
 
     def rodar(self, *conteudos: tuple[str, str], strict: bool = False) -> subprocess.CompletedProcess:
         caminhos = [str(self.escrever(nome, texto)) for nome, texto in conteudos]
-        args = [sys.executable, str(HARNESS / "validate_artefatos.py"), *caminhos]
+        args = [sys.executable, str(HARNESS / "bin" / "validate_artefatos.py"), *caminhos]
         if strict:
             args.append("--strict")
         return subprocess.run(
@@ -2873,7 +2877,7 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
             caminho = HARNESS / "skills" / skill / "templates" / template
             with self.subTest(template=template):
                 resultado = subprocess.run(
-                    [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+                    [sys.executable, str(HARNESS / "bin" / "validate_artefatos.py"), str(caminho)],
                     capture_output=True, text=True, encoding="utf-8", errors="replace",
                     env=dict(os.environ, PYTHONIOENCODING="utf-8"),
                 )
@@ -2971,7 +2975,7 @@ class ValidadorDeArtefatosTest(unittest.TestCase):
         artefato.write_text(CASOS_OK, encoding="utf-8")
 
         resultado = subprocess.run(
-            [sys.executable, str(HARNESS / "validate_artefatos.py"), str(artefato)],
+            [sys.executable, str(HARNESS / "bin" / "validate_artefatos.py"), str(artefato)],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             env=dict(os.environ, PYTHONIOENCODING="utf-8"),
         )
@@ -3280,7 +3284,7 @@ class ValidadorDosArtefatosDeApoioTest(unittest.TestCase):
         caminho = raiz / nome
         caminho.write_text(texto, encoding="utf-8")
         return subprocess.run(
-            [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+            [sys.executable, str(HARNESS / "bin" / "validate_artefatos.py"), str(caminho)],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             env=dict(os.environ, PYTHONIOENCODING="utf-8"),
         ).stdout
@@ -3312,7 +3316,7 @@ class ValidadorDosArtefatosDeApoioTest(unittest.TestCase):
             caminho = HARNESS / "skills" / skill / "templates" / template
             with self.subTest(template=template):
                 resultado = subprocess.run(
-                    [sys.executable, str(HARNESS / "validate_artefatos.py"), str(caminho)],
+                    [sys.executable, str(HARNESS / "bin" / "validate_artefatos.py"), str(caminho)],
                     capture_output=True, text=True, encoding="utf-8", errors="replace",
                     env=dict(os.environ, PYTHONIOENCODING="utf-8"),
                 )
