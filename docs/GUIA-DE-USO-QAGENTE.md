@@ -639,9 +639,10 @@ execução, e essa exigência não é configurável.
 9. **Quando um teste oscilar, não peça "roda de novo".** Peça a classificação da causa raiz.
    Repetir até passar é o modo de falha que a skill de confiabilidade existe para impedir.
 10. **Deixe o contexto crescer com o uso.** Toda vez que você corrigir um julgamento do agente
-    ("esse fluxo é interno", "essa área não é crítica"), considere registrar em Observações do
-    contexto. Hoje isso é manual — a versão automática está desenhada, mas não implementada
-    (`IDEIAS-MELHORIAS-QAGENTE.md`).
+    ("esse fluxo é interno", "essa área não é crítica"), o agente propõe gravar isso em
+    `memoria-projeto.md` no fim da tarefa — aprove o que for fato estável (ver
+    [12.1](#121-a-memória-o-contexto-que-se-preenche-sozinho)). O que for descrição do
+    produto, e não aprendizado, vai para Observações do contexto, à mão.
 11. **Versione `.qagente/` no git.** Perfil e contexto são trabalho do time, e o diff é a
     auditoria de como o entendimento evoluiu.
 12. **Peça o nome do perfil aplicado quando algo sair estranho.** O agente resume a configuração

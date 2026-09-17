@@ -8,7 +8,7 @@
 > [`PRIMEIROS-PASSOS-QAGENTE.md`](../PRIMEIROS-PASSOS-QAGENTE.md) (manual do usuário: 15 passos
 > numerados, da instalação ao primeiro teste, sem jargão) e
 > [`GUIA-DE-USO-QAGENTE.md`](GUIA-DE-USO-QAGENTE.md) (referência de operação no dia a dia).
-> Registro de ideias não implementadas: `IDEIAS-MELHORIAS-QAGENTE.md`.
+> Decisões adiadas de propósito: [seção 17.1](#171-decisões-adiadas-de-propósito).
 >
 > Estado descrito: repositório `QAGente/` em `main`, commit `2ef7f1c` —
 > **15 skills, 186 evals, 325 testes**, `ferramentas/validate_skills.py --strict` em 0 erros / 0 avisos.
@@ -1299,21 +1299,80 @@ testar."* Projeto instalado com `--profile fullstack`.
 
 ## 17. Limites conhecidos e pontos cegos
 
-Registrados aqui para evitar expectativa errada. Vários estão analisados em
-`IDEIAS-MELHORIAS-QAGENTE.md`.
+Registrados aqui para evitar expectativa errada. O que foi analisado e **adiado de propósito**
+está em [17.1](#171-decisões-adiadas-de-propósito), com o motivo — para a decisão não precisar
+ser reconstruída quando alguém a reabrir.
 
 | Limite | Detalhe |
 |---|---|
 | **Não existe gatilho de "primeiro uso"** | Não há hook pós-instalação que dispare um agente. Uma entrevista de configuração só pode ser *oferecida* pelo agente ao detectar perfil intocado ou contexto com `[colchetes]` |
-| **Não há memória entre sessões** | `contexto-projeto.md` é a memória, mas hoje só é preenchido à mão. O protocolo de escrita automática está desenhado, **não implementado** (item 1 de `IDEIAS-MELHORIAS-QAGENTE.md`), e tem uma trava real: memória gravada a partir de documento analisado transformaria injeção pontual em injeção **persistente** |
+| **A memória só cresce com aprovação humana** | `memoria-projeto.md` existe e o agente propõe linhas no fim de cada tarefa, mas nada entra sem aprovação por item, e só o que o usuário disse na conversa é elegível (`Origem` de vocabulário fechado). É restrição deliberada, não lacuna: memória gravada a partir de documento analisado transformaria injeção pontual em injeção **persistente**. Os tetos (60/100 linhas, 5 propostas por tarefa, 90/180 dias) são pontos de partida, **não medidos** — ver 17.1 |
 | **Evals são estáticos** | Provam que a skill *ensina* o que deveria — não que o agente *acertou*. Não há modo `--live`, de propósito |
 | **`--global` não instala regras** | Em modo global só vão skills e agente. Sem `AGENTS.md`, perfil, contexto e pastas, boa parte do comportamento não existe. É preciso rodar sem `--global` em cada projeto |
 | **Um framework por camada** | Existe skill para Robot Framework (API) e Cypress/Playwright (UI). Perfil apontando outro framework faz o agente **parar e perguntar** — corretamente, mas sem entregar |
 | **Fora de escopo por decisão** | Carga/performance (k6, JMeter, Gatling), segurança/pentest, alteração de código de aplicação, execução contra produção, aprovação de release |
 | **Depende de um humano preencher o contexto** | Sem ele, a priorização por impacto é palpite declarado. O arquivo é justamente o que "ninguém preenche" |
-| **`.github/agents/*.agent.md` do Copilot nunca foi validado na prática** | Registrado no arquivo de ideias como formato não verificado |
+| **`.github/agents/*.agent.md` do Copilot nunca foi validado na prática** | O adaptador existe e os dois arquivos concordam entre si (teste), mas o formato nunca foi exercitado numa instalação real do Copilot |
 | **A skill do Cypress usa `data-cy` como default** | Todos os perfis embarcados declaram `data-testid`; o perfil vence, mas a divergência entre texto da skill e perfil pode confundir na leitura |
 | **Bloco mesclado pode envelhecer** | O `AGENTS.md` do projeto guarda uma *cópia* das regras. Se o harness evoluir e ninguém reinstalar, o projeto segue com a versão antiga (ver [seção 18.4](#184-quando-o-bloco-mesclado-envelhece)) |
+
+### 17.1 Decisões adiadas de propósito
+
+Cinco pendências ficaram abertas quando o registro de ideias de melhoria foi fechado
+(2026-09-17, com todos os seus itens em `main`). Nenhuma é trabalho faltando: são adiamentos
+que dependem de uso real ou de alguém pedir. Estão aqui para que o motivo não se perca.
+
+| Pendência | Onde mora | Gatilho para reabrir |
+|---|---|---|
+| **Calibrar os tetos da memória** — 60/100 linhas, 5 propostas por tarefa, 90/180 dias para `[a revalidar]` | `AGENTS.md`, "Memória do projeto" | Algumas semanas de uso real. Os números são defensáveis, não medidos — e a versão em arquivo existe justamente para descobrir o valor certo |
+| **Reavaliar `quarantine_max_days`** | `quality-profile.json`, `conventions.quarantine_max_days` | O `registro-quarentena.md` é sobrescrevível pelo time desde os templates do time, então parte do caso de uso já tinha saída. O que o campo ainda acrescenta é o comando no `SKILL.md` de confiabilidade, que o template não alcança. Se ninguém o alterar, é candidato a sair |
+| **Nível 2 dos templates do time** — os 8 templates de automação (Robot, Cypress, Playwright) | `templates-do-time/` | Só depois que o nível 1 (os seis artefatos de análise, ver [GUIA-DE-USO 3.4](GUIA-DE-USO-QAGENTE.md#34-o-layout-dos-artefatos-também-é-do-time)) se provar no uso |
+| **`--formato json` no validador de artefatos** | `bin/validate_artefatos.py` | Só se alguém quiser plugar num CI de projeto do usuário. Hoje o consumidor é o agente, que lê a saída em texto |
+| **Rótulos de camada e de execução como campo de perfil** | `casos-de-teste`, `cenarios-de-teste`, três skills de automação, validador | Analisado em 2026-09-02, recomendação **não mexer até alguém pedir** — ver abaixo |
+
+#### Por que `@api`/`@interface` não virou campo de perfil
+
+A pendência tratava três rótulos como um. Separá-los é o que torna a decisão possível:
+
+| Rótulo | Onde vive | O que faz |
+|---|---|---|
+| `[API]` / `[INTERFACE]` | lista de casos sugeridos, Fase 1 | anuncia a camada de cada caso sugerido |
+| `@api` / `@interface` | tag do caso, Fase 2 | **decide se o caso vai para `api.framework` ou `ui.framework`** |
+| `@pendente-de-automacao` / `@nao-automatizavel` | tag do caso, Fase 2 | separa o que segue para automação do que fica como roteiro manual |
+
+**O achado: a tag de camada não é rótulo, é chave de roteamento.** `casos-de-teste` declara que
+ela *"decide se o caso vai para `api.framework` ou `ui.framework` na fase de automação"*.
+Renomeá-la exige que a regra de despacho a acompanhe — em `AGENTS.md`, na skill de casos e nas
+três skills de automação. Não é uma linha na tabela de `## Configuração`, como foi com
+`scenario_title_prefix`.
+
+Isso põe o caso do lado errado da distinção que a auditoria das convenções fixou (ver
+[18.2](#182-campo-novo-de-perfil)): **o nome é convenção, a existência é invariante**.
+`scenario_title_prefix` virou campo por ser cosmético puro — trocá-lo não muda o comportamento de
+nada. Aqui, o valor é lido para tomar uma decisão.
+
+Duas coisas aumentam o custo desde que a pendência foi escrita:
+
+- **O validador de artefatos depende desses rótulos** — os carrega como vocabulário fechado
+  (`CAMADAS`, `EXECUCOES`). Virando campo, precisaria lê-los do perfil. Essa parte é fácil: é o
+  mesmo padrão de `risk_levels` e `scenario_title_prefix`.
+- **`[API]`/`[INTERFACE]` e `@api`/`@interface` são o mesmo eixo em dois formatos** — a tag é
+  *herdada* do prefixo. Um campo teria que governar os dois; governando só um, o contrato entre
+  as fases (que o validador confere) passa a comparar coisas com nomes diferentes.
+
+Veredito, por rótulo:
+
+| Rótulo | Parametrizar? | Por quê |
+|---|---|---|
+| tipo de execução | **talvez** — o único caso fácil | é o mais próximo de cosmético; nenhuma skill de framework lê esse valor, só a de casos |
+| camada (`@api`/`@interface`) | **duvidoso** | o ganho é um time escrever `@backend`/`@frontend`; o custo é a regra de despacho virar indireta em cinco lugares |
+| `[API]`/`[INTERFACE]` da Fase 1 | **não isolado** | mesmo eixo da camada; mexer num sem o outro quebra a herança |
+
+O teste que decide é o de sempre: *isso é convenção genuína de time, ou é gramática do harness?*
+"Validar que" um time troca porque escreve diferente; `@api` versus `@backend` não tem nenhum caso
+real registrado. E o risco de super-parametrização continua valendo: cada chave nova é um ramo no
+validador, um teste e uma linha nas tabelas de configuração. **Se um dia for feito, comece pelo
+tipo de execução** — é o único sem roteamento atrás.
 
 ---
 
